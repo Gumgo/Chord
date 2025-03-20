@@ -99,6 +99,8 @@ public class ConvertBuilderTests
     {
       ("float = 1.0f", "double"),
       ("double = 1.0", "float"),
+      ("int = 1", "float"),
+      ("float = 1.0f", "int"),
 
       ("float = 1.0f", "const? float"),
       ("float = 1.0f", "const float"),

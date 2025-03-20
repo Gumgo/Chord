@@ -696,6 +696,15 @@ public class ParserExpressionTests
       });
 
     ParserTestUtilities.RunParser(
+      "1",
+      (context, location) =>
+      {
+        Assert.True(LiteralParseTreeNode.CanParse(location.NextToken()));
+        var node = LiteralParseTreeNode.Parse(location);
+        Assert.Equal(TokenType.LiteralInt, node.LiteralToken.TokenType);
+      });
+
+    ParserTestUtilities.RunParser(
       "true",
       (context, location) =>
       {

@@ -5,17 +5,17 @@ internal class SourceFileParseTreeNode : ParseTreeNode
   private SourceFileParseTreeNode(
     SourceLocation sourceLocation,
     ImportListParseTreeNode importList,
-    InstrumentGlobalListParseTreeNode instrumentGlobalList,
+    InstrumentPropertyListParseTreeNode instrumentPropertyList,
     GlobalScopeParseTreeNode globalScope)
     : base(sourceLocation)
   {
     ImportList = importList;
-    InstrumentGlobalList = instrumentGlobalList;
+    InstrumentPropertyList = instrumentPropertyList;
     GlobalScope = globalScope;
   }
 
   public ImportListParseTreeNode ImportList { get; }
-  public InstrumentGlobalListParseTreeNode InstrumentGlobalList { get; }
+  public InstrumentPropertyListParseTreeNode InstrumentPropertyList { get; }
   public GlobalScopeParseTreeNode GlobalScope { get; }
 
   public static SourceFileParseTreeNode Parse(ParserContext context, ParserLocation location)
@@ -25,12 +25,12 @@ internal class SourceFileParseTreeNode : ParseTreeNode
     var importList = ImportListParseTreeNode.Parse(context, location);
     tokenSourceLocations.Add(importList.SourceLocation);
 
-    var instrumentGlobalList = InstrumentGlobalListParseTreeNode.Parse(context, location);
-    tokenSourceLocations.Add(instrumentGlobalList.SourceLocation);
+    var instrumentPropertyList = InstrumentPropertyListParseTreeNode.Parse(context, location);
+    tokenSourceLocations.Add(instrumentPropertyList.SourceLocation);
 
     var globalScope = GlobalScopeParseTreeNode.Parse(context, location);
     tokenSourceLocations.Add(globalScope.SourceLocation);
 
-    return new(tokenSourceLocations.Merge(), importList, instrumentGlobalList, globalScope);
+    return new(tokenSourceLocations.Merge(), importList, instrumentPropertyList, globalScope);
   }
 }

@@ -63,6 +63,17 @@ file static class ReportingExtensions
       arrayIndex.SourceLocation,
       $"Cannot index array value using index of type '{indexDataType.ToLanguageString()}'");
 
+  public static void CannotIndexUsingMismatchedUpsampleFactorError(
+    this IReporting reporting,
+    ArrayIndexParseTreeNode arrayIndex,
+    AstDataType arrayDataType,
+    AstDataType indexDataType)
+  {
+    var message = $"Cannot index array of type '{arrayDataType.ToLanguageString()}' using index of type '{indexDataType.ToLanguageString()}' "
+      + "due to mismatched upsample factors";
+    reporting.Error("CannotIndexUsingMismatchedUpsampleFactor", arrayIndex.SourceLocation, message);
+  }
+
   public static void IllegalArrayAndIndexDataTypeCombinationError(
     this IReporting reporting,
     ArrayIndexParseTreeNode arrayIndex,
@@ -112,6 +123,12 @@ internal class BuildExpressionResult
 // were written. This also applies to assignment expressions (x = y), for loops (for (val x in y)), etc.
 internal class ExpressionBuilder(AstBuilderContext context, DefaultValueExpressionResolver defaultValueExpressionResolver)
 {
+  // Special "field" on array types which accesses the array's length
+  private const string ArrayLengthFieldName = "length";
+
+  // Special "field" on string types which accesses the string's length
+  private const string StringLengthFieldName = "length";
+
   // This will build the expression and modify scope/scopeTracker with any values declared/assigned within the expression (via out module arguments). The
   // resulting BuildExpressionResult will contain two child branch trackers. These should be used in the appropriate branches if the expression is used as the
   // condition in a conditional statement but can be ignored otherwise.
@@ -204,6 +221,7 @@ internal class ExpressionBuilder(AstBuilderContext context, DefaultValueExpressi
       TokenType.LiteralFloat => new LiteralAstNode(literal.SourceLocation, literal.LiteralToken.LiteralFloatValue),
       TokenType.LiteralDouble => new LiteralAstNode(literal.SourceLocation, literal.LiteralToken.LiteralDoubleValue),
       TokenType.LiteralBool => new LiteralAstNode(literal.SourceLocation, literal.LiteralToken.LiteralBoolValue),
+      TokenType.LiteralInt => new LiteralAstNode(literal.SourceLocation, literal.LiteralToken.LiteralIntValue),
       TokenType.LiteralString => new LiteralAstNode(literal.SourceLocation, literal.LiteralToken.LiteralStringValue),
       _ => throw UnhandledEnumValueException.Create(literal.LiteralToken.TokenType),
     };
@@ -223,31 +241,57 @@ internal class ExpressionBuilder(AstBuilderContext context, DefaultValueExpressi
     {
       context.Reporting.NotInitializedErrorIfNotInitialized(scopeTracker, contextExpressionResult.Expression);
 
-      if (contextExpressionResult.Expression.DataType.StructDefinition != null)
+      if (contextExpressionResult.Expression.DataType.IsArray)
       {
-        var structField = contextExpressionResult.Expression.DataType.StructDefinition.FlattenedFields.FirstOrDefault(
-          (field) => field.Name == access.Identifier);
-        if (structField == null)
+        if (access.Identifier == ArrayLengthFieldName)
+        {
+          resultExpression = new ArrayLengthAstNode(access.SourceLocation, contextExpressionResult.Expression);
+        }
+        else
         {
           resultExpression = new PlaceholderAstNode(access.SourceLocation, AstDataType.Error());
           context.Reporting.ResolveAccessError(access, contextExpressionResult.Expression.DataType);
         }
+      }
+      else if (contextExpressionResult.Expression.DataType.PrimitiveType == PrimitiveType.String)
+      {
+        if (access.Identifier == StringLengthFieldName)
+        {
+          resultExpression = new StringLengthAstNode(access.SourceLocation, contextExpressionResult.Expression);
+        }
         else
+        {
+          resultExpression = new PlaceholderAstNode(access.SourceLocation, AstDataType.Error());
+          context.Reporting.ResolveAccessError(access, contextExpressionResult.Expression.DataType);
+        }
+      }
+      else if (contextExpressionResult.Expression.DataType.StructDefinition != null)
+      {
+        var structField = contextExpressionResult.Expression.DataType.StructDefinition.FlattenedFields.FirstOrDefault(
+          (field) => field.Name == access.Identifier);
+        if (structField != null)
         {
           var dataType = contextExpressionResult.Expression.DataType.GetModifiedFieldDataType(structField);
           resultExpression = new StructFieldAccessAstNode(access.SourceLocation, contextExpressionResult.Expression, structField, dataType);
+        }
+        else
+        {
+          resultExpression = new PlaceholderAstNode(access.SourceLocation, AstDataType.Error());
+          context.Reporting.ResolveAccessError(access, contextExpressionResult.Expression.DataType);
         }
       }
       else if (contextExpressionResult.Expression is ReferenceAstNode reference)
       {
         ExpressionAstNode? resolvedReference = NameResolver.TryGetOrExtendReference(scope, reference, access.SourceLocation, access.Identifier);
-        if (resolvedReference == null)
+        if (resolvedReference != null)
+        {
+          resultExpression = resolvedReference;
+        }
+        else
         {
           context.Reporting.ResolveAccessError(access, reference.DataType);
-          resolvedReference = new PlaceholderAstNode(access.SourceLocation, AstDataType.Error());
+          resultExpression = new PlaceholderAstNode(access.SourceLocation, AstDataType.Error());
         }
-
-        resultExpression = resolvedReference;
       }
       else
       {
@@ -278,7 +322,7 @@ internal class ExpressionBuilder(AstBuilderContext context, DefaultValueExpressi
     else
     {
       // If the index expression failed to parse, just add a placeholder expression (we already emitted an error during parse)
-      indexExpression = new PlaceholderAstNode(arrayIndex.SourceLocation, new(RuntimeMutability.Constant, PrimitiveType.Float, 1, false));
+      indexExpression = new PlaceholderAstNode(arrayIndex.SourceLocation, new(RuntimeMutability.Constant, PrimitiveType.Int, 1, false));
     }
 
     AstDataType elementDataType;
@@ -323,23 +367,20 @@ internal class ExpressionBuilder(AstBuilderContext context, DefaultValueExpressi
       {
         context.Reporting.CannotIndexUsingNonNumberIndexError(arrayIndex, indexExpression.DataType);
       }
+
+      if (!arrayExpression.DataType.IsError
+        && arrayExpression.DataType.RuntimeMutability != RuntimeMutability.Constant
+        && indexExpression.DataType.RuntimeMutability != RuntimeMutability.Constant
+        && arrayExpression.DataType.UpsampleFactor != indexExpression.DataType.UpsampleFactor)
+      {
+        context.Reporting.CannotIndexUsingMismatchedUpsampleFactorError(arrayIndex, arrayExpression.DataType, indexExpression.DataType);
+      }
     }
 
     return ResultFromSubResults(
       scopeTracker,
       new ArrayIndexAstNode(arrayIndex.SourceLocation, arrayExpression, indexExpression, elementDataType),
       subResults);
-
-    // !!! during graph build, we will also need to detect/restrict cases like the following:
-    // foo[x].bar[y]
-    // where both x and y are variables. This is because at runtime, structs don't exist, only the leaf-most field values will exist (suppose arrays are 2
-    // elements long):
-    // foo_0_bar_0
-    // foo_0_bar_1
-    // foo_1_bar_0
-    // foo_1_bar_1
-    // Therefore, to index by y, we'll need to construct an array of ALL foo_i_bar_0 and foo_i_bar_1 values, index both of them using 'x', and then index the
-    // foo_x_bar_0 and foo_x_bar_1 values using 'y'. For n levels of array indexing, this becomes exponential.
   }
 
   private BuildExpressionResult BuildArray(ArrayParseTreeNode array, ScopeAstNode scope, ScopeTracker scopeTracker)
@@ -481,6 +522,10 @@ internal class ExpressionBuilder(AstBuilderContext context, DefaultValueExpressi
     else if (operatorCall.OperatorTokenType == TokenType.LogicalAnd)
     {
       return BuildLogicalAndOperatorCall(operatorCall, scope, scopeTracker);
+    }
+    else if (operatorCall.OperatorTokenType == TokenType.LogicalNot)
+    {
+      return BuildLogicalNotOperatorCall(operatorCall, scope, scopeTracker);
     }
     else
     {
@@ -721,6 +766,63 @@ internal class ExpressionBuilder(AstBuilderContext context, DefaultValueExpressi
     };
   }
 
+  private BuildExpressionResult BuildLogicalNotOperatorCall(OperatorCallParseTreeNode operatorCall, ScopeAstNode scope, ScopeTracker scopeTracker)
+  {
+    Debug.Assert(operatorCall.OperatorTokenType == TokenType.LogicalNot);
+
+    // The block of code:
+    //
+    //  !condition
+    //
+    // is logically equivalent to:
+    //
+    //  if (condition)
+    //  {
+    //    return false;
+    //  }
+    //  else
+    //  {
+    //    return true;
+    //  }
+
+    var result = BuildExpression(operatorCall.Arguments[0].ValueExpression, scope, scopeTracker);
+    context.Reporting.NotInitializedErrorIfNotInitialized(scopeTracker, result.Expression);
+
+    // Create "true" and "false" scopes to use for branches if this expression is part of a conditional. These scopes are children of our outer scope.
+
+    // The "true" branch runs when the condition is false
+    var trueBranchScopeTracker = new ScopeTracker(scopeTracker, ScopeType.Conditional);
+    trueBranchScopeTracker.IntegrateChildScope(result.FalseBranchScopeTracker);
+
+    // The "false" branch runs when the condition is true
+    var falseBranchScopeTracker = new ScopeTracker(scopeTracker, ScopeType.Conditional);
+    falseBranchScopeTracker.IntegrateChildScope(result.TrueBranchScopeTracker);
+
+    var constBoolDataType = new AstDataType(RuntimeMutability.Constant, PrimitiveType.Bool, 1, false);
+
+    if (!result.Expression.DataType.IsAssignableTo(constBoolDataType))
+    {
+      context.Reporting.InvalidOperatorArgumentTypeError(
+        operatorCall.SourceLocation,
+        operatorCall.OperatorTokenType,
+        0,
+        constBoolDataType,
+        result.Expression.DataType);
+    }
+
+    return new()
+    {
+      Expression = new TernaryAstNode(
+        operatorCall.SourceLocation,
+        result.Expression,
+        new LiteralAstNode(operatorCall.SourceLocation, false),
+        new LiteralAstNode(operatorCall.SourceLocation, true),
+        constBoolDataType),
+      TrueBranchScopeTracker = trueBranchScopeTracker,
+      FalseBranchScopeTracker = falseBranchScopeTracker,
+    };
+  }
+
   private SequentialEvaluationAstNode? TryBuildArrayOperation(
     SourceLocation sourceLocation,
     TokenType operatorTokenType,
@@ -766,7 +868,9 @@ internal class ExpressionBuilder(AstBuilderContext context, DefaultValueExpressi
 
       var arrayExpression = argumentExpressions.FirstOrDefault((expression) => expression.DataType.IsArray);
       var countExpression = argumentExpressions.FirstOrDefault(
-        (expression) => expression.DataType.RuntimeMutability == RuntimeMutability.Constant && expression.DataType.IsNumber());
+        (expression) => expression.DataType.RuntimeMutability == RuntimeMutability.Constant
+          && expression.DataType.PrimitiveType == PrimitiveType.Int
+          && !expression.DataType.IsArray);
 
       if (arrayExpression == null || countExpression == null)
       {

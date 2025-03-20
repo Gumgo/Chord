@@ -10,6 +10,11 @@ file static class ReportingExtensions
       "IllegalUpsampleFactor",
       sourceLocation,
       $"Upsample factor not allowed on data type with '{RuntimeMutability.Constant.ToLanguageString()}' runtime mutability");
+
+  public static void IllegalVoidDataTypeQualifierError(this IReporting reporting, SourceLocation sourceLocation)
+    => reporting.Error(
+      "IllegalVoidDataTypeQualifier",
+      $"Illegal qualifier specified on '{VoidDataType.LanguageString}' data type");
 }
 
 internal class DataTypeParseTreeNode : ParseTreeNode
@@ -21,6 +26,7 @@ internal class DataTypeParseTreeNode : ParseTreeNode
     RuntimeMutability runtimeMutability,
     TypeNameParseTreeNode? typeName,
     PrimitiveType? primitiveType,
+    bool isVoid,
     int? upsampleFactor,
     bool isArray)
     : base(sourceLocation)
@@ -28,6 +34,7 @@ internal class DataTypeParseTreeNode : ParseTreeNode
     RuntimeMutability = runtimeMutability;
     TypeName = typeName;
     PrimitiveType = primitiveType;
+    IsVoid = isVoid;
     UpsampleFactor = upsampleFactor;
     IsArray = isArray;
   }
@@ -35,6 +42,7 @@ internal class DataTypeParseTreeNode : ParseTreeNode
   public RuntimeMutability RuntimeMutability { get; }
   public TypeNameParseTreeNode? TypeName { get; }
   public PrimitiveType? PrimitiveType { get; }
+  public bool IsVoid { get; }
   public int? UpsampleFactor { get; }
   public bool IsArray { get; }
 
@@ -51,16 +59,19 @@ internal class DataTypeParseTreeNode : ParseTreeNode
     }
 
     var primitiveType = location.NextToken().TokenType.GetPrimitiveType();
+    var isVoid = false;
+    TypeNameParseTreeNode? typeName = null;
     if (primitiveType != null)
     {
       location.ConsumeNextToken(tokenSourceLocations);
     }
-
-    var typeName = primitiveType == null
-      ? TypeNameParseTreeNode.Parse(context, location)
-      : null;
-    if (typeName != null)
+    else if (location.ConsumeIfNextTokenIs(TokenType.KeywordVoid, tokenSourceLocations) != null)
     {
+      isVoid = true;
+    }
+    else
+    {
+      typeName = TypeNameParseTreeNode.Parse(context, location);
       tokenSourceLocations.Add(typeName.SourceLocation);
     }
 
@@ -94,7 +105,15 @@ internal class DataTypeParseTreeNode : ParseTreeNode
       isArray = true;
     }
 
-    return new(tokenSourceLocations.Merge(), runtimeMutability, typeName, primitiveType, upsampleFactor, isArray);
+    if (isVoid && (runtimeMutability != RuntimeMutability.Variable || upsampleFactor != null || isArray))
+    {
+      context.Reporting.IllegalVoidDataTypeQualifierError(tokenSourceLocations.Merge());
+      runtimeMutability = RuntimeMutability.Variable;
+      upsampleFactor = null;
+      isArray = false;
+    }
+
+    return new(tokenSourceLocations.Merge(), runtimeMutability, typeName, primitiveType, isVoid, upsampleFactor, isArray);
   }
 
   public string ToLanguageString()
@@ -104,6 +123,7 @@ internal class DataTypeParseTreeNode : ParseTreeNode
       ? string.Empty
       : $"{runtimeMutabilityString} ";
     var typeNameString = PrimitiveType?.ToLanguageString()
+      ?? (IsVoid ? VoidDataType.LanguageString : null)
       ?? TypeName?.ToLanguageString()
       ?? throw new InvalidOperationException("No type name specified");
     var upsampleFactorString = UpsampleFactor == null

@@ -1,4 +1,6 @@
 ﻿using Compiler.Ast;
+using Compiler.EntryPoint;
+using Compiler.NativeLibrary;
 
 namespace Compiler;
 
@@ -7,9 +9,12 @@ internal class CompileResult : ICompileResult
   // These are listed in the order in which they should be initialized
   public required IReadOnlyList<ValueDefinitionAstNode> GlobalValueDefinitions { get; init; }
 
-  // List of possible program entry points
-  public required IReadOnlyList<ModuleDefinitionAstNode> EntryPoints { get; init; }
+  // Voice and/or effect entry points
+  public required EntryPoints EntryPoints { get; init; }
 
   // Built ASTs for each source file keyed by source file canonical path
-  public required IDictionary<string, ScopeAstNode> SourceFileAsts { get; init; }
+  public required IReadOnlyDictionary<string, ScopeAstNode> SourceFileAsts { get; init; }
+
+  // Core native modules accessible via signature
+  public required IReadOnlyDictionary<NativeModuleSignature, NativeModuleDefinitionAstNode> CoreNativeModules { get; init; }
 }

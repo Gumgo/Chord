@@ -112,6 +112,27 @@ public class InitializationTests
         {
           val x: float;
           val y: float;
+          if (!(F(out x) && F(out y)))
+          {
+            return y;
+          }
+
+          return 1.0f;
+        }
+        """,
+        out _,
+        out var errorIdentifiers);
+      Assert.Equal(["ValueMaybeNotInitialized"], errorIdentifiers);
+    }
+
+    {
+      AstBuilderTestUtilities.RunAstBuilder(
+        """
+        module F(out x: float): const bool { x = 1.0f; return true; }
+        module M(): float
+        {
+          val x: float;
+          val y: float;
           if (F(out x) || F(out y))
           {
             return y;
@@ -123,6 +144,27 @@ public class InitializationTests
         out _,
         out var errorIdentifiers);
       Assert.Equal(["ValueMaybeNotInitialized"], errorIdentifiers);
+    }
+
+    {
+      AstBuilderTestUtilities.RunAstBuilder(
+        """
+        module F(out x: float): const bool { x = 1.0f; return true; }
+        module M(): float
+        {
+          val x: float;
+          val y: float;
+          if (!(F(out x) || F(out y)))
+          {
+            return y;
+          }
+
+          return 1.0f;
+        }
+        """,
+        out _,
+        out var errorIdentifiers);
+      Assert.Empty(errorIdentifiers);
     }
 
     {
@@ -226,6 +268,52 @@ public class InitializationTests
         {
           val x: float;
           val y: float;
+          if (!(F(out x) && F(out y)))
+          {
+            return 1.0f;
+          }
+          else
+          {
+            return y;
+          }
+        }
+        """,
+        out _,
+        out var errorIdentifiers);
+      Assert.Empty(errorIdentifiers);
+    }
+
+    {
+      AstBuilderTestUtilities.RunAstBuilder(
+        """
+        module F(out x: float): const bool { x = 1.0f; return true; }
+        module M(): float
+        {
+          val x: float;
+          val y: float;
+          if (!F(out x) || !F(out y))
+          {
+            return 1.0f;
+          }
+          else
+          {
+            return y;
+          }
+        }
+        """,
+        out _,
+        out var errorIdentifiers);
+      Assert.Empty(errorIdentifiers);
+    }
+
+    {
+      AstBuilderTestUtilities.RunAstBuilder(
+        """
+        module F(out x: float): const bool { x = 1.0f; return true; }
+        module M(): float
+        {
+          val x: float;
+          val y: float;
           if (F(out x) && F(out y))
           {
             return y;
@@ -249,6 +337,52 @@ public class InitializationTests
         {
           val x: float;
           val y: float;
+          if (!(F(out x) && F(out y)))
+          {
+            return y;
+          }
+          else
+          {
+            return 1.0f;
+          }
+        }
+        """,
+        out _,
+        out var errorIdentifiers);
+      Assert.Equal(["ValueMaybeNotInitialized"], errorIdentifiers);
+    }
+
+    {
+      AstBuilderTestUtilities.RunAstBuilder(
+        """
+        module F(out x: float): const bool { x = 1.0f; return true; }
+        module M(): float
+        {
+          val x: float;
+          val y: float;
+          if (!F(out x) || !F(out y))
+          {
+            return y;
+          }
+          else
+          {
+            return 1.0f;
+          }
+        }
+        """,
+        out _,
+        out var errorIdentifiers);
+      Assert.Equal(["ValueMaybeNotInitialized"], errorIdentifiers);
+    }
+
+    {
+      AstBuilderTestUtilities.RunAstBuilder(
+        """
+        module F(out x: float): const bool { x = 1.0f; return true; }
+        module M(): float
+        {
+          val x: float;
+          val y: float;
           if (F(out x) || F(out y))
           {
             return 1.0f;
@@ -272,6 +406,52 @@ public class InitializationTests
         {
           val x: float;
           val y: float;
+          if (!(F(out x) || F(out y)))
+          {
+            return 1.0f;
+          }
+          else
+          {
+            return y;
+          }
+        }
+        """,
+        out _,
+        out var errorIdentifiers);
+      Assert.Equal(["ValueMaybeNotInitialized"], errorIdentifiers);
+    }
+
+    {
+      AstBuilderTestUtilities.RunAstBuilder(
+        """
+        module F(out x: float): const bool { x = 1.0f; return true; }
+        module M(): float
+        {
+          val x: float;
+          val y: float;
+          if (!F(out x) && !F(out y))
+          {
+            return 1.0f;
+          }
+          else
+          {
+            return y;
+          }
+        }
+        """,
+        out _,
+        out var errorIdentifiers);
+      Assert.Equal(["ValueMaybeNotInitialized"], errorIdentifiers);
+    }
+
+    {
+      AstBuilderTestUtilities.RunAstBuilder(
+        """
+        module F(out x: float): const bool { x = 1.0f; return true; }
+        module M(): float
+        {
+          val x: float;
+          val y: float;
           if (F(out x) || F(out y))
           {
             return y;
@@ -285,6 +465,52 @@ public class InitializationTests
         out _,
         out var errorIdentifiers);
       Assert.Equal(["ValueMaybeNotInitialized"], errorIdentifiers);
+    }
+
+    {
+      AstBuilderTestUtilities.RunAstBuilder(
+        """
+        module F(out x: float): const bool { x = 1.0f; return true; }
+        module M(): float
+        {
+          val x: float;
+          val y: float;
+          if (!(F(out x) || F(out y)))
+          {
+            return y;
+          }
+          else
+          {
+            return 1.0f;
+          }
+        }
+        """,
+        out _,
+        out var errorIdentifiers);
+      Assert.Empty(errorIdentifiers);
+    }
+
+    {
+      AstBuilderTestUtilities.RunAstBuilder(
+        """
+        module F(out x: float): const bool { x = 1.0f; return true; }
+        module M(): float
+        {
+          val x: float;
+          val y: float;
+          if (!F(out x) && !F(out y))
+          {
+            return y;
+          }
+          else
+          {
+            return 1.0f;
+          }
+        }
+        """,
+        out _,
+        out var errorIdentifiers);
+      Assert.Empty(errorIdentifiers);
     }
   }
 

@@ -14,6 +14,7 @@ internal class ExpressionParseTreeNode : ParseTreeNode
     { TokenType.Identifier, new(EvaluateIdentifier, 0) },
     { TokenType.LiteralFloat, new(EvaluateLiteral, 0) },
     { TokenType.LiteralDouble, new(EvaluateLiteral, 0) },
+    { TokenType.LiteralInt, new(EvaluateLiteral, 0) },
     { TokenType.LiteralBool, new(EvaluateLiteral, 0) },
     { TokenType.LiteralString, new(EvaluateLiteral, 0) },
     { TokenType.LeftBrace, new(EvaluateStructValue, 0) },
@@ -21,8 +22,8 @@ internal class ExpressionParseTreeNode : ParseTreeNode
     { TokenType.LeftParenthesis, new(EvaluateLeftParenthesis, 1) },
     { TokenType.Plus, new(EvaluateUnary, 30) },
     { TokenType.Minus, new(EvaluateUnary, 30) },
-    { TokenType.Not, new(EvaluateUnary, 30) },
-    { TokenType.NotAlternate, new(EvaluateUnary, 30) },
+    { TokenType.LogicalNot, new(EvaluateUnary, 30) },
+    { TokenType.BitwiseNot, new(EvaluateUnary, 30) },
   };
 
   private static readonly Dictionary<TokenType, PostfixExpressionSymbolDefinition> _postfixExpressionSymbolDefinitions = new()

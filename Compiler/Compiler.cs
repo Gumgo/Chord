@@ -1,7 +1,8 @@
-﻿using Compiler.Ast;
-using Compiler.AstBuilder;
+﻿using Compiler.AstBuilder;
+using Compiler.EntryPoint;
 using Compiler.GlobalValueInitializationOrderResolver;
 using Compiler.Importer;
+using Compiler.InstrumentProperty;
 using Compiler.Lexer;
 using Compiler.NativeLibrary;
 using Compiler.Parser;
@@ -21,9 +22,11 @@ public class CompilerContext
 public class Compiler(CompilerContext context)
 {
   public ICompileResult? Compile(string rootSourceFilePath)
+    => Compile(rootSourceFilePath, new());
+
+  protected internal ICompileResult? Compile(string rootSourceFilePath, DevelopmentOptions developmentOptions)
   {
     var reporting = new ReportingWrapper(context.Reporting);
-    var nativeLibraryRegistry = (NativeLibraryRegistry)context.NativeLibraryRegistry;
 
     string canonicalRootSourceFilePath;
     try
@@ -59,10 +62,13 @@ public class Compiler(CompilerContext context)
     var parserContext = new ParserContext() { Reporting = reporting };
     var parser = new Parser.Parser(parserContext);
 
+    var instrumentPropertyProcessorContext = new InstrumentPropertyParserContext() { Reporting = reporting };
+    var instrumentPropertyProcessor = new InstrumentPropertyProcessor(instrumentPropertyProcessorContext);
+
     var importerContext = new ImporterContext()
     {
       Reporting = reporting,
-      NativeLibraryRegistry = nativeLibraryRegistry,
+      NativeLibraryRegistry = (INativeLibraryRegistryAccess)context.NativeLibraryRegistry,
       FileOperations = context.FileOperations,
       RootSourceFileDirectory = rootSourceFileDirectory,
     };
@@ -84,6 +90,9 @@ public class Compiler(CompilerContext context)
       }
 
       sourceFile.ParseTree = parser.Process(sourceFile.Path, sourceFile.Tokens);
+
+      // Process instrument properties in this file (these are listed before imports so we'll process them first)
+      instrumentPropertyProcessor.Process(rootSourceFile.Path, sourceFile);
 
       // This will add imports to the source file's import list. We'll then enqueue any new imports.
       importer.Process(sourceFile);
@@ -118,26 +127,41 @@ public class Compiler(CompilerContext context)
       return null;
     }
 
+    // Grab the instrument properties. Any errors will be automatically reported.
+    var instrumentProperties = instrumentPropertyProcessor.TryGetInstrumentProperties();
+
     // Order by source file path for predictable processing order
     var orderedValidSourceFiles = sourceFiles.Values
       .Where((sourceFile) => sourceFile.ParseTree != null)
       .OrderBy((sourceFile) => sourceFile.Path)
       .ToArray();
 
-    var astBuilderContext = new AstBuilderContext() { Reporting = reporting, NativeLibraryRegistry = nativeLibraryRegistry };
+    var astBuilderContext = new AstBuilderContext()
+    {
+      Reporting = reporting,
+      NativeLibraryRegistry = (INativeLibraryRegistryAccess)context.NativeLibraryRegistry,
+    };
+
     var astBuilder = new AstBuilder.AstBuilder(astBuilderContext);
-    var nativeLibraryAsts = astBuilder.BuildNativeLibraryAsts(orderedValidSourceFiles);
-    astBuilder.BuildAsts(orderedValidSourceFiles, nativeLibraryAsts);
+    var buildNativeLibraryAstsResult = astBuilder.BuildNativeLibraryAsts(orderedValidSourceFiles);
+    astBuilder.BuildAsts(orderedValidSourceFiles, buildNativeLibraryAstsResult.NativeLibraryAsts);
 
     var globalValueInitializationOrderResolverContext = new GlobalValueInitializationOrderResolverContext() { Reporting = reporting };
     var globalValueInitializationOrderResolver = new GlobalValueInitializationOrderResolver.GlobalValueInitializationOrderResolver(
       globalValueInitializationOrderResolverContext);
     var globalValueInitializationOrder = globalValueInitializationOrderResolver.ResolveGlobalValueInitializationOrder(orderedValidSourceFiles);
 
-    var entryPoints = Array.Empty<ModuleDefinitionAstNode>(); // !!! extract entry points
-    // !!! probably parse instrument globals higher up? maybe?
+    if (reporting.ErrorCount > 0 || instrumentProperties == null)
+    {
+      return null;
+    }
 
-    if (reporting.ErrorCount > 0)
+    var entryPointExtractorContext = new EntryPointExtractorContext() { Reporting = reporting };
+    var entryPointExtractor = new EntryPointExtractor(entryPointExtractorContext);
+    Debug.Assert(rootSourceFile.Ast != null);
+    var entryPoints = entryPointExtractor.ExtractEntryPoints(rootSourceFile.Ast, instrumentProperties, developmentOptions.AllowNoEntryPoints);
+
+    if (reporting.ErrorCount > 0 || entryPoints == null)
     {
       return null;
     }
@@ -154,6 +178,7 @@ public class Compiler(CompilerContext context)
             return KeyValuePair.Create(v.Key, v.Value.Ast);
           })
         .ToDictionary(),
+      CoreNativeModules = buildNativeLibraryAstsResult.CoreNativeModules,
     };
   }
 
@@ -203,6 +228,13 @@ public class Compiler(CompilerContext context)
     }
 
     return [..runes];
+  }
+
+  // These options are used in unit tests and aren't exposed to the public API
+  protected internal class DevelopmentOptions
+  {
+    // This prevents the "no entry point" error when we're just testing simple things which don't require a complete program definition
+    public bool AllowNoEntryPoints { get; init; }
   }
 }
 

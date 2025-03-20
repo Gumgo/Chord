@@ -57,7 +57,7 @@ internal static class AstDataTypeExtensions
 
   public static AstDataType WithUpsampleFactor(this AstDataType dataType, int upsampleFactor)
   {
-    if (dataType.IsModule || dataType.IsScope || dataType.IsEmptyArray || dataType.IsError)
+    if (dataType.IsEmptyArray || dataType.IsModule || dataType.IsScope || dataType.IsVoid || dataType.IsError)
     {
       // These data types always have fixed upsample factor
       return dataType;
@@ -133,10 +133,16 @@ internal static class AstDataTypeExtensions
       return false;
     }
 
-    if (dataType.IsEmptyArray && otherDataType.IsEmptyArray)
+    if (dataType.IsEmptyArray || otherDataType.IsEmptyArray)
     {
       // If both are empty array, they are identical, but if only one is, they are not
-      return dataType.IsEmptyArray == otherDataType.IsEmptyArray;
+      return dataType.IsEmptyArray && otherDataType.IsEmptyArray;
+    }
+
+    if (dataType.IsVoid || otherDataType.IsVoid)
+    {
+      // If both are void, they are identical, but if only one is, they are not
+      return dataType.IsVoid && otherDataType.IsVoid;
     }
 
     if (dataType.IsModule || otherDataType.IsModule || dataType.IsScope || otherDataType.IsScope)
@@ -232,6 +238,13 @@ internal static class AstDataTypeExtensions
         return false;
       }
     }
+    else if (fromDataType.IsVoid)
+    {
+      if (!toDataType.IsVoid)
+      {
+        return false;
+      }
+    }
     else
     {
       Debug.Assert(fromDataType.StructDefinition != null);
@@ -281,7 +294,8 @@ internal static class AstDataTypeExtensions
   }
 
   public static bool IsNumber(this AstDataType dataType)
-    => !dataType.IsArray && (dataType.PrimitiveType == PrimitiveType.Float || dataType.PrimitiveType == PrimitiveType.Double);
+    => !dataType.IsArray
+    && (dataType.PrimitiveType == PrimitiveType.Float || dataType.PrimitiveType == PrimitiveType.Double || dataType.PrimitiveType == PrimitiveType.Int);
 
   public static bool IsValidArrayIndex(this AstDataType dataType)
     => dataType.IsNumber();

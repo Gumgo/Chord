@@ -13,6 +13,10 @@ internal static class DataTypeNodeExtensions
     {
       astDataType = new(dataType.RuntimeMutability, dataType.PrimitiveType.Value, dataType.UpsampleFactor ?? 1, dataType.IsArray);
     }
+    else if (dataType.IsVoid)
+    {
+      astDataType = AstDataType.Void();
+    }
     else
     {
       Debug.Assert(dataType.TypeName != null);

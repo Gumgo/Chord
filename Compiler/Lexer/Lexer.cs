@@ -288,6 +288,7 @@ internal class Lexer(LexerContext context)
     // fraction : ""|("."[0-9]+)
     // exponent : ""|(("E"|"e")(""|"+"|"-")[0-9]+)
     // suffix   : f?
+    // $TODO do we want to support hex integers?
 
     if (!location.IsNextCharacterDigit() && !location.IsNextCharacter('-'))
     {
@@ -297,6 +298,7 @@ internal class Lexer(LexerContext context)
     var sourceLocation = location.ToSourceLocation(null);
     var startOffset = location.Offset;
     var length = 0;
+    var isFloatingPoint = false;
 
     if (location.IsNextCharacter('-'))
     {
@@ -342,6 +344,7 @@ internal class Lexer(LexerContext context)
     // Parse fraction
     if (location.IsNextCharacter('.'))
     {
+      isFloatingPoint = true;
       location.Advance();
       length++;
 
@@ -363,6 +366,7 @@ internal class Lexer(LexerContext context)
     // Parse exponent
     if (location.IsNextCharacter('E') || location.IsNextCharacter('e'))
     {
+      isFloatingPoint = true;
       location.Advance();
       length++;
 
@@ -387,9 +391,10 @@ internal class Lexer(LexerContext context)
       while (location.IsNextCharacterDigit());
     }
 
-    var isFloat = location.IsNextCharacter('f');
-    if (isFloat)
+    var isSinglePrecision = location.IsNextCharacter('f');
+    if (isSinglePrecision)
     {
+      isFloatingPoint = true;
       location.Advance();
       length++;
     }
@@ -408,27 +413,41 @@ internal class Lexer(LexerContext context)
       return result;
     }
 
-    if (isFloat)
+    if (isFloatingPoint)
     {
-      if (!float.TryParse(location.Text.EncodeToString(startOffset, length - 1), out var value))
+      if (isSinglePrecision)
       {
-        var result = new Token(TokenType.Invalid, sourceLocation.WithLength(length), location.Text);
-        context.Reporting.InvalidTokenError(result);
-        return result;
-      }
+        if (!float.TryParse(location.Text.EncodeToString(startOffset, length - 1), out var value))
+        {
+          var result = new Token(TokenType.Invalid, sourceLocation.WithLength(length), location.Text);
+          context.Reporting.InvalidTokenError(result);
+          return result;
+        }
 
-      return Token.LiteralFloat(value, sourceLocation.WithLength(length), location.Text);
+        return Token.LiteralFloat(value, sourceLocation.WithLength(length), location.Text);
+      }
+      else
+      {
+        if (!double.TryParse(location.Text.EncodeToString(startOffset, length), out var value))
+        {
+          var result = new Token(TokenType.Invalid, sourceLocation.WithLength(length), location.Text);
+          context.Reporting.InvalidTokenError(result);
+          return result;
+        }
+
+        return Token.LiteralDouble(value, sourceLocation.WithLength(length), location.Text);
+      }
     }
     else
     {
-      if (!double.TryParse(location.Text.EncodeToString(startOffset, length), out var value))
+      if (!int.TryParse(location.Text.EncodeToString(startOffset, length), out var value))
       {
         var result = new Token(TokenType.Invalid, sourceLocation.WithLength(length), location.Text);
         context.Reporting.InvalidTokenError(result);
         return result;
       }
 
-      return Token.LiteralDouble(value, sourceLocation.WithLength(length), location.Text);
+      return Token.LiteralInt(value, sourceLocation.WithLength(length), location.Text);
     }
   }
 

@@ -21,6 +21,13 @@ internal class LiteralAstNode
     LiteralValue = literalValue;
   }
 
+  public LiteralAstNode(SourceLocation sourceLocation, int literalValue)
+    : base(sourceLocation)
+  {
+    DataType = new(RuntimeMutability.Constant, PrimitiveType.Int, 1, false);
+    LiteralValue = literalValue;
+  }
+
   public LiteralAstNode(SourceLocation sourceLocation, bool literalValue)
     : base(sourceLocation)
   {
@@ -39,6 +46,7 @@ internal class LiteralAstNode
   {
     PrimitiveType.Float => "float literal",
     PrimitiveType.Double => "double literal",
+    PrimitiveType.Int => "int literal",
     PrimitiveType.Bool => "bool literal",
     PrimitiveType.String => "string literal",
     null => throw new InvalidDataException("Literal primitive type is null"),
@@ -66,6 +74,15 @@ internal class LiteralAstNode
     {
       Debug.Assert(DataType.PrimitiveType == PrimitiveType.Double);
       return (double)LiteralValue;
+    }
+  }
+
+  public int LiteralIntValue
+  {
+    get
+    {
+      Debug.Assert(DataType.PrimitiveType == PrimitiveType.Int);
+      return (int)LiteralValue;
     }
   }
 

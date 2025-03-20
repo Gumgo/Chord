@@ -36,6 +36,7 @@ internal class AstDataType
   public bool IsEmptyArray { get; private init; }
   public bool IsModule { get; private init; }
   public bool IsScope { get; private init; }
+  public bool IsVoid { get; private init; }
   public bool IsError { get; private init; }
 
   public static AstDataType EmptyArray()
@@ -48,7 +49,7 @@ internal class AstDataType
     => new(RuntimeMutability.Constant, 1, false) { IsScope = true };
 
   public static AstDataType Void()
-    => new(RuntimeMutability.Variable, Types.PrimitiveType.Void, 1, false);
+    => new(RuntimeMutability.Variable, 1, false) { IsVoid = true };
 
   public static AstDataType Error()
     => new(RuntimeMutability.Constant, 1, true) { IsError = true };
@@ -59,6 +60,11 @@ internal class AstDataType
     {
       // We already flag errors when they're detected, don't double-report them
       return true;
+    }
+
+    if (UpsampleFactor <= 0)
+    {
+      return false;
     }
 
     // Unnamed struct data types should always be variable runtime mutability and non-upsampled (the individual fields can vary these properties)
@@ -72,11 +78,6 @@ internal class AstDataType
       return false;
     }
 
-    if (PrimitiveType == Types.PrimitiveType.Void)
-    {
-      return RuntimeMutability == RuntimeMutability.Variable && UpsampleFactor == 1 && !IsArray;
-    }
-
     if (PrimitiveType != null && !PrimitiveType.Value.SupportsVariableRuntimeMutability())
     {
       return RuntimeMutability == RuntimeMutability.Constant && UpsampleFactor == 1;
@@ -86,10 +87,10 @@ internal class AstDataType
   }
 
   public bool IsLegalImplicitValueType()
-    => IsLegal() && !IsModule && !IsScope && PrimitiveType != Types.PrimitiveType.Void;
+    => IsLegal() && !IsModule && !IsScope && !IsVoid;
 
   public bool IsLegalValueType()
-    => IsLegal() && !IsModule && !IsScope && !IsEmptyArray && PrimitiveType != Types.PrimitiveType.Void;
+    => IsLegal() && !IsModule && !IsScope && !IsEmptyArray && !IsVoid;
 
   public bool IsLegalParameterType()
     => IsLegalValueType();
@@ -115,6 +116,11 @@ internal class AstDataType
     if (IsScope)
     {
       return "<scope>";
+    }
+
+    if (IsVoid)
+    {
+      return VoidDataType.LanguageString;
     }
 
     if (IsError)
@@ -168,7 +174,7 @@ internal class AstDataType
 
   public override int GetHashCode()
   {
-    var hashCode = HashCode.Combine(RuntimeMutability, PrimitiveType, UpsampleFactor, IsArray);
+    var hashCode = HashCode.Combine(RuntimeMutability, PrimitiveType, UpsampleFactor, IsArray, IsVoid);
 
     if (StructDefinition is NamedStructDefinitionAstNode namedStructDefinition)
     {

@@ -17,12 +17,12 @@ internal static class AstBuilderTestUtilities
     var compilerContext = new CompilerContext()
     {
       Reporting = reporting,
-      NativeLibraryRegistry = (NativeLibraryRegistry)NativeLibraryRegistryFactory.Create(reporting, "/"),
+      NativeLibraryRegistry = new TestNativeLibraryRegistry(),
       FileOperations = fileOperations,
     };
 
     var compiler = new CompilerNamespace.Compiler(compilerContext);
-    var result = (CompileResult?)compiler.Compile(rootSourceFilePath);
+    var result = (CompileResult?)compiler.Compile(rootSourceFilePath, new() { AllowNoEntryPoints = true });
 
     rootSourceFileAst = result?.SourceFileAsts[rootSourceFilePath];
     errorIdentifiers = reporting.ErrorIdentifiers;

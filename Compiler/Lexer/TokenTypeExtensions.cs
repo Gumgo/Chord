@@ -51,6 +51,7 @@ internal static class TokenTypeExtensions
   public static bool IsLiteral(this TokenType tokenType)
     => tokenType == TokenType.LiteralFloat
     || tokenType == TokenType.LiteralDouble
+    || tokenType == TokenType.LiteralInt
     || tokenType == TokenType.LiteralBool
     || tokenType == TokenType.LiteralString;
 
@@ -63,9 +64,9 @@ internal static class TokenTypeExtensions
   public static PrimitiveType? GetPrimitiveType(this TokenType tokenType)
     => tokenType switch
     {
-      TokenType.KeywordVoid => PrimitiveType.Void,
       TokenType.KeywordFloat => PrimitiveType.Float,
       TokenType.KeywordDouble => PrimitiveType.Double,
+      TokenType.KeywordInt => PrimitiveType.Int,
       TokenType.KeywordBool => PrimitiveType.Bool,
       TokenType.KeywordString => PrimitiveType.String,
       _ => null,

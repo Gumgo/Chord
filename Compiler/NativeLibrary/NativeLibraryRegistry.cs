@@ -1,6 +1,10 @@
-﻿using Compiler.Ast;
-using Compiler.Types;
+﻿using Compiler.Utilities;
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Security;
+using InteropServices = System.Runtime.InteropServices;
 
 namespace Compiler.NativeLibrary;
 
@@ -11,21 +15,47 @@ public interface INativeLibraryRegistry : IDisposable
 public static class NativeLibraryRegistryFactory
 {
   public static INativeLibraryRegistry Create(IReporting reporting, string nativeLibraryPath)
-    => new NativeLibraryRegistry(reporting, nativeLibraryPath);
+    => new NativeLibraryRegistry(new() { Reporting = reporting, NativeLibraryPath = nativeLibraryPath });
 }
 
 public class CoreLibraryMissingOrInvalidException : Exception
 {
   public CoreLibraryMissingOrInvalidException()
-    : base($"'{NativeLibraryRegistry.CoreNativeLibraryName}' library missing or contains invalid data")
+    : base($"'{CoreNativeLibrary.Name}' library missing or contains invalid data")
   {
   }
 }
 
 file static class ReportingExtensions
 {
-  public static void NativeLibraryNotLoadedWarning(this IReporting reporting, SourceLocation sourceLocation, string nativeLibrary)
-    => reporting.Warning("NativeLibraryNotLoaded", sourceLocation, $"Native library '{nativeLibrary}' contains one or more errors and was not loaded");
+  public static void InvalidNativeLibraryPathError(this IReporting reporting, string nativeLibraryPath)
+    => reporting.Error("InvalidNativeLibraryPath", $"Native library path '{nativeLibraryPath}' is invalid");
+
+  public static void NativeLibraryPathNotFoundError(this IReporting reporting, string nativeLibraryPath)
+    => reporting.Error("NativeLibraryPathNotFound", $"Native library path '{nativeLibraryPath}' does not exist");
+
+  public static void NativeLibraryPathTooLongError(this IReporting reporting, string nativeLibraryPath)
+    => reporting.Error("NativeLibraryPathTooLong", $"Native library path '{nativeLibraryPath}' is too long");
+
+  public static void NativeLibraryPathNotADirectoryError(this IReporting reporting, string nativeLibraryPath)
+    => reporting.Error("NativeLibraryPathNotADirectory", $"Native library path '{nativeLibraryPath}' is not a directory");
+
+  public static void NativeLibraryPathPermissionError(this IReporting reporting, string nativeLibraryPath)
+    => reporting.Error("NativeLibraryPathPermission", $"Native library path '{nativeLibraryPath}' cannot be accessed");
+
+  public static void NativeLibraryNotFoundWarning(this IReporting reporting, string nativeLibraryDllPath)
+    => reporting.Warning("NativeLibraryNotFound", $"Native library '{nativeLibraryDllPath}' could not be found");
+
+  public static void InvalidNativeLibraryImageFormatWarning(this IReporting reporting, string nativeLibraryDllPath)
+    => reporting.Warning("InvalidNativeLibraryImageFormat", $"Native library '{nativeLibraryDllPath}' has invalid image format and was not loaded");
+
+  public static void NativeLibraryMissingEntryPointWarning(this IReporting reporting, string nativeLibraryDllPath, string listNativeLibariesFunctionName)
+    => reporting.Warning(
+      "NativeLibraryMissingEntryPoint",
+      $"Native library '{nativeLibraryDllPath}' does not export symbol '{listNativeLibariesFunctionName}' and was not loaded");
+
+  public static void NativeLibraryContainsErrorsWarning(this IReporting reporting, SourceLocation sourceLocation, string nativeLibrary)
+    => reporting.Warning("NativeLibraryContainsErrors", sourceLocation, $"Native library '{nativeLibrary}' contains one or more errors and was not loaded");
 
   public static void NativeModuleNotLoadedWarning(this IReporting reporting, SourceLocation sourceLocation, string nativeLibrary, string nativeModule)
     => reporting.Warning(
@@ -37,119 +67,69 @@ file static class ReportingExtensions
     => reporting.Warning(
       "NativeModuleConflict",
       sourceLocation,
-      $"Native library '{nativeLibrary}' was not loaded because its name conflicts with a previously-loaded native library");
+      $"Native library '{nativeLibrary}' was not loaded because its name conflicts with the name of a previously-loaded native library");
+
+  public static void NativeLibraryIdConflictError(
+    this IReporting reporting,
+    SourceLocation sourceLocation,
+    string nativeLibrary,
+    string conflictingNativeLibrary)
+  {
+    var message = $"Native library '{nativeLibrary}' was not loaded "
+      + $"because its ID conflicts with the ID of the previously-loaded native library '{conflictingNativeLibrary}'";
+    reporting.Warning("NativeLibraryIdConflict", sourceLocation, message);
+  }
+
+  public static void NativeModuleIdConflictError(
+    this IReporting reporting,
+    SourceLocation sourceLocation,
+    string nativeLibrary,
+    string nativeModule,
+    string conflictingNativeModule)
+  {
+    var message = $"Native library '{nativeLibrary}' module '{nativeModule}' was not loaded "
+      + $"because its ID conflicts with the ID of the previously-loaded module '{conflictingNativeModule}'";
+    reporting.Warning("NativeModuleIdConflict", sourceLocation, message);
+  }
 
   public static void CoreNativeLibraryMissingOrInvalidError(this IReporting reporting, string coreNativeLibrary)
     => reporting.Error("CoreNativeLibraryMissingOrInvalid", $"Native library '{coreNativeLibrary}' is missing or contains invalid data");
 }
 
-internal class NativeLibraryRegistry : INativeLibraryRegistry
+internal class NativeLibraryRegistryContext
 {
-  public const string CoreNativeLibraryName = "core";
+  public required IReporting Reporting { get; init; }
+  public required string NativeLibraryPath { get; init; }
+}
 
-  private static readonly NativeModuleSignature[] _coreLibraryModuleSignatures;
+internal class NativeLibraryRegistry : INativeLibraryRegistry, INativeLibraryRegistryAccess
+{
+  private const string ListNativeLibrariesFunctionName = "ListNativeLibraries";
 
+  // Grab all signatures directly from the ones declared as CoreNativeLibrary fields
+  private static readonly NativeModuleSignature[] _coreLibraryModuleSignatures = typeof(CoreNativeLibrary)
+    .GetFields(BindingFlags.Public | BindingFlags.Static)
+    .Select((field) => field.GetValue(null))
+    .OfType<NativeModuleSignature>()
+    .ToArray();
+
+  private readonly NativeLibraryRegistryContext _context;
+  private readonly List<nint> _dllHandles = [];
   private readonly List<NativeLibrary> _nativeLibraries = [];
+  private readonly Dictionary<NativeLibrary, NativeLibraryContext> _nativeLibraryContexts = [];
 
   private bool _disposed;
 
-  static NativeLibraryRegistry()
+  public NativeLibraryRegistry(NativeLibraryRegistryContext context)
   {
-    // Declare these up-front for convenience
-    var inDir = ModuleParameterDirection.In;
-    var outDir = ModuleParameterDirection.In;
-    var floatDataType = new AstDataType(RuntimeMutability.DependentConstant, PrimitiveType.Float, 1, false);
-    var constFloatDataType = new AstDataType(RuntimeMutability.Constant, PrimitiveType.Float, 1, false);
-    var doubleDataType = new AstDataType(RuntimeMutability.DependentConstant, PrimitiveType.Double, 1, false);
-    var constDoubleDataType = new AstDataType(RuntimeMutability.Constant, PrimitiveType.Double, 1, false);
-    var boolDataType = new AstDataType(RuntimeMutability.DependentConstant, PrimitiveType.Bool, 1, false);
-    var constBoolDataType = new AstDataType(RuntimeMutability.Constant, PrimitiveType.Bool, 1, false);
-    var constStringDataType = new AstDataType(RuntimeMutability.Constant, PrimitiveType.String, 1, false);
+    _context = context;
+    LoadNativeLibraries();
 
-    _coreLibraryModuleSignatures =
-    [
-      new("|", 2, new(inDir, "x", boolDataType), new(inDir, "y", boolDataType), new(outDir, "result", boolDataType)),
-      new("^", 2, new(inDir, "x", boolDataType), new(inDir, "y", boolDataType), new(outDir, "result", boolDataType)),
-      new("&", 2, new(inDir, "x", boolDataType), new(inDir, "y", boolDataType), new(outDir, "result", boolDataType)),
-
-      new("==", 2, new(inDir, "x", floatDataType), new(inDir, "y", floatDataType), new(outDir, "result", boolDataType)),
-      new("==", 2, new(inDir, "x", doubleDataType), new(inDir, "y", doubleDataType), new(outDir, "result", boolDataType)),
-      new("==", 2, new(inDir, "x", boolDataType), new(inDir, "y", boolDataType), new(outDir, "result", boolDataType)),
-      new("==", 2, new(inDir, "x", constStringDataType), new(inDir, "y", constStringDataType), new(outDir, "result", constBoolDataType)),
-
-      new("!=", 2, new(inDir, "x", floatDataType), new(inDir, "y", floatDataType), new(outDir, "result", boolDataType)),
-      new("!=", 2, new(inDir, "x", doubleDataType), new(inDir, "y", doubleDataType), new(outDir, "result", boolDataType)),
-      new("!=", 2, new(inDir, "x", boolDataType), new(inDir, "y", boolDataType), new(outDir, "result", boolDataType)),
-      new("!=", 2, new(inDir, "x", constStringDataType), new(inDir, "y", constStringDataType), new(outDir, "result", constBoolDataType)),
-
-      new("<", 2, new(inDir, "x", floatDataType), new(inDir, "y", floatDataType), new(outDir, "result", boolDataType)),
-      new("<", 2, new(inDir, "x", doubleDataType), new(inDir, "y", doubleDataType), new(outDir, "result", boolDataType)),
-
-      new(">", 2, new(inDir, "x", floatDataType), new(inDir, "y", floatDataType), new(outDir, "result", boolDataType)),
-      new(">", 2, new(inDir, "x", doubleDataType), new(inDir, "y", doubleDataType), new(outDir, "result", boolDataType)),
-
-      new("<=", 2, new(inDir, "x", floatDataType), new(inDir, "y", floatDataType), new(outDir, "result", boolDataType)),
-      new("<=", 2, new(inDir, "x", doubleDataType), new(inDir, "y", doubleDataType), new(outDir, "result", boolDataType)),
-
-      new(">=", 2, new(inDir, "x", floatDataType), new(inDir, "y", floatDataType), new(outDir, "result", boolDataType)),
-      new(">=", 2, new(inDir, "x", doubleDataType), new(inDir, "y", doubleDataType), new(outDir, "result", boolDataType)),
-
-      new("+", 1, new(inDir, "x", floatDataType), new(outDir, "result", floatDataType)),
-      new("+", 1, new(inDir, "x", doubleDataType), new(outDir, "result", doubleDataType)),
-      new("+", 2, new(inDir, "x", floatDataType), new(inDir, "y", floatDataType), new(outDir, "result", floatDataType)),
-      new("+", 2, new(inDir, "x", doubleDataType), new(inDir, "y", doubleDataType), new(outDir, "result", doubleDataType)),
-      new("+", 2, new(inDir, "x", floatDataType), new(inDir, "y", doubleDataType), new(outDir, "result", doubleDataType)),
-      new("+", 2, new(inDir, "x", doubleDataType), new(inDir, "y", floatDataType), new(outDir, "result", doubleDataType)),
-      new("+", 2, new(inDir, "x", constStringDataType), new(inDir, "y", constStringDataType), new(outDir, "result", constStringDataType)),
-
-      new("-", 1, new(inDir, "x", floatDataType), new(outDir, "result", floatDataType)),
-      new("-", 1, new(inDir, "x", doubleDataType), new(outDir, "result", doubleDataType)),
-      new("-", 2, new(inDir, "x", floatDataType), new(inDir, "y", floatDataType), new(outDir, "result", floatDataType)),
-      new("-", 2, new(inDir, "x", doubleDataType), new(inDir, "y", doubleDataType), new(outDir, "result", doubleDataType)),
-      new("-", 2, new(inDir, "x", floatDataType), new(inDir, "y", doubleDataType), new(outDir, "result", doubleDataType)),
-      new("-", 2, new(inDir, "x", doubleDataType), new(inDir, "y", floatDataType), new(outDir, "result", doubleDataType)),
-
-      new("*", 2, new(inDir, "x", floatDataType), new(inDir, "y", floatDataType), new(outDir, "result", floatDataType)),
-      new("*", 2, new(inDir, "x", doubleDataType), new(inDir, "y", doubleDataType), new(outDir, "result", doubleDataType)),
-      new("*", 2, new(inDir, "x", floatDataType), new(inDir, "y", doubleDataType), new(outDir, "result", doubleDataType)),
-      new("*", 2, new(inDir, "x", doubleDataType), new(inDir, "y", floatDataType), new(outDir, "result", doubleDataType)),
-
-      new("/", 2, new(inDir, "x", floatDataType), new(inDir, "y", floatDataType), new(outDir, "result", floatDataType)),
-      new("/", 2, new(inDir, "x", doubleDataType), new(inDir, "y", doubleDataType), new(outDir, "result", doubleDataType)),
-      new("/", 2, new(inDir, "x", floatDataType), new(inDir, "y", doubleDataType), new(outDir, "result", doubleDataType)),
-      new("/", 2, new(inDir, "x", doubleDataType), new(inDir, "y", floatDataType), new(outDir, "result", doubleDataType)),
-
-      new("%", 2, new(inDir, "x", floatDataType), new(inDir, "y", floatDataType), new(outDir, "result", floatDataType)),
-      new("%", 2, new(inDir, "x", doubleDataType), new(inDir, "y", doubleDataType), new(outDir, "result", doubleDataType)),
-      new("%", 2, new(inDir, "x", floatDataType), new(inDir, "y", doubleDataType), new(outDir, "result", doubleDataType)),
-      new("%", 2, new(inDir, "x", doubleDataType), new(inDir, "y", floatDataType), new(outDir, "result", doubleDataType)),
-
-      new("!", 2, new(inDir, "x", boolDataType), new(inDir, "y", boolDataType), new(outDir, "result", boolDataType)),
-      new("~", 2, new(inDir, "x", boolDataType), new(inDir, "y", boolDataType), new(outDir, "result", boolDataType)),
-
-      new("[", 2, new(inDir, "x", floatDataType), new(inDir, "y", floatDataType), new(outDir, "result", floatDataType)),
-      new("[", 2, new(inDir, "x", floatDataType), new(inDir, "y", doubleDataType), new(outDir, "result", floatDataType)),
-      new("[", 2, new(inDir, "x", doubleDataType), new(inDir, "y", floatDataType), new(outDir, "result", doubleDataType)),
-      new("[", 2, new(inDir, "x", doubleDataType), new(inDir, "y", doubleDataType), new(outDir, "result", doubleDataType)),
-      new("[", 2, new(inDir, "x", boolDataType), new(inDir, "y", floatDataType), new(outDir, "result", boolDataType)),
-      new("[", 2, new(inDir, "x", boolDataType), new(inDir, "y", doubleDataType), new(outDir, "result", boolDataType)),
-      new("[", 2, new(inDir, "x", constStringDataType), new(inDir, "y", constFloatDataType), new(outDir, "result", constStringDataType)),
-      new("[", 2, new(inDir, "x", constStringDataType), new(inDir, "y", constDoubleDataType), new(outDir, "result", constStringDataType)),
-
-      new("as float", 1, new(inDir, "x", doubleDataType), new(outDir, "result", floatDataType)),
-      new("as double", 1, new(inDir, "x", floatDataType), new(outDir, "result", doubleDataType)),
-    ];
-  }
-
-  public NativeLibraryRegistry(IReporting reporting, string nativeLibraryPath)
-  {
-    LoadNativeLibraries(reporting);
-
-    var coreNativeLibrary = _nativeLibraries.FirstOrDefault((nativeLibrary) => nativeLibrary.Name == CoreNativeLibraryName);
+    var coreNativeLibrary = _nativeLibraries.FirstOrDefault((nativeLibrary) => nativeLibrary.Name == CoreNativeLibrary.Name);
     if (coreNativeLibrary == null
       || _coreLibraryModuleSignatures.Any((signature) => !coreNativeLibrary.Modules.Any((module) => signature.Equals(module.Signature))))
     {
-      reporting.CoreNativeLibraryMissingOrInvalidError(CoreNativeLibraryName);
+      _context.Reporting.CoreNativeLibraryMissingOrInvalidError(CoreNativeLibrary.Name);
       UnloadNativeLibraries();
       throw new CoreLibraryMissingOrInvalidException();
     }
@@ -170,6 +150,22 @@ internal class NativeLibraryRegistry : INativeLibraryRegistry
     return nativeLibrary != null;
   }
 
+  public bool TryGetNativeLibraryAndContext(
+    Guid id,
+    [NotNullWhen(true)] out NativeLibrary? nativeLibrary,
+    [NotNullWhen(true)] out NativeLibraryContext? context)
+  {
+    nativeLibrary = _nativeLibraries.FirstOrDefault((nativeLibrary) => id == nativeLibrary.Id);
+    if (nativeLibrary == null)
+    {
+      context = null;
+      return false;
+    }
+
+    context = _nativeLibraryContexts[nativeLibrary];
+    return true;
+  }
+
   private void Dispose(bool disposing)
   {
     if (!_disposed)
@@ -184,74 +180,217 @@ internal class NativeLibraryRegistry : INativeLibraryRegistry
     }
   }
 
-  private void LoadNativeLibraries(IReporting reporting)
+  private void LoadNativeLibraries()
   {
-    var nativeLibraryValidatorContext = new NativeLibraryValidatorContext() { Reporting = reporting };
+    var nativeLibraryInteropContext = new NativeLibraryInteropContext() { Reporting = _context.Reporting };
+    var nativeLibraryInterop = new NativeLibraryInterop(nativeLibraryInteropContext);
+
+    var nativeLibraryValidatorContext = new NativeLibraryValidatorContext() { Reporting = _context.Reporting };
     var nativeLibraryValidator = new NativeLibraryValidator(nativeLibraryValidatorContext);
 
-    var nativeLibraryDllPaths = Array.Empty<string>(); // !!! scan for DLLs
-    foreach (var nativeLibraryDllPath in nativeLibraryDllPaths)
+    string[] nativeLibraryDllPaths;
+    try
     {
-      // !!! load
-      var nativeLibraryName = string.Empty;
-      var nativeModules = Array.Empty<NativeModule>();
-
-      if (!nativeLibraryValidator.ValidateNativeLibrary(nativeLibraryName))
-      {
-        reporting.NativeLibraryNotLoadedWarning(SourceLocation.FromNativeLibrary(nativeLibraryName), nativeLibraryName);
-        continue;
-      }
-
-      if (_nativeLibraries.Any((loadedNativeLibrary) => nativeLibraryName == loadedNativeLibrary.Name))
-      {
-        reporting.NativeModuleConflictWarning(SourceLocation.FromNativeLibrary(nativeLibraryName), nativeLibraryName);
-        continue;
-      }
-
-      var validNativeModules = nativeModules
-        .Where(
-          (nativeModule) =>
-          {
-            if (!nativeLibraryValidator.ValidateNativeModule(nativeLibraryName, nativeModule, nativeLibraryName == CoreNativeLibraryName))
-            {
-              reporting.NativeModuleNotLoadedWarning(SourceLocation.FromNativeLibrary(nativeLibraryName), nativeLibraryName, nativeModule.Signature.Name);
-              return false;
-            }
-
-            return true;
-          })
+      nativeLibraryDllPaths = Directory
+        .EnumerateFiles(_context.NativeLibraryPath, "*.dll") // $TODO support .so on Linux, perhaps?
         .ToArray();
-
-      _nativeLibraries.Add(
-        new()
-        {
-          Name = nativeLibraryName,
-          Modules = validNativeModules,
-        });
+    }
+    catch (ArgumentException)
+    {
+      _context.Reporting.InvalidNativeLibraryPathError(_context.NativeLibraryPath);
+      return;
+    }
+    catch (DirectoryNotFoundException)
+    {
+      _context.Reporting.NativeLibraryPathNotFoundError(_context.NativeLibraryPath);
+      return;
+    }
+    catch (PathTooLongException)
+    {
+      _context.Reporting.NativeLibraryPathTooLongError(_context.NativeLibraryPath);
+      return;
+    }
+    catch (IOException)
+    {
+      _context.Reporting.NativeLibraryPathNotADirectoryError(_context.NativeLibraryPath);
+      return;
+    }
+    catch (SecurityException)
+    {
+      _context.Reporting.NativeLibraryPathPermissionError(_context.NativeLibraryPath);
+      return;
+    }
+    catch (UnauthorizedAccessException)
+    {
+      _context.Reporting.NativeLibraryPathPermissionError(_context.NativeLibraryPath);
+      return;
     }
 
-    // !!! TEMPORARY CODE TO STUB IN THE CORE LIBRARY UNTIL WE HAVE DLL LOADING IMPLEMENTED:
-    _nativeLibraries.Add(
-      new()
+    foreach (var nativeLibraryDllPath in nativeLibraryDllPaths)
+    {
+      nint? dllHandle;
+      try
       {
-        Name = CoreNativeLibraryName,
-        Modules = _coreLibraryModuleSignatures
-          .Select(
-            (signature) => new NativeModule()
+        dllHandle = InteropServices.NativeLibrary.Load(nativeLibraryDllPath);
+      }
+      catch (DllNotFoundException)
+      {
+        _context.Reporting.NativeLibraryNotFoundWarning(nativeLibraryDllPath);
+        continue;
+      }
+      catch (BadImageFormatException)
+      {
+        _context.Reporting.InvalidNativeLibraryImageFormatWarning(nativeLibraryDllPath);
+        continue;
+      }
+
+      using var freeDllOnFailure = new DisposableCallback(
+        () =>
+        {
+          if (dllHandle != null)
+          {
+            InteropServices.NativeLibrary.Free(dllHandle.Value);
+            dllHandle = null;
+          }
+        });
+
+      NativeTypes.Delegates.ListNativeLibraries listNativeLibraries;
+      try
+      {
+        var functionHandle = InteropServices.NativeLibrary.GetExport(dllHandle.Value, ListNativeLibrariesFunctionName);
+        listNativeLibraries = Marshal.GetDelegateForFunctionPointer<NativeTypes.Delegates.ListNativeLibraries>(functionHandle);
+      }
+      catch (EntryPointNotFoundException)
+      {
+        _context.Reporting.NativeLibraryMissingEntryPointWarning(nativeLibraryDllPath, ListNativeLibrariesFunctionName);
+        continue;
+      }
+
+      _dllHandles.Add(dllHandle.Value);
+
+      // Prevent the DLL from being unloaded on scope exit since we've added it to the DLL handle list
+      dllHandle = null;
+
+      unsafe
+      {
+        var listNativeLibrariesContext = new ListNativeLibrariesContext()
+        {
+          Reporting = _context.Reporting,
+          NativeLibraryInterop = nativeLibraryInterop,
+          NativeLibraryValidator = nativeLibraryValidator,
+          NativeLibraries = _nativeLibraries,
+        };
+
+        [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
+        static void ListNativeLibrariesCallback(void* contextUntyped, NativeTypes.NativeLibrary* nativeLibraryNative)
+        {
+          // This warning is safe to suppress because listNativeLibrariesContext lives on the stack so its location won't change
+#pragma warning disable CS8500 // This takes the address of, gets the size of, or declares a pointer to a managed type
+          var context = (ListNativeLibrariesContext*)contextUntyped;
+#pragma warning restore CS8500 // This takes the address of, gets the size of, or declares a pointer to a managed type
+
+          var nativeLibrary = context->NativeLibraryInterop.NativeLibraryFromNative(nativeLibraryNative);
+          if (nativeLibrary == null)
+          {
+            return;
+          }
+
+          var sourceLocation = SourceLocation.FromNativeLibrary(nativeLibrary.Name);
+
+          if (!context->NativeLibraryValidator.ValidateNativeLibrary(nativeLibrary))
+          {
+            context->Reporting.NativeLibraryContainsErrorsWarning(sourceLocation, nativeLibrary.Name);
+            return;
+          }
+
+          if (context->NativeLibraries.Any((loadedNativeLibrary) => nativeLibrary.Name == loadedNativeLibrary.Name))
+          {
+            context->Reporting.NativeModuleConflictWarning(sourceLocation, nativeLibrary.Name);
+            return;
+          }
+
+          var validNativeModules = new List<NativeModule>();
+          foreach (var nativeModule in nativeLibrary.Modules)
+          {
+            if (!context->NativeLibraryValidator.ValidateNativeModule(nativeLibrary, nativeModule, nativeLibrary.Name == CoreNativeLibrary.Name))
             {
-              Signature = signature,
-            })
-          .ToArray(),
-      });
+              context->Reporting.NativeModuleNotLoadedWarning(sourceLocation, nativeLibrary.Name, nativeModule.Signature.Name);
+              continue;
+            }
+
+            var conflictingNativeModule = validNativeModules.FirstOrDefault((v) => v.Id == nativeModule.Id);
+            if (conflictingNativeModule != null)
+            {
+              context->Reporting.NativeModuleIdConflictError(
+                sourceLocation,
+                nativeLibrary.Name,
+                nativeModule.Signature.Name,
+                conflictingNativeModule.Signature.Name);
+              continue;
+            }
+
+            validNativeModules.Add(nativeModule);
+          }
+
+          var conflictingNativeLibrary = context->NativeLibraries.FirstOrDefault((v) => v.Id == nativeLibrary.Id);
+          if (conflictingNativeLibrary != null)
+          {
+            context->Reporting.NativeLibraryIdConflictError(sourceLocation, nativeLibrary.Name, conflictingNativeLibrary.Name);
+            return;
+          }
+
+          // Make a copy of the native library now that we've filtered out any invalid native modules
+          var validatedNativeLibrary = new NativeLibrary()
+          {
+            Id = nativeLibrary.Id,
+            Name = nativeLibrary.Name,
+            Version = nativeLibrary.Version,
+            Initialize = nativeLibrary.Initialize,
+            Deinitialize = nativeLibrary.Deinitialize,
+            InitializeVoice = nativeLibrary.InitializeVoice,
+            DeinitializeVoice = nativeLibrary.DeinitializeVoice,
+            Modules = validNativeModules,
+          };
+
+          context->NativeLibraries.Add(validatedNativeLibrary);
+        }
+
+        // This warning is safe to suppress because listNativeLibrariesContext is a struct and lives on the stack
+#pragma warning disable CS8500 // This takes the address of, gets the size of, or declares a pointer to a managed type
+        listNativeLibraries(&listNativeLibrariesContext, &ListNativeLibrariesCallback);
+#pragma warning restore CS8500 // This takes the address of, gets the size of, or declares a pointer to a managed type
+      }
+    }
   }
 
   private void UnloadNativeLibraries()
   {
-    foreach (var nativeLibrary in _nativeLibraries)
+    for (var i = _nativeLibraries.Count - 1; i >= 0; i--)
     {
-      // !!! unload unmanaged
+      var nativeLibrary = _nativeLibraries[i];
+      if (_nativeLibraryContexts.TryGetValue(nativeLibrary, out var context))
+      {
+        nativeLibrary.Deinitialize(context);
+      }
     }
 
+    _nativeLibraryContexts.Clear();
     _nativeLibraries.Clear();
+
+    foreach (var dllHandle in _dllHandles)
+    {
+      InteropServices.NativeLibrary.Free(dllHandle);
+    }
+
+    _dllHandles.Clear();
+  }
+
+  // This is a struct because it gets allocated on the stack so we can safely store off a pointer
+  private readonly struct ListNativeLibrariesContext
+  {
+    public required IReporting Reporting { get; init; }
+    public required NativeLibraryInterop NativeLibraryInterop { get; init; }
+    public required NativeLibraryValidator NativeLibraryValidator { get; init; }
+    public required List<NativeLibrary> NativeLibraries { get; init; }
   }
 }

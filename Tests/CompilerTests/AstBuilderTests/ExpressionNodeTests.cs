@@ -91,10 +91,21 @@ public class ExpressionNodeTests
   }
 
   [Fact]
+  public void ArrayLength()
+  {
+    AstBuilderTestUtilities.RunAstBuilder(WrapExpression("[1.0f, 2.0f].length"), out var result, out var errorIdentifiers);
+    Assert.Empty(errorIdentifiers);
+
+    var expression = GetExpression(result);
+    var node = Assert.IsType<ArrayLengthAstNode>(expression);
+    Assert.Equal(new AstDataType(RuntimeMutability.Constant, PrimitiveType.Int, 1, false), node.DataType);
+  }
+
+  [Fact]
   public void ArrayRepeat()
   {
     {
-      AstBuilderTestUtilities.RunAstBuilder(WrapExpression("[] * 2.0f"), out var result, out var errorIdentifiers);
+      AstBuilderTestUtilities.RunAstBuilder(WrapExpression("[] * 2"), out var result, out var errorIdentifiers);
       Assert.Empty(errorIdentifiers);
 
       var expression = GetExpression(result);
@@ -105,7 +116,7 @@ public class ExpressionNodeTests
     }
 
     {
-      AstBuilderTestUtilities.RunAstBuilder(WrapExpression("2.0f * []"), out var result, out var errorIdentifiers);
+      AstBuilderTestUtilities.RunAstBuilder(WrapExpression("2 * []"), out var result, out var errorIdentifiers);
       Assert.Empty(errorIdentifiers);
 
       var expression = GetExpression(result);
@@ -116,7 +127,7 @@ public class ExpressionNodeTests
     }
 
     {
-      AstBuilderTestUtilities.RunAstBuilder(WrapExpression("[1.0f, 2.0f] * 2.0f"), out var result, out var errorIdentifiers);
+      AstBuilderTestUtilities.RunAstBuilder(WrapExpression("[1.0f, 2.0f] * 2"), out var result, out var errorIdentifiers);
       Assert.Empty(errorIdentifiers);
 
       var expression = GetExpression(result);
@@ -127,7 +138,7 @@ public class ExpressionNodeTests
     }
 
     {
-      AstBuilderTestUtilities.RunAstBuilder(WrapExpression("2.0f * [1.0f, 2.0f]"), out var result, out var errorIdentifiers);
+      AstBuilderTestUtilities.RunAstBuilder(WrapExpression("2 * [1.0f, 2.0f]"), out var result, out var errorIdentifiers);
       Assert.Empty(errorIdentifiers);
 
       var expression = GetExpression(result);
@@ -170,6 +181,16 @@ public class ExpressionNodeTests
       var node = Assert.IsType<LiteralAstNode>(expression);
       Assert.Equal(new AstDataType(RuntimeMutability.Constant, PrimitiveType.Double, 1, false), node.DataType);
       Assert.Equal(1.0f, node.LiteralDoubleValue);
+    }
+
+    {
+      AstBuilderTestUtilities.RunAstBuilder(WrapExpression("1"), out var result, out var errorIdentifiers);
+      Assert.Empty(errorIdentifiers);
+
+      var expression = GetExpression(result);
+      var node = Assert.IsType<LiteralAstNode>(expression);
+      Assert.Equal(new AstDataType(RuntimeMutability.Constant, PrimitiveType.Int, 1, false), node.DataType);
+      Assert.Equal(1, node.LiteralIntValue);
     }
 
     {
@@ -297,6 +318,17 @@ public class ExpressionNodeTests
     var node = Assert.Single(structValue.FieldInitializers);
     Assert.Equal("a", node.Name);
     Assert.Equal(new AstDataType(RuntimeMutability.Constant, PrimitiveType.Float, 1, false), node.ValueExpression.DataType);
+  }
+
+  [Fact]
+  public void StringLength()
+  {
+    AstBuilderTestUtilities.RunAstBuilder(WrapExpression("\"hello\".length"), out var result, out var errorIdentifiers);
+    Assert.Empty(errorIdentifiers);
+
+    var expression = GetExpression(result);
+    var node = Assert.IsType<StringLengthAstNode>(expression);
+    Assert.Equal(new AstDataType(RuntimeMutability.Constant, PrimitiveType.Int, 1, false), node.DataType);
   }
 
   [Fact]

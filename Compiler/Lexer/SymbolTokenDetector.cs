@@ -41,8 +41,8 @@ internal class SymbolTokenDetector
       TokenType.Multiply,
       TokenType.Divide,
       TokenType.Modulo,
-      TokenType.Not,
-      TokenType.NotAlternate,
+      TokenType.LogicalNot,
+      TokenType.BitwiseNot,
     ];
 
   private static readonly HashSet<Rune> _symbolsDisallowingAdjacencyCharacters = new(

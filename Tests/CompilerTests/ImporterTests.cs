@@ -235,7 +235,7 @@ public class ImporterTests
     var importerContext = new ImporterContext()
     {
       Reporting = reporting,
-      NativeLibraryRegistry = (NativeLibraryRegistry)NativeLibraryRegistryFactory.Create(reporting, "/"),
+      NativeLibraryRegistry = new TestNativeLibraryRegistry(),
       FileOperations = fileOperations,
       RootSourceFileDirectory = rootSourceFileDirectory,
     };

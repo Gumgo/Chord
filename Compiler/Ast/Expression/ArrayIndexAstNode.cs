@@ -1,4 +1,6 @@
-﻿namespace Compiler.Ast.Expression;
+﻿using Compiler.Types;
+
+namespace Compiler.Ast.Expression;
 
 internal class ArrayIndexAstNode(SourceLocation sourceLocation, ExpressionAstNode arrayExpression, ExpressionAstNode indexExpression, AstDataType dataType)
   : ExpressionAstNode(sourceLocation)
@@ -7,7 +9,7 @@ internal class ArrayIndexAstNode(SourceLocation sourceLocation, ExpressionAstNod
   public override AstDataType DataType => dataType;
   public override bool IsWritableReference => arrayExpression.IsWritableReference
     && indexExpression.DataType.IsValidArrayIndex()
-    && indexExpression.DataType.RuntimeMutability == Types.RuntimeMutability.Constant;
+    && indexExpression.DataType.RuntimeMutability == RuntimeMutability.Constant;
   public override bool IsGlobalReference => arrayExpression.IsGlobalReference;
 
   public ExpressionAstNode ArrayExpression => arrayExpression;

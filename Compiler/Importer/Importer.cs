@@ -35,7 +35,7 @@ file static class ReportingExtensions
 internal class ImporterContext
 {
   public required IReporting Reporting { get; init; }
-  public required NativeLibraryRegistry NativeLibraryRegistry { get; init; }
+  public required INativeLibraryRegistryAccess NativeLibraryRegistry { get; init; }
   public required IFileOperations FileOperations { get; init; }
   public required string RootSourceFileDirectory { get; init; }
 }
@@ -53,7 +53,7 @@ internal class Importer(ImporterContext context)
       new()
       {
         SourceLocation = SourceLocation.FromFile(sourceFile.Path),
-        ResolvedPath = NativeLibraryRegistry.CoreNativeLibraryName,
+        ResolvedPath = CoreNativeLibrary.Name,
         ImportAsComponents = [],
       });
 

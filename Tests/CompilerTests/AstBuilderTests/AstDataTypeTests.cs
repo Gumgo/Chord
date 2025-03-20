@@ -19,10 +19,9 @@ public class AstDataTypeTests
     Assert.True(AstDataType.Module().IsLegal());
     Assert.True(AstDataType.Void().IsLegal());
 
-    Assert.False(new AstDataType(RuntimeMutability.Constant, PrimitiveType.Void, 2, true).IsLegal());
-
     Assert.True(new AstDataType(RuntimeMutability.Variable, PrimitiveType.Float, 1, false).IsLegal());
     Assert.True(new AstDataType(RuntimeMutability.Variable, PrimitiveType.Double, 2, false).IsLegal());
+    Assert.True(new AstDataType(RuntimeMutability.Variable, PrimitiveType.Int, 1, false).IsLegal());
     Assert.True(new AstDataType(RuntimeMutability.Variable, PrimitiveType.Bool, 1, true).IsLegal());
     Assert.True(new AstDataType(RuntimeMutability.DependentConstant, PrimitiveType.Bool, 1, false).IsLegal());
     Assert.True(new AstDataType(RuntimeMutability.DependentConstant, PrimitiveType.Double, 2, false).IsLegal());

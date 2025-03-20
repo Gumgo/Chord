@@ -10,22 +10,6 @@ public class Reporting : IReporting
   public IReadOnlyList<string> ErrorIdentifiers => _errorIdentifiers;
   public IReadOnlyList<string> WarningIdentifiers => _warningIdentifiers;
 
-  public void Error(string? identifier, string message)
-  {
-    if (identifier != null)
-    {
-      _errorIdentifiers.Add(identifier);
-    }
-  }
-
-  public void Error(string? identifier, SourceLocation sourceLocation, string message)
-  {
-    if (identifier != null)
-    {
-      _errorIdentifiers.Add(identifier);
-    }
-  }
-
   public void Warning(string? identifier, string message)
   {
     if (identifier != null)
@@ -39,6 +23,22 @@ public class Reporting : IReporting
     if (identifier != null)
     {
       _warningIdentifiers.Add(identifier);
+    }
+  }
+
+  public void Error(string? identifier, string message)
+  {
+    if (identifier != null)
+    {
+      _errorIdentifiers.Add(identifier);
+    }
+  }
+
+  public void Error(string? identifier, SourceLocation sourceLocation, string message)
+  {
+    if (identifier != null)
+    {
+      _errorIdentifiers.Add(identifier);
     }
   }
 }

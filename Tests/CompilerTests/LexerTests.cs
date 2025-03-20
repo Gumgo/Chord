@@ -66,9 +66,9 @@ public class LexerTests
     RunLexerAndAssertLiteralFloatToken("7.5e-3f", 7.5e-3f);
     RunLexerAndAssertLiteralFloatToken("-8.6e-4f", -8.6e-4f);
     RunLexerAndAssertLiteralFloatToken("-8.6E-4f", -8.6e-4f);
-    RunLexerAndAssertLiteralDoubleToken("0", 0.0);
-    RunLexerAndAssertLiteralDoubleToken("1", 1.0);
-    RunLexerAndAssertLiteralDoubleToken("-2", -2.0);
+    RunLexerAndAssertLiteralDoubleToken("0.0", 0.0);
+    RunLexerAndAssertLiteralDoubleToken("1.0", 1.0);
+    RunLexerAndAssertLiteralDoubleToken("-2.0", -2.0);
     RunLexerAndAssertLiteralDoubleToken("3.1", 3.1);
     RunLexerAndAssertLiteralDoubleToken("-4.2", -4.2);
     RunLexerAndAssertLiteralDoubleToken("5.3e1", 5.3e1);
@@ -78,6 +78,9 @@ public class LexerTests
     RunLexerAndAssertLiteralDoubleToken("7.5e-3", 7.5e-3);
     RunLexerAndAssertLiteralDoubleToken("-8.6e-4", -8.6e-4);
     RunLexerAndAssertLiteralDoubleToken("-8.6E-4", -8.6e-4);
+    RunLexerAndAssertLiteralIntToken("0", 0);
+    RunLexerAndAssertLiteralIntToken("1", 1);
+    RunLexerAndAssertLiteralIntToken("-2", -2);
 
     RunLexerAndAssertError("01", "InvalidNumberToken");
     RunLexerAndAssertError("-01", "InvalidNumberToken");
@@ -193,6 +196,14 @@ public class LexerTests
     Debug.Assert(tokens != null);
     Assert.Equal([TokenType.LiteralDouble, TokenType.EndOfFile], tokens.Select((v) => v.TokenType));
     Assert.Equal(literalDouble, tokens[0].LiteralDoubleValue);
+  }
+
+  private static void RunLexerAndAssertLiteralIntToken(string text, int literalInt)
+  {
+    RunLexer(text, out var tokens, out _);
+    Debug.Assert(tokens != null);
+    Assert.Equal([TokenType.LiteralInt, TokenType.EndOfFile], tokens.Select((v) => v.TokenType));
+    Assert.Equal(literalInt, tokens[0].LiteralIntValue);
   }
 
   private static void RunLexerAndAssertLiteralStringToken(string text, string literalString)

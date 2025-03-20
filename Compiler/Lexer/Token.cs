@@ -62,6 +62,16 @@ internal class Token
     }
   }
 
+  public int LiteralIntValue
+  {
+    get
+    {
+      Debug.Assert(TokenType == TokenType.LiteralInt);
+      Debug.Assert(Value is int);
+      return (int)Value;
+    }
+  }
+
   public bool LiteralBoolValue
   {
     get
@@ -100,6 +110,9 @@ internal class Token
 
   public static Token LiteralDouble(double literalValue, SourceLocation sourceLocation, IReadOnlyList<Rune> runes)
     => new(TokenType.LiteralDouble, sourceLocation, runes, literalValue);
+
+  public static Token LiteralInt(int literalValue, SourceLocation sourceLocation, IReadOnlyList<Rune> runes)
+    => new(TokenType.LiteralInt, sourceLocation, runes, literalValue);
 
   public static Token LiteralBool(bool literalValue, SourceLocation sourceLocation, IReadOnlyList<Rune> runes)
     => new(TokenType.LiteralBool, sourceLocation, runes, value: literalValue);

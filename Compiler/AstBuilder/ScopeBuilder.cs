@@ -125,7 +125,7 @@ internal class ScopeBuilder(AstBuilderContext context, DefaultValueExpressionRes
     if (!scopeTracker.IsUnreachable)
     {
       ValidateOutputParameterAssignment(moduleDefinition.SourceLocation, scopeTracker, outputParameters);
-      if (moduleDefinition.ReturnDataType.PrimitiveType != PrimitiveType.Void)
+      if (!moduleDefinition.ReturnDataType.IsVoid)
       {
         if (scopeTracker.DidReturn == ScopeTrackerState.No)
         {
@@ -381,7 +381,7 @@ internal class ScopeBuilder(AstBuilderContext context, DefaultValueExpressionRes
 
     // Before integrating, union with an empty scope to "downgrade" all "Yes" states to "Maybe" states since the for loop may not ever run
     containingScopeTracker.IntegrateChildScope(ScopeTracker.Union([loopScopeTracker, new(containingScopeTracker, ScopeType.ForLoop)]));
-    return new ForLoopAstNode(forLoop.SourceLocation, containingScope, loopValueExpression, rangeExpression, loopScope, elementReference);
+    return new ForLoopAstNode(forLoop.SourceLocation, containingScope, loopValueExpression, loopValueReference, rangeExpression, loopScope, elementReference);
   }
 
   private ValueDefinitionAstNode BuildValueDefinition(

@@ -1,13 +1,15 @@
 ﻿using Compiler.Ast;
+using Compiler.NativeLibrary;
 
 namespace Compiler.AstBuilder;
 
 internal class AstBuilder(AstBuilderContext context)
 {
-  public IReadOnlyDictionary<string, ScopeAstNode> BuildNativeLibraryAsts(IReadOnlyList<SourceFile> sourceFiles)
+  public BuildNativeLibraryAstsResult BuildNativeLibraryAsts(IReadOnlyList<SourceFile> sourceFiles)
   {
     var allNativeImports = sourceFiles.SelectMany((sourceFile) => sourceFile.NativeImports.Select((nativeImport) => nativeImport.ResolvedPath)).ToHashSet();
     var nativeLibraryAsts = new Dictionary<string, ScopeAstNode>();
+    var coreNativeModules = new Dictionary<NativeModuleSignature, NativeModuleDefinitionAstNode>();
 
     foreach (var nativeImport in allNativeImports)
     {
@@ -49,12 +51,21 @@ internal class AstBuilder(AstBuilderContext context)
         }
 
         nativeLibraryScope.AddScopeItem(nativeModuleDefinition);
+
+        if (nativeLibrary.Name == CoreNativeLibrary.Name)
+        {
+          coreNativeModules.Add(nativeModule.Signature, nativeModuleDefinition);
+        }
       }
 
       nativeLibraryAsts.Add(nativeImport, nativeLibraryScope);
     }
 
-    return nativeLibraryAsts;
+    return new()
+    {
+      NativeLibraryAsts = nativeLibraryAsts,
+      CoreNativeModules = coreNativeModules,
+    };
   }
 
   public void BuildAsts(IReadOnlyList<SourceFile> sourceFiles, IReadOnlyDictionary<string, ScopeAstNode> nativeLibraryAsts)
@@ -104,5 +115,11 @@ internal class AstBuilder(AstBuilderContext context)
     {
       moduleBuilder.BuildModuleBodies(sourceFile);
     }
+  }
+
+  public class BuildNativeLibraryAstsResult
+  {
+    public required IReadOnlyDictionary<string, ScopeAstNode> NativeLibraryAsts { get; init; }
+    public required IReadOnlyDictionary<NativeModuleSignature, NativeModuleDefinitionAstNode> CoreNativeModules { get; init; }
   }
 }

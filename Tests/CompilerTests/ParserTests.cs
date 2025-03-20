@@ -6,6 +6,7 @@ using System.Diagnostics;
 
 namespace Tests.CompilerTests;
 
+// !!! add int tests
 // Note: node tests are listed in alphabetical order for simplicity, except for expression nodes, which are tested in ParserExpressionTests.cs
 public class ParserTests
 {
@@ -281,8 +282,17 @@ public class ParserTests
     var errorB = ParserTestUtilities.RunParser("const float@2x", (context, location) => DataTypeParseTreeNode.Parse(context, location), expectError: false);
     Assert.Equal(["IllegalUpsampleFactor"], errorB);
 
-    var errorC = ParserTestUtilities.RunParser("float[1]", (context, location) => DataTypeParseTreeNode.Parse(context, location), expectError: true);
-    Assert.Equal(["Malformed data type"], errorC);
+    var errorC = ParserTestUtilities.RunParser("const void", (context, location) => DataTypeParseTreeNode.Parse(context, location), expectError: false);
+    Assert.Equal(["IllegalVoidDataTypeQualifier"], errorC);
+
+    var errorD = ParserTestUtilities.RunParser("void@2x", (context, location) => DataTypeParseTreeNode.Parse(context, location), expectError: false);
+    Assert.Equal(["IllegalVoidDataTypeQualifier"], errorD);
+
+    var errorE = ParserTestUtilities.RunParser("void[]", (context, location) => DataTypeParseTreeNode.Parse(context, location), expectError: false);
+    Assert.Equal(["IllegalVoidDataTypeQualifier"], errorE);
+
+    var errorF = ParserTestUtilities.RunParser("float[1]", (context, location) => DataTypeParseTreeNode.Parse(context, location), expectError: true);
+    Assert.Equal(["Malformed data type"], errorF);
   }
 
   [Fact]
@@ -580,44 +590,44 @@ public class ParserTests
   }
 
   [Fact]
-  public void InstrumentGlobalList()
+  public void InstrumentPropertyList()
   {
     ParserTestUtilities.RunParser(
       string.Empty,
       (context, location) =>
       {
-        var node = InstrumentGlobalListParseTreeNode.Parse(context, location);
-        Assert.Empty(node.InstrumentGlobals);
+        var node = InstrumentPropertyListParseTreeNode.Parse(context, location);
+        Assert.Empty(node.InstrumentProperties);
       });
 
     ParserTestUtilities.RunParser(
       "#foo 1.0; #bar false;",
       (context, location) =>
       {
-        var node = InstrumentGlobalListParseTreeNode.Parse(context, location);
-        Assert.Equal(2, node.InstrumentGlobals.Count);
+        var node = InstrumentPropertyListParseTreeNode.Parse(context, location);
+        Assert.Equal(2, node.InstrumentProperties.Count);
 
-        Assert.Equal("foo", node.InstrumentGlobals[0].Name);
-        var valueA = Assert.Single(node.InstrumentGlobals[0].Values);
+        Assert.Equal("foo", node.InstrumentProperties[0].Name);
+        var valueA = Assert.Single(node.InstrumentProperties[0].Values);
         Assert.Equal(TokenType.LiteralDouble, valueA.TokenType);
         Assert.Equal(1.0, valueA.LiteralDoubleValue);
 
-        Assert.Equal("bar", node.InstrumentGlobals[1].Name);
-        var valueB = Assert.Single(node.InstrumentGlobals[1].Values);
+        Assert.Equal("bar", node.InstrumentProperties[1].Name);
+        var valueB = Assert.Single(node.InstrumentProperties[1].Values);
         Assert.Equal(TokenType.LiteralBool, valueB.TokenType);
         Assert.False(valueB.LiteralBoolValue);
       });
   }
 
   [Fact]
-  public void InstrumentGlobal()
+  public void InstrumentProperty()
   {
     ParserTestUtilities.RunParser(
       "#foo;",
       (context, location) =>
       {
-        Assert.True(InstrumentGlobalParseTreeNode.CanParse(location.NextToken()));
-        var node = InstrumentGlobalParseTreeNode.Parse(context, location);
+        Assert.True(InstrumentPropertyParseTreeNode.CanParse(location.NextToken()));
+        var node = InstrumentPropertyParseTreeNode.Parse(context, location);
         Assert.Equal("foo", node.Name);
         Assert.Empty(node.Values);
       });
@@ -626,8 +636,8 @@ public class ParserTests
       "#foo 1.0f 2.0 \"bar\" true;",
       (context, location) =>
       {
-        Assert.True(InstrumentGlobalParseTreeNode.CanParse(location.NextToken()));
-        var node = InstrumentGlobalParseTreeNode.Parse(context, location);
+        Assert.True(InstrumentPropertyParseTreeNode.CanParse(location.NextToken()));
+        var node = InstrumentPropertyParseTreeNode.Parse(context, location);
         Assert.Equal("foo", node.Name);
         Assert.Equal(4, node.Values.Count);
         Assert.Equal(TokenType.LiteralFloat, node.Values[0].TokenType);
@@ -640,11 +650,11 @@ public class ParserTests
         Assert.True(node.Values[3].LiteralBoolValue);
       });
 
-    var errorA = ParserTestUtilities.RunParser("#;", (context, location) => InstrumentGlobalParseTreeNode.Parse(context, location), expectError: true);
-    Assert.Equal(["Malformed instrument global"], errorA);
+    var errorA = ParserTestUtilities.RunParser("#;", (context, location) => InstrumentPropertyParseTreeNode.Parse(context, location), expectError: true);
+    Assert.Equal(["Malformed instrument property"], errorA);
 
-    var errorB = ParserTestUtilities.RunParser("# 1;", (context, location) => InstrumentGlobalParseTreeNode.Parse(context, location), expectError: true);
-    Assert.Equal(["Malformed instrument global"], errorB);
+    var errorB = ParserTestUtilities.RunParser("# 1;", (context, location) => InstrumentPropertyParseTreeNode.Parse(context, location), expectError: true);
+    Assert.Equal(["Malformed instrument property"], errorB);
   }
 
   [Fact]
@@ -658,7 +668,7 @@ public class ParserTests
         var node = ModuleDefinitionParseTreeNode.Parse(context, location);
         Assert.Equal("Foo", node.Name);
         Assert.Empty(node.Parameters);
-        Assert.Equal(PrimitiveType.Void, node.ReturnDataType.PrimitiveType);
+        Assert.True(node.ReturnDataType.IsVoid);
       });
 
     ParserTestUtilities.RunParser(
@@ -905,7 +915,7 @@ public class ParserTests
       {
         var node = SourceFileParseTreeNode.Parse(context, location);
         Assert.Empty(node.ImportList.Imports);
-        Assert.Empty(node.InstrumentGlobalList.InstrumentGlobals);
+        Assert.Empty(node.InstrumentPropertyList.InstrumentProperties);
         Assert.Empty(node.GlobalScope.Items);
       });
 
@@ -927,7 +937,7 @@ public class ParserTests
       {
         var node = SourceFileParseTreeNode.Parse(context, location);
         Assert.Equal(2, node.ImportList.Imports.Count);
-        Assert.Equal(3, node.InstrumentGlobalList.InstrumentGlobals.Count);
+        Assert.Equal(3, node.InstrumentPropertyList.InstrumentProperties.Count);
         Assert.Equal(4, node.GlobalScope.Items.Count);
       });
   }

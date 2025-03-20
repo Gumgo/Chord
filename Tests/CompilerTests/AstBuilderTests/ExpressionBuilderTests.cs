@@ -32,13 +32,33 @@ public class ExpressionBuilderTests
     }
 
     {
+      AstBuilderTestUtilities.RunAstBuilder(
+        """
+        struct S { a: float; }
+        module M(): void
+        {
+          val s: S[] = [];
+          val x = s.a;
+        }
+        """,
+        out _,
+        out var errorIdentifiers);
+      Assert.Equal(["ResolveAccess"], errorIdentifiers);
+    }
+
+    {
+      AstBuilderTestUtilities.RunAstBuilder("module M(): void { val a = [1.0f]; val x = a.foo; }", out _, out var errorIdentifiers);
+      Assert.Equal(["ResolveAccess"], errorIdentifiers);
+    }
+
+    {
       AstBuilderTestUtilities.RunAstBuilder("module M(): void { val x = M.foo; }", out _, out var errorIdentifiers);
       Assert.Equal(["ResolveAccess"], errorIdentifiers);
     }
 
     {
       AstBuilderTestUtilities.RunAstBuilder("module M(): void { val x = \"x\".foo; }", out _, out var errorIdentifiers);
-      Assert.Equal(["IllegalAccess"], errorIdentifiers);
+      Assert.Equal(["ResolveAccess"], errorIdentifiers);
     }
   }
 
@@ -93,6 +113,21 @@ public class ExpressionBuilderTests
       AstBuilderTestUtilities.RunAstBuilder("module M(): void { val x = ([0.0f])[\"str\"]; }", out _, out var errorIdentifiers);
       Assert.Equal(["CannotIndexUsingNonNumberIndex"], errorIdentifiers);
     }
+
+    {
+      AstBuilderTestUtilities.RunAstBuilder(
+        """
+        module M(): void
+        {
+          val a: float@2x[] = [0.0f];
+          val i: float@3x = 0.0f;
+          val x = a[i];
+        }
+        """,
+        out _,
+        out var errorIdentifiers);
+      Assert.Equal(["CannotIndexUsingMismatchedUpsampleFactor"], errorIdentifiers);
+    }
   }
 
   [Fact]
@@ -144,7 +179,7 @@ public class ExpressionBuilderTests
 
     {
       AstBuilderTestUtilities.RunAstBuilder("module M(): void { val x = true as float; }", out _, out var errorIdentifiers);
-      Assert.Equal(["IllegalParameterType"], errorIdentifiers); // This is IllegalParameterType because the module call builder runs in this case
+      Assert.Equal(["NoMatchingModuleOverload"], errorIdentifiers); // This is NoMatchingModuleOverload because the module call builder runs in this case
     }
   }
 
@@ -212,6 +247,20 @@ public class ExpressionBuilderTests
   }
 
   [Fact]
+  public void BuildLogicalNotOperatorCall()
+  {
+    {
+      AstBuilderTestUtilities.RunAstBuilder("module M(): void { val b: const bool; val x = !b; }", out _, out var errorIdentifiers);
+      Assert.Equal(["ValueNotInitialized"], errorIdentifiers);
+    }
+
+    {
+      AstBuilderTestUtilities.RunAstBuilder("module M(): void { val x = !1.0f; }", out _, out var errorIdentifiers);
+      Assert.Equal(["InvalidOperatorArgumentType"], errorIdentifiers);
+    }
+  }
+
+  [Fact]
   public void TryBuildArrayOperation()
   {
     {
@@ -225,12 +274,12 @@ public class ExpressionBuilderTests
     }
 
     {
-      AstBuilderTestUtilities.RunAstBuilder("module M(): void { val a: float[]; val x = a * 2.0f; }", out _, out var errorIdentifiers);
+      AstBuilderTestUtilities.RunAstBuilder("module M(): void { val a: float[]; val x = a * 2; }", out _, out var errorIdentifiers);
       Assert.Equal(["ValueNotInitialized"], errorIdentifiers);
     }
 
     {
-      AstBuilderTestUtilities.RunAstBuilder("module M(): void { val a: float[]; val x = 2.0f * a; }", out _, out var errorIdentifiers);
+      AstBuilderTestUtilities.RunAstBuilder("module M(): void { val a: float[]; val x = 2 * a; }", out _, out var errorIdentifiers);
       Assert.Equal(["ValueNotInitialized"], errorIdentifiers);
     }
   }

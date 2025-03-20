@@ -26,10 +26,11 @@ internal enum TokenType
   [KeywordToken("break")] KeywordBreak,
   [KeywordToken("continue")] KeywordContinue,
 
-  // Primitive type keywords
+  // Primitive type keywords (and void)
   [KeywordToken("void")] KeywordVoid,
   [KeywordToken("float")] KeywordFloat,
   [KeywordToken("double")] KeywordDouble,
+  [KeywordToken("int")] KeywordInt,
   [KeywordToken("bool")] KeywordBool,
   [KeywordToken("string")] KeywordString,
 
@@ -39,6 +40,7 @@ internal enum TokenType
   // Literals
   [TokenDescription("float literal")] LiteralFloat,
   [TokenDescription("double literal")] LiteralDouble,
+  [TokenDescription("int literal")] LiteralInt,
   [TokenDescription("bool literal")] LiteralBool,
   [TokenDescription("string literal")] LiteralString,
 
@@ -50,7 +52,7 @@ internal enum TokenType
   [SymbolToken("}")] RightBrace,
 
   [SymbolToken("@")] At,    // Used to force a native import and to indicate upsampled data types
-  [SymbolToken("#")] Pound, // Prefix to instrument globals
+  [SymbolToken("#")] Pound, // Prefix to instrument properties
   [SymbolToken(".")] Period,
   [SymbolToken(",")] Comma,
   [SymbolToken(":")] Colon,
@@ -84,8 +86,8 @@ internal enum TokenType
   [SymbolToken("*")] Multiply,
   [SymbolToken("/")] Divide,
   [SymbolToken("%")] Modulo,
-  [SymbolToken("!")] Not,
-  [SymbolToken("~")] NotAlternate,
+  [SymbolToken("!")] LogicalNot,
+  [SymbolToken("~")] BitwiseNot,
 
   // Parentheses
   [SymbolToken("(")] LeftParenthesis,

@@ -3,11 +3,11 @@ using System.Diagnostics;
 
 namespace Compiler.Parser.Nodes;
 
-internal class InstrumentGlobalParseTreeNode : ParseTreeNode
+internal class InstrumentPropertyParseTreeNode : ParseTreeNode
 {
-  private const string _component = "instrument global";
+  private const string _component = "instrument property";
 
-  private InstrumentGlobalParseTreeNode(SourceLocation sourceLocation, string name, IReadOnlyList<Token> values)
+  private InstrumentPropertyParseTreeNode(SourceLocation sourceLocation, string name, IReadOnlyList<Token> values)
     : base(sourceLocation)
   {
     Name = name;
@@ -20,17 +20,17 @@ internal class InstrumentGlobalParseTreeNode : ParseTreeNode
   public static bool CanParse(Token nextToken)
     => nextToken.TokenType == TokenType.Pound;
 
-  public static InstrumentGlobalParseTreeNode Parse(ParserContext context, ParserLocation location)
+  public static InstrumentPropertyParseTreeNode Parse(ParserContext context, ParserLocation location)
   {
     Debug.Assert(CanParse(location.NextToken()));
     var tokenSourceLocations = new List<SourceLocation>();
     location.ConsumeNextToken(tokenSourceLocations);
 
-    // Instrument globals are formatted as: #name param1 param1 ... ;
+    // Instrument properties are formatted as: #name param1 param1 ... ;
     var nameToken = location.ConsumeIfNextTokenIs(TokenType.Identifier, tokenSourceLocations);
     if (nameToken == null)
     {
-      context.Reporting.MalformedError(_component, location.NextToken(), "instrument global name");
+      context.Reporting.MalformedError(_component, location.NextToken(), "instrument property name");
       location.RecoverFromError();
     }
 
