@@ -13,7 +13,7 @@ internal static class ParserTestUtilities
     var lexerContext = new LexerContext() { Reporting = reporting };
     var lexer = new Lexer(lexerContext);
     var tokens = lexer.Process("test", [.. text.EnumerateRunes()]);
-    Debug.Assert(tokens != null);
+    Assert.NotNull(tokens);
     Assert.Empty(reporting.ErrorIdentifiers);
 
     var parserContext = new ParserContext() { Reporting = reporting };

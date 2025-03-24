@@ -41,7 +41,10 @@ internal class LatencyAligner(ProgramGraphBuilderContext context)
 
     // Now, align the max common latency to the next common upsample factor multiple so that we can safely divide by each argument's upsample factor to get
     // final aligned latency in terms of each argument's upsample factor
-    maxCommonInputLatency = ((maxCommonInputLatency + commonUpsampleFactor - 1) / maxCommonInputLatency) * maxCommonInputLatency;
+    if (maxCommonInputLatency != 0)
+    {
+      maxCommonInputLatency = ((maxCommonInputLatency + commonUpsampleFactor - 1) / maxCommonInputLatency) * maxCommonInputLatency;
+    }
 
     // Add latency to each node as necessary
     return inputs

@@ -250,7 +250,7 @@ public class NodeTests
       """,
       out var result,
       out var errorIdentifiers);
-    Debug.Assert(result != null);
+    Assert.NotNull(result);
     Assert.Empty(errorIdentifiers);
 
     var namedStructDefinitions = result.ScopeItems.OfType<NamedStructDefinitionAstNode>().ToArray();
@@ -334,7 +334,7 @@ public class NodeTests
       """,
       out var result,
       out var errorIdentifiers);
-    Debug.Assert(result != null);
+    Assert.NotNull(result);
     Assert.Empty(errorIdentifiers);
 
     var moduleDefinitionA = Assert.Single(result.ScopeItems.OfType<ScriptModuleDefinitionAstNode>().Where((v) => v.Name == "A"));
@@ -387,7 +387,7 @@ public class NodeTests
 
     var moduleScope = GetModuleScope(result, "M");
     var valueDefinition = Assert.IsType<ValueDefinitionAstNode>(Assert.Single(moduleScope.ScopeItems));
-    Debug.Assert(valueDefinition.AssignmentExpression != null);
+    Assert.NotNull(valueDefinition.AssignmentExpression);
 
     // The conversion from unnamed struct to named struct uses sequential evaluation
     var sequentialEvaluation = Assert.IsType<SequentialEvaluationAstNode>(valueDefinition.AssignmentExpression);
@@ -419,7 +419,7 @@ public class NodeTests
   public void ValueDefinition()
   {
     AstBuilderTestUtilities.RunAstBuilder("val g: const float = 1.0f;", out var result, out var errorIdentifiers);
-    Debug.Assert(result != null);
+    Assert.NotNull(result);
     Assert.Empty(errorIdentifiers);
 
     var valueDefinition = Assert.IsType<ValueDefinitionAstNode>(Assert.Single(result.ScopeItems.OfType<INamedAstNode>().Where((v) => v.Name == "g")));
@@ -430,7 +430,7 @@ public class NodeTests
 
   private static ScopeAstNode GetModuleScope(ScopeAstNode? scope, string name)
   {
-    Debug.Assert(scope != null);
+    Assert.NotNull(scope);
     return Assert.Single(scope.ScopeItems.OfType<ScriptModuleDefinitionAstNode>().Where((v) => v.Name == "M")).Scope;
   }
 }

@@ -30,7 +30,7 @@ public class ImportTests
     fileOperations.AddSourceFile("/root/main.chd", mainSource);
 
     AstBuilderTestUtilities.RunAstBuilder(fileOperations, "/root/main.chd", out var result, out var errorIdentifiers);
-    Debug.Assert(result != null);
+    Assert.NotNull(result);
     Assert.Empty(errorIdentifiers);
 
     var globalScope = result;

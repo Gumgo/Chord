@@ -162,14 +162,14 @@ public class LexerTests
   private static void RunLexerAndAssertTokenTypes(string text, IEnumerable<TokenType> tokenTypes)
   {
     RunLexer(text, out var tokens, out _);
-    Debug.Assert(tokens != null);
+    Assert.NotNull(tokens);
     Assert.Equal(tokenTypes, tokens.Select((v) => v.TokenType));
   }
 
   private static void RunLexerAndAssertUpsampleFactorToken(string text, int upsampleFactor)
   {
     RunLexer(text, out var tokens, out _);
-    Debug.Assert(tokens != null);
+    Assert.NotNull(tokens);
     Assert.Equal([TokenType.UpsampleFactor, TokenType.EndOfFile], tokens.Select((v) => v.TokenType));
     Assert.Equal(upsampleFactor, tokens[0].UpsampleFactorValue);
   }
@@ -177,7 +177,7 @@ public class LexerTests
   private static void RunLexerAndAssertLiteralBoolToken(string text, bool literalBool)
   {
     RunLexer(text, out var tokens, out _);
-    Debug.Assert(tokens != null);
+    Assert.NotNull(tokens);
     Assert.Equal([TokenType.LiteralBool, TokenType.EndOfFile], tokens.Select((v) => v.TokenType));
     Assert.Equal(literalBool, tokens[0].LiteralBoolValue);
   }
@@ -185,7 +185,7 @@ public class LexerTests
   private static void RunLexerAndAssertLiteralFloatToken(string text, float literalFloat)
   {
     RunLexer(text, out var tokens, out _);
-    Debug.Assert(tokens != null);
+    Assert.NotNull(tokens);
     Assert.Equal([TokenType.LiteralFloat, TokenType.EndOfFile], tokens.Select((v) => v.TokenType));
     Assert.Equal(literalFloat, tokens[0].LiteralFloatValue);
   }
@@ -193,7 +193,7 @@ public class LexerTests
   private static void RunLexerAndAssertLiteralDoubleToken(string text, double literalDouble)
   {
     RunLexer(text, out var tokens, out _);
-    Debug.Assert(tokens != null);
+    Assert.NotNull(tokens);
     Assert.Equal([TokenType.LiteralDouble, TokenType.EndOfFile], tokens.Select((v) => v.TokenType));
     Assert.Equal(literalDouble, tokens[0].LiteralDoubleValue);
   }
@@ -201,7 +201,7 @@ public class LexerTests
   private static void RunLexerAndAssertLiteralIntToken(string text, int literalInt)
   {
     RunLexer(text, out var tokens, out _);
-    Debug.Assert(tokens != null);
+    Assert.NotNull(tokens);
     Assert.Equal([TokenType.LiteralInt, TokenType.EndOfFile], tokens.Select((v) => v.TokenType));
     Assert.Equal(literalInt, tokens[0].LiteralIntValue);
   }
@@ -209,7 +209,7 @@ public class LexerTests
   private static void RunLexerAndAssertLiteralStringToken(string text, string literalString)
   {
     RunLexer(text, out var tokens, out _);
-    Debug.Assert(tokens != null);
+    Assert.NotNull(tokens);
     Assert.Equal([TokenType.LiteralString, TokenType.EndOfFile], tokens.Select((v) => v.TokenType));
     Assert.Equal(literalString, tokens[0].LiteralStringValue);
   }

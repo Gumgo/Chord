@@ -32,12 +32,9 @@ internal class ArrayProgramGraphNode : IProcessorProgramGraphNode
       }
     }
 
-    var elementDataType = new ProgramDataType(primitiveType, upsampleFactor, false);
-    var arrayDataType = new ProgramDataType(primitiveType, upsampleFactor, true);
-
     PrimitiveType = primitiveType;
     Elements = elements.Select((v) => new InputProgramGraphNode(this) { Connection = v }).ToArray();
-    Output = new OutputProgramGraphNode(this, elementDataType, 0);
+    Output = new OutputProgramGraphNode(this, new(primitiveType, upsampleFactor, true), 0);
   }
 
   public PrimitiveType? PrimitiveType { get; }

@@ -54,7 +54,7 @@ internal class NativeModuleCallProgramGraphNode : IProcessorProgramGraphNode
           continue;
         }
 
-        Debug.Assert(latencyInput.DataType.UpsampleFactor / upsampleFactor == 0);
+        Debug.Assert(latencyInput.DataType.UpsampleFactor % upsampleFactor == 0);
         var relativeUpsampleFactor = latencyInput.DataType.UpsampleFactor / upsampleFactor;
         if (latencyInput.Latency % relativeUpsampleFactor != 0)
         {

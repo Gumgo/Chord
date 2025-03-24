@@ -2,6 +2,7 @@
 using Compiler.NativeLibrary;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Xml.Linq;
 
 namespace Tests.CompilerTests;
 
@@ -165,7 +166,10 @@ internal sealed class TestNativeLibraryRegistry : INativeLibraryRegistry, INativ
     [NotNullWhen(true)] out NativeLibrary? nativeLibrary,
     [NotNullWhen(true)] out NativeLibraryContext? context)
   {
-    throw new NotImplementedException();
+    var isCore = id == _coreNativeLibraryId;
+    nativeLibrary = isCore ? _coreNativeLibrary : null;
+    context = isCore ? new(0) : null; // Context is always null for the core native library
+    return isCore;
   }
 
   private static TElement Index<TElement>(TElement?[] array, int index)

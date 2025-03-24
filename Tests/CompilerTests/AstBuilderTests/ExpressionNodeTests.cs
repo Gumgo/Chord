@@ -373,7 +373,7 @@ public class ExpressionNodeTests
 
   private static ExpressionAstNode GetExpression(ScopeAstNode? scope, int? scopeItemIndex = null)
   {
-    Debug.Assert(scope != null);
+    Assert.NotNull(scope);
     var moduleDefinition = Assert.IsType<ScriptModuleDefinitionAstNode>(Assert.Single(scope.ScopeItems.OfType<INamedAstNode>().Where((v) => v.Name == "M")));
     return scopeItemIndex == null
       ? Assert.IsType<ExpressionStatementAstNode>(Assert.Single(moduleDefinition.Scope.ScopeItems)).Expression

@@ -360,7 +360,7 @@ public class AstDataTypeTests
     var lexerContext = new LexerContext() { Reporting = reporting };
     var lexer = new Lexer(lexerContext);
     var tokens = lexer.Process("test", [.."struct S { }".EnumerateRunes()]);
-    Debug.Assert(tokens != null);
+    Assert.NotNull(tokens);
 
     var parserContext = new ParserContext() { Reporting = reporting };
     var parseTreeNode = StructDefinitionParseTreeNode.Parse(parserContext, new("test", tokens));

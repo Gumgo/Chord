@@ -1,6 +1,5 @@
 ﻿using Compiler;
 using Compiler.Ast;
-using Compiler.NativeLibrary;
 using CompilerNamespace = Compiler;
 
 namespace Tests.CompilerTests.AstBuilderTests;

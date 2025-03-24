@@ -19,7 +19,7 @@ public class ParserTests
     var lexerContext = new LexerContext() { Reporting = reporting };
     var lexer = new Lexer(lexerContext);
     var tokens = lexer.Process("test", [.. text.EnumerateRunes()]);
-    Debug.Assert(tokens != null);
+    Assert.NotNull(tokens);
     Assert.Empty(reporting.ErrorIdentifiers);
 
     var parserContext = new ParserContext() { Reporting = reporting };
@@ -379,7 +379,7 @@ public class ParserTests
         Assert.True(GlobalScopeItemParseTreeNode.CanParse(location.NextToken()));
         var node = GlobalScopeItemParseTreeNode.Parse(context, location, exportToken);
         Assert.True(node.IsExported);
-        Debug.Assert(node.ValueDefinition != null);
+        Assert.NotNull(node.ValueDefinition);
         Assert.Equal("foo", node.ValueDefinition.Value.Name);
       });
 
@@ -390,7 +390,7 @@ public class ParserTests
         Assert.True(GlobalScopeItemParseTreeNode.CanParse(location.NextToken()));
         var node = GlobalScopeItemParseTreeNode.Parse(context, location, null);
         Assert.False(node.IsExported);
-        Debug.Assert(node.ValueDefinition != null);
+        Assert.NotNull(node.ValueDefinition);
         Assert.Equal("foo", node.ValueDefinition.Value.Name);
       });
 
@@ -401,7 +401,7 @@ public class ParserTests
         Assert.True(GlobalScopeItemParseTreeNode.CanParse(location.NextToken()));
         var node = GlobalScopeItemParseTreeNode.Parse(context, location, null);
         Assert.False(node.IsExported);
-        Debug.Assert(node.ModuleDefinition != null);
+        Assert.NotNull(node.ModuleDefinition);
         Assert.Equal("Foo", node.ModuleDefinition.Name);
       });
 
@@ -412,7 +412,7 @@ public class ParserTests
         Assert.True(GlobalScopeItemParseTreeNode.CanParse(location.NextToken()));
         var node = GlobalScopeItemParseTreeNode.Parse(context, location, null);
         Assert.False(node.IsExported);
-        Debug.Assert(node.StructDefinition != null);
+        Assert.NotNull(node.StructDefinition);
         Assert.Equal("Foo", node.StructDefinition.Name);
       });
   }
@@ -542,7 +542,7 @@ public class ParserTests
         Assert.False(node.IsNative);
         Assert.Null(node.ParentDirectoryCount);
         Assert.Equal(["a"], node.PathComponents);
-        Debug.Assert(node.ImportAsComponents != null);
+        Assert.NotNull(node.ImportAsComponents);
         Assert.Empty(node.ImportAsComponents);
       });
 
