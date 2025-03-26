@@ -93,11 +93,6 @@ internal class GlobalValueInitializationOrderResolver(GlobalValueInitializationO
           break;
 
         case ExpressionStatementAstNode expressionStatement:
-          if (expressionStatement.AssignmentTargetExpression != null)
-          {
-            yield return expressionStatement.AssignmentTargetExpression;
-          }
-
           yield return expressionStatement.Expression;
           break;
 

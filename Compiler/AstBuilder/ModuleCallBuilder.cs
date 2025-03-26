@@ -215,15 +215,20 @@ internal class ModuleCallBuilder(AstBuilderContext context, DefaultValueExpressi
 
         // This assignment should always succeed because we've already verified that the parameter type is assignable
         var convertBuilder = new ConvertBuilder(context, defaultValueExpressionResolver);
-        var valueReference = new TemporaryReferenceAstNode(parameterMapping.ValueExpression.SourceLocation, parameterMapping.ParameterDataType, true, false);
+        var temporaryReference = new TemporaryReferenceAstNode(
+          parameterMapping.ValueExpression.SourceLocation,
+          parameterMapping.ParameterDataType,
+          true,
+          false);
         var valueExpression = convertBuilder.BuildAssign(
           parameterMapping.ValueExpression.SourceLocation,
           scope,
           scopeTracker,
-          valueReference,
+          temporaryReference,
           parameterMapping.ValueExpression.DataType);
 
-        outputArguments.Add(new() { ValueReference = valueReference, ValueExpression = valueExpression, TargetExpression = parameterMapping.ValueExpression });
+        outputArguments.Add(
+          new() { TemporaryReference = temporaryReference, ValueExpression = valueExpression, TargetExpression = parameterMapping.ValueExpression });
       }
     }
 

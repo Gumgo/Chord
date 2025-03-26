@@ -195,7 +195,7 @@ public class ProgramBuilder(ProgramBuilderContext context)
     foreach (var globalValueDefinition in globalValueDefinitions)
     {
       Debug.Assert(globalValueDefinition.AssignmentExpression != null);
-      var node = expressionBuilder.BuildExpression(programVariantProperties, globalValueDefinition.AssignmentExpression, globalScopeContext).Node;
+      var node = expressionBuilder.BuildExpression(programVariantProperties, globalValueDefinition.AssignmentExpression, globalScopeContext).Result.Node;
       Debug.Assert(node != null);
       globalNodeValueTracker.TrackValue(globalValueDefinition, node);
     }

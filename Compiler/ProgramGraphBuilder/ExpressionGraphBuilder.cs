@@ -23,32 +23,38 @@ file static class ReportingExtensions
     => reporting.Error("ArrayIndexOutOfBounds", sourceLocation, "Attempted to index array using out-of-bounds index value");
 }
 
+internal class BuildGraphExpressionResults
+{
+  public required BuildGraphExpressionResult Result { get; init; }
+  public required IReadOnlyDictionary<string, BuildGraphExpressionResult> NamedResults { get; init; }
+}
+
 // !!! for unit testing: make each of these cases into a public function (same for other builders, like scope builder) so they can be selectively called
 internal class ExpressionGraphBuilder(ProgramGraphBuilderContext context)
 {
-  public BuildGraphExpressionResult BuildExpression(
+  public BuildGraphExpressionResults BuildExpression(
     ProgramVariantProperties programVariantProperties,
     ExpressionAstNode expression,
     ProgramGraphScopeContext scopeContext)
     => expression switch
     {
-      ArrayAstNode array => BuildArrayExpression(programVariantProperties, array, scopeContext),
-      ArrayConcatenateAstNode arrayConcatenate => BuildArrayConcatenateExpression(programVariantProperties, arrayConcatenate, scopeContext),
-      ArrayIndexAstNode arrayIndex => BuildArrayIndexExpression(programVariantProperties, arrayIndex, scopeContext),
-      ArrayLengthAstNode arrayLength => BuildArrayLengthExpression(programVariantProperties, arrayLength, scopeContext),
-      ArrayRepeatAstNode arrayRepeat => BuildArrayRepeatExpression(programVariantProperties, arrayRepeat, scopeContext),
-      ChangeDataTypeAstNode changeDataType => BuildExpression(programVariantProperties, changeDataType.Expression, scopeContext),
-      LiteralAstNode literal => BuildLiteralExpression(literal),
-      ModuleCallAstNode moduleCall => BuildModuleCallExpression(programVariantProperties, moduleCall, scopeContext),
+      ArrayAstNode array => SingleResult(BuildArrayExpression(programVariantProperties, array, scopeContext)),
+      ArrayConcatenateAstNode arrayConcatenate => SingleResult(BuildArrayConcatenateExpression(programVariantProperties, arrayConcatenate, scopeContext)),
+      ArrayIndexAstNode arrayIndex => SingleResult(BuildArrayIndexExpression(programVariantProperties, arrayIndex, scopeContext)),
+      ArrayLengthAstNode arrayLength => SingleResult(BuildArrayLengthExpression(programVariantProperties, arrayLength, scopeContext)),
+      ArrayRepeatAstNode arrayRepeat => SingleResult(BuildArrayRepeatExpression(programVariantProperties, arrayRepeat, scopeContext)),
+      ChangeDataTypeAstNode changeDataType => SingleResult(BuildChangeDataTypeExpression(programVariantProperties, changeDataType, scopeContext)),
+      LiteralAstNode literal => SingleResult(BuildLiteralExpression(literal)),
+      ModuleCallAstNode moduleCall => SingleResult(BuildModuleCallExpression(programVariantProperties, moduleCall, scopeContext)),
       PlaceholderAstNode placeholder => throw new InvalidOperationException($"{nameof(PlaceholderAstNode)} should not occur within an expression"),
-      ReferenceAstNode reference => BuildReferenceExpression(reference, scopeContext),
+      ReferenceAstNode reference => SingleResult(BuildReferenceExpression(reference, scopeContext)),
       SequentialEvaluationAstNode sequentialEvaluation => BuildSequentialEvaluationExpression(programVariantProperties, sequentialEvaluation, scopeContext),
-      StringLengthAstNode stringLength => BuildStringLengthExpression(programVariantProperties, stringLength, scopeContext),
-      StructFieldAccessAstNode structFieldAccess => BuildStructFieldAccessExpression(programVariantProperties, structFieldAccess, scopeContext),
-      StructValueAstNode structValue => BuildStructValueExpression(programVariantProperties, structValue, scopeContext),
-      TemporaryReferenceAstNode temporaryReference => BuildTemporaryReferenceExpression(temporaryReference, scopeContext),
-      TernaryAstNode ternary => BuildTernaryExpression(programVariantProperties, ternary, scopeContext),
-      TransformArrayAstNode transformArray => BuildTransformArrayExpression(programVariantProperties, transformArray, scopeContext),
+      StringLengthAstNode stringLength => SingleResult(BuildStringLengthExpression(programVariantProperties, stringLength, scopeContext)),
+      StructFieldAccessAstNode structFieldAccess => SingleResult(BuildStructFieldAccessExpression(programVariantProperties, structFieldAccess, scopeContext)),
+      StructValueAstNode structValue => SingleResult(BuildStructValueExpression(programVariantProperties, structValue, scopeContext)),
+      TemporaryReferenceAstNode temporaryReference => SingleResult(BuildTemporaryReferenceExpression(temporaryReference, scopeContext)),
+      TernaryAstNode ternary => SingleResult(BuildTernaryExpression(programVariantProperties, ternary, scopeContext)),
+      TransformArrayAstNode transformArray => SingleResult(BuildTransformArrayExpression(programVariantProperties, transformArray, scopeContext)),
       _ => throw new InvalidOperationException("Unhandled expression type"),
     };
 
@@ -58,10 +64,10 @@ internal class ExpressionGraphBuilder(ProgramGraphBuilderContext context)
     var node = literal.DataType.PrimitiveType.Value switch
     {
       PrimitiveType.Float => new ConstantProgramGraphNode(literal.LiteralFloatValue).Output,
-      PrimitiveType.Double => new ConstantProgramGraphNode(literal.LiteralFloatValue).Output,
+      PrimitiveType.Double => new ConstantProgramGraphNode(literal.LiteralDoubleValue).Output,
       PrimitiveType.Int => new ConstantProgramGraphNode(literal.LiteralIntValue).Output,
-      PrimitiveType.Bool => new ConstantProgramGraphNode(literal.LiteralFloatValue).Output,
-      PrimitiveType.String => new ConstantProgramGraphNode(literal.LiteralFloatValue).Output,
+      PrimitiveType.Bool => new ConstantProgramGraphNode(literal.LiteralBoolValue).Output,
+      PrimitiveType.String => new ConstantProgramGraphNode(literal.LiteralStringValue).Output,
       _ => throw UnhandledEnumValueException.Create(literal.DataType.PrimitiveType.Value),
     };
 
@@ -72,7 +78,7 @@ internal class ExpressionGraphBuilder(ProgramGraphBuilderContext context)
   {
     reference.TryGetReferencedValueDefinition(out var valueDefinition);
     Debug.Assert(valueDefinition != null);
-    var node = scopeContext.NodeValueTracker.GetValueNode(valueDefinition);
+    var node = scopeContext.NodeValueTracker.GetValueNodeIfAssigned(valueDefinition);
     return new() { Node = node, ValueDefinition = valueDefinition, ReferenceNodes = [] };
   }
 
@@ -96,7 +102,7 @@ internal class ExpressionGraphBuilder(ProgramGraphBuilderContext context)
       .Select(
         (element) =>
         {
-          var elementResult = BuildExpression(programVariantProperties, element, scopeContext);
+          var elementResult = BuildExpression(programVariantProperties, element, scopeContext).Result;
           Debug.Assert(elementResult.Node != null);
           return elementResult.Node;
         })
@@ -111,8 +117,8 @@ internal class ExpressionGraphBuilder(ProgramGraphBuilderContext context)
     ArrayConcatenateAstNode arrayConcatenate,
     ProgramGraphScopeContext scopeContext)
   {
-    var resultA = BuildExpression(programVariantProperties, arrayConcatenate.ArrayAExpression, scopeContext);
-    var resultB = BuildExpression(programVariantProperties, arrayConcatenate.ArrayBExpression, scopeContext);
+    var resultA = BuildExpression(programVariantProperties, arrayConcatenate.ArrayAExpression, scopeContext).Result;
+    var resultB = BuildExpression(programVariantProperties, arrayConcatenate.ArrayBExpression, scopeContext).Result;
     var arrayANode = resultA.GetArray();
     var arrayBNode = resultB.GetArray();
 
@@ -141,8 +147,8 @@ internal class ExpressionGraphBuilder(ProgramGraphBuilderContext context)
     ArrayIndexAstNode arrayIndex,
     ProgramGraphScopeContext scopeContext)
   {
-    var arrayResult = BuildExpression(programVariantProperties, arrayIndex.ArrayExpression, scopeContext);
-    var indexResult = BuildExpression(programVariantProperties, arrayIndex.IndexExpression, scopeContext);
+    var arrayResult = BuildExpression(programVariantProperties, arrayIndex.ArrayExpression, scopeContext).Result;
+    var indexResult = BuildExpression(programVariantProperties, arrayIndex.IndexExpression, scopeContext).Result;
     var arrayNode = arrayResult.GetArray();
     Debug.Assert(indexResult.Node != null);
 
@@ -208,7 +214,7 @@ internal class ExpressionGraphBuilder(ProgramGraphBuilderContext context)
     ArrayLengthAstNode arrayLength,
     ProgramGraphScopeContext scopeContext)
   {
-    var arrayResult = BuildExpression(programVariantProperties, arrayLength.Expression, scopeContext);
+    var arrayResult = BuildExpression(programVariantProperties, arrayLength.Expression, scopeContext).Result;
     var arrayNode = arrayResult.GetArray();
     var node = new ConstantProgramGraphNode(arrayNode.Elements.Count).Output;
     return new() { Node = node, ValueDefinition = null, ReferenceNodes = [] };
@@ -219,8 +225,8 @@ internal class ExpressionGraphBuilder(ProgramGraphBuilderContext context)
     ArrayRepeatAstNode arrayRepeat,
     ProgramGraphScopeContext scopeContext)
   {
-    var arrayResult = BuildExpression(programVariantProperties, arrayRepeat.ArrayExpression, scopeContext);
-    var countResult = BuildExpression(programVariantProperties, arrayRepeat.CountExpression, scopeContext);
+    var arrayResult = BuildExpression(programVariantProperties, arrayRepeat.ArrayExpression, scopeContext).Result;
+    var countResult = BuildExpression(programVariantProperties, arrayRepeat.CountExpression, scopeContext).Result;
     var arrayNode = arrayResult.GetArray();
     var count = (long)countResult.GetConstantInt();
 
@@ -261,6 +267,12 @@ internal class ExpressionGraphBuilder(ProgramGraphBuilderContext context)
     return new() { Node = node, ValueDefinition = null, ReferenceNodes = [] };
   }
 
+  protected internal BuildGraphExpressionResult BuildChangeDataTypeExpression(
+    ProgramVariantProperties programVariantProperties,
+    ChangeDataTypeAstNode changeDataType,
+    ProgramGraphScopeContext scopeContext)
+    => BuildExpression(programVariantProperties, changeDataType.Expression, scopeContext).Result;
+
   protected internal BuildGraphExpressionResult BuildModuleCallExpression(
     ProgramVariantProperties programVariantProperties,
     ModuleCallAstNode moduleCall,
@@ -273,7 +285,7 @@ internal class ExpressionGraphBuilder(ProgramGraphBuilderContext context)
       .Select(
         (inputArgument) =>
         {
-          var node = BuildExpression(programVariantProperties, inputArgument.ValueExpression, scopeContext).Node;
+          var node = BuildExpression(programVariantProperties, inputArgument.ValueExpression, scopeContext).Result.Node;
           Debug.Assert(node != null);
           return node;
         })
@@ -290,11 +302,15 @@ internal class ExpressionGraphBuilder(ProgramGraphBuilderContext context)
     {
       using var temporaryReferenceContext = new NodeValueTrackerTemporaryReferenceContext(scopeContext.NodeValueTracker);
       scopeContext.NodeValueTracker.TrackTemporaryReference(
-        outputArgument.ValueReference,
+        outputArgument.TemporaryReference,
         new() { Node = outputNode, ValueDefinition = null, ReferenceNodes = [] });
 
-      var targetResult = BuildExpression(programVariantProperties, outputArgument.TargetExpression, scopeContext);
-      var valueResult = BuildExpression(programVariantProperties, outputArgument.ValueExpression, scopeContext);
+      // !!! sequential evaluation is not working nicely, need to rethink how to access results
+      // I think what i need to do is have it so that sequential evaluation nodes can tag entries with a name
+      // then, BuildGraphExpressionResult gets returned along with a dictionary of (name, BuildGraphExpressionResult)
+      // this way, each entry result can be used after the scope ends
+      var targetResult = BuildExpression(programVariantProperties, outputArgument.TargetExpression, scopeContext).Result;
+      var valueResult = BuildExpression(programVariantProperties, outputArgument.ValueExpression, scopeContext).Result;
       Debug.Assert(valueResult.Node != null);
       scopeContext.NodeValueTracker.AssignNode(targetResult, valueResult.Node);
     }
@@ -302,21 +318,27 @@ internal class ExpressionGraphBuilder(ProgramGraphBuilderContext context)
     return new() { Node = returnValueNode, ValueDefinition = null, ReferenceNodes = [] };
   }
 
-  protected internal BuildGraphExpressionResult BuildSequentialEvaluationExpression(
+  protected internal BuildGraphExpressionResults BuildSequentialEvaluationExpression(
     ProgramVariantProperties programVariantProperties,
     SequentialEvaluationAstNode sequentialEvaluation,
     ProgramGraphScopeContext scopeContext)
   {
     using var temporaryReferenceContext = new NodeValueTrackerTemporaryReferenceContext(scopeContext.NodeValueTracker);
     BuildGraphExpressionResult? result = null;
+    var namedResults = new Dictionary<string, BuildGraphExpressionResult>();
     foreach (var entry in sequentialEvaluation.Entries)
     {
-      result = BuildExpression(programVariantProperties, entry.Expression, scopeContext);
+      result = BuildExpression(programVariantProperties, entry.Expression, scopeContext).Result;
       scopeContext.NodeValueTracker.TrackTemporaryReference(entry.TemporaryReference, result);
+
+      if (entry.Name != null)
+      {
+        namedResults.Add(entry.Name, result);
+      }
     }
 
     Debug.Assert(result != null);
-    return result;
+    return new() { Result = result, NamedResults = namedResults };
   }
 
   protected internal BuildGraphExpressionResult BuildStringLengthExpression(
@@ -324,7 +346,7 @@ internal class ExpressionGraphBuilder(ProgramGraphBuilderContext context)
     StringLengthAstNode stringLength,
     ProgramGraphScopeContext scopeContext)
   {
-    var stringResult = BuildExpression(programVariantProperties, stringLength.Expression, scopeContext);
+    var stringResult = BuildExpression(programVariantProperties, stringLength.Expression, scopeContext).Result;
     var stringValue = stringResult.GetConstantString();
     var node = new ConstantProgramGraphNode(new StringInfo(stringValue).LengthInTextElements).Output;
     return new() { Node = node, ValueDefinition = null, ReferenceNodes = [] };
@@ -335,7 +357,7 @@ internal class ExpressionGraphBuilder(ProgramGraphBuilderContext context)
     StructFieldAccessAstNode structFieldAccess,
     ProgramGraphScopeContext scopeContext)
   {
-    var result = BuildExpression(programVariantProperties, structFieldAccess.ContextExpression, scopeContext);
+    var result = BuildExpression(programVariantProperties, structFieldAccess.ContextExpression, scopeContext).Result;
     var structNode = result.GetStruct();
 
     var node = structNode.Fields[structFieldAccess.StructField.Name];
@@ -351,7 +373,7 @@ internal class ExpressionGraphBuilder(ProgramGraphBuilderContext context)
       .Select(
         (fieldInitializer) =>
         {
-          var fieldResult = BuildExpression(programVariantProperties, fieldInitializer.ValueExpression, scopeContext);
+          var fieldResult = BuildExpression(programVariantProperties, fieldInitializer.ValueExpression, scopeContext).Result;
           Debug.Assert(fieldResult.Node != null);
           return KeyValuePair.Create(fieldInitializer.Name, fieldResult.Node);
         })
@@ -366,10 +388,10 @@ internal class ExpressionGraphBuilder(ProgramGraphBuilderContext context)
     TernaryAstNode ternary,
     ProgramGraphScopeContext scopeContext)
   {
-    var conditionResult = BuildExpression(programVariantProperties, ternary.ConditionExpression, scopeContext);
+    var conditionResult = BuildExpression(programVariantProperties, ternary.ConditionExpression, scopeContext).Result;
     var conditionValue = conditionResult.GetConstantBool();
     var evaluatedExpression = conditionValue ? ternary.TrueExpression : ternary.FalseExpression;
-    return BuildExpression(programVariantProperties, evaluatedExpression, scopeContext);
+    return BuildExpression(programVariantProperties, evaluatedExpression, scopeContext).Result;
   }
 
   protected internal BuildGraphExpressionResult BuildTransformArrayExpression(
@@ -377,7 +399,7 @@ internal class ExpressionGraphBuilder(ProgramGraphBuilderContext context)
     TransformArrayAstNode transformArray,
     ProgramGraphScopeContext scopeContext)
   {
-    var arrayResult = BuildExpression(programVariantProperties, transformArray.ArrayExpression, scopeContext);
+    var arrayResult = BuildExpression(programVariantProperties, transformArray.ArrayExpression, scopeContext).Result;
     var arrayNode = arrayResult.GetArray();
 
     var transformedElements = arrayNode.Elements
@@ -390,13 +412,13 @@ internal class ExpressionGraphBuilder(ProgramGraphBuilderContext context)
             transformArray.ElementTemporaryReference,
             new() { Node = element.Connection, ValueDefinition = null, ReferenceNodes = [] });
 
-          var elementResult = BuildExpression(programVariantProperties, transformArray.TransformedElementExpression, scopeContext);
+          var elementResult = BuildExpression(programVariantProperties, transformArray.TransformedElementExpression, scopeContext).Result;
           Debug.Assert(elementResult.Node != null);
           return elementResult.Node;
         })
     .ToArray();
 
-    var node = new ArrayProgramGraphNode(arrayNode.Output.DataType.PrimitiveType, transformedElements).Output;
+    var node = new ArrayProgramGraphNode(transformArray.DataType.PrimitiveType, transformedElements).Output;
     return new() { Node = node, ValueDefinition = null, ReferenceNodes = [] };
   }
 
@@ -405,4 +427,7 @@ internal class ExpressionGraphBuilder(ProgramGraphBuilderContext context)
     Debug.Assert(node.Connection != null);
     return new() { Node = node.Connection, ValueDefinition = result.ValueDefinition, ReferenceNodes = [.. result.ReferenceNodes, node] };
   }
+
+  private static BuildGraphExpressionResults SingleResult(BuildGraphExpressionResult result)
+    => new() { Result = result, NamedResults = new Dictionary<string, BuildGraphExpressionResult>() };
 }

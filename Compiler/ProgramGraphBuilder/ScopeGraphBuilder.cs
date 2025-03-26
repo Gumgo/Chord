@@ -15,13 +15,14 @@ internal class ScopeGraphBuilder(ProgramGraphBuilderContext context)
     Return,
   }
 
+  // Note: a NodeValueTrackerScope should be used outside of this method. It's not used inside of this method so that node associations with value definitions
+  // are accessible after the method has completed.
   public (BuildScopeResult Result, IOutputProgramGraphNode? ReturnValue) BuildScope(
     ProgramVariantProperties programVariantProperties,
     ScopeAstNode scope,
     ProgramGraphScopeContext scopeContext)
   {
     var expressionBuilder = new ExpressionGraphBuilder(context);
-    using var nodeValueTrackerScope = new NodeValueTrackerScope(scopeContext.NodeValueTracker);
 
     foreach (var scopeItem in scope.ScopeItems)
     {
@@ -36,7 +37,7 @@ internal class ScopeGraphBuilder(ProgramGraphBuilderContext context)
             foreach (var ifBranch in conditional.IfBranches)
             {
               Debug.Assert(ifBranch.Condition != null);
-              var conditionResult = expressionBuilder.BuildExpression(programVariantProperties, ifBranch.Condition, scopeContext);
+              var conditionResult = expressionBuilder.BuildExpression(programVariantProperties, ifBranch.Condition, scopeContext).Result;
               if (conditionResult.Node == null
                 || !conditionResult.Node.DataType.IsConstantBool()
                 || conditionResult.Node.Processor is not ConstantProgramGraphNode constant)
@@ -47,6 +48,7 @@ internal class ScopeGraphBuilder(ProgramGraphBuilderContext context)
               if (constant.BoolValue)
               {
                 didRunAnyBranch = true;
+                using var nodeValueTrackerScope = new NodeValueTrackerScope(scopeContext.NodeValueTracker);
                 var (result, resultNode) = BuildScope(programVariantProperties, ifBranch.Scope, scopeContext);
                 if (result != BuildScopeResult.EndOfScope)
                 {
@@ -59,6 +61,7 @@ internal class ScopeGraphBuilder(ProgramGraphBuilderContext context)
 
             if (!didRunAnyBranch && conditional.ElseBranch != null)
             {
+              using var nodeValueTrackerScope = new NodeValueTrackerScope(scopeContext.NodeValueTracker);
               var (result, resultNode) = BuildScope(programVariantProperties, conditional.ElseBranch, scopeContext);
               if (result != BuildScopeResult.EndOfScope)
               {
@@ -74,17 +77,16 @@ internal class ScopeGraphBuilder(ProgramGraphBuilderContext context)
 
         case ExpressionStatementAstNode expressionStatement:
           {
-            BuildGraphExpressionResult? assignmentTarget = null;
-            if (expressionStatement.AssignmentTargetExpression != null)
+            var results = expressionBuilder.BuildExpression(programVariantProperties, expressionStatement.Expression, scopeContext);
+            if (expressionStatement.IsAssignment)
             {
-              assignmentTarget = expressionBuilder.BuildExpression(programVariantProperties, expressionStatement.AssignmentTargetExpression, scopeContext);
-            }
-
-            var node = expressionBuilder.BuildExpression(programVariantProperties, expressionStatement.Expression, scopeContext);
-            if (assignmentTarget != null)
-            {
-              Debug.Assert(node.Node != null); // If we try to assign a void module call's result, that error should be caught in the AST builder
-              scopeContext.NodeValueTracker.AssignNode(assignmentTarget, node.Node);
+              // If we got more than one result back it means this is an assignment expression and the first result is the assignment target. Note: this
+              // assumption feels a bit hacky and it would be nice to find a less fragile feeling approach. The problem is that sequential evaluation nodes
+              // don't allow temporary references to leave their scope and there's not a good way of allowing that behavior on a case-by-case basis.
+              var assignmentTarget = results.NamedResults[ExpressionStatementAstNode.AssignmentTargetResultName];
+              var node = results.NamedResults[ExpressionStatementAstNode.ExpressionResultName].Node;
+              Debug.Assert(node != null); // If we try to assign a void module call's result, that error should be caught in the AST builder
+              scopeContext.NodeValueTracker.AssignNode(assignmentTarget, node);
             }
 
             break;
@@ -97,13 +99,13 @@ internal class ScopeGraphBuilder(ProgramGraphBuilderContext context)
             {
               // If a loop value expression was provided, we'll get back its temporary reference. We need to track that temporary reference using this outer
               // scope so that it is available for assignment within the loop scope.
-              var loopValueResult = expressionBuilder.BuildExpression(programVariantProperties, forLoop.LoopValueExpression, scopeContext);
+              var loopValueResult = expressionBuilder.BuildExpression(programVariantProperties, forLoop.LoopValueExpression, scopeContext).Result;
 
               Debug.Assert(forLoop.LoopValueReference != null);
               scopeContext.NodeValueTracker.TrackTemporaryReference(forLoop.LoopValueReference, loopValueResult);
             }
 
-            var rangeResult = expressionBuilder.BuildExpression(programVariantProperties, forLoop.RangeExpression, scopeContext);
+            var rangeResult = expressionBuilder.BuildExpression(programVariantProperties, forLoop.RangeExpression, scopeContext).Result;
             if (rangeResult.Node == null || !rangeResult.Node.DataType.IsArray || rangeResult.Node.Processor is not ArrayProgramGraphNode array)
             {
               throw new InvalidOperationException("For loop range expression did not resolve to an array");
@@ -117,6 +119,7 @@ internal class ScopeGraphBuilder(ProgramGraphBuilderContext context)
                 forLoop.ElementReference,
                 new() { Node = element.Connection, ValueDefinition = null, ReferenceNodes = [] });
 
+              using var nodeValueTrackerScope = new NodeValueTrackerScope(scopeContext.NodeValueTracker);
               var (result, resultNode) = BuildScope(programVariantProperties, forLoop.LoopScope, scopeContext);
               if (result == BuildScopeResult.Break)
               {
@@ -144,6 +147,7 @@ internal class ScopeGraphBuilder(ProgramGraphBuilderContext context)
 
         case NestedScopeAstNode nestedScope:
           {
+            using var nodeValueTrackerScope = new NodeValueTrackerScope(scopeContext.NodeValueTracker);
             var (result, resultNode) = BuildScope(programVariantProperties, nestedScope, scopeContext);
             if (result != BuildScopeResult.EndOfScope)
             {
@@ -158,7 +162,7 @@ internal class ScopeGraphBuilder(ProgramGraphBuilderContext context)
             IOutputProgramGraphNode? node = null;
             if (returnStatement.ReturnExpression != null)
             {
-              node = expressionBuilder.BuildExpression(programVariantProperties, returnStatement.ReturnExpression, scopeContext).Node;
+              node = expressionBuilder.BuildExpression(programVariantProperties, returnStatement.ReturnExpression, scopeContext).Result.Node;
             }
 
             return (BuildScopeResult.Return, node);
@@ -169,7 +173,7 @@ internal class ScopeGraphBuilder(ProgramGraphBuilderContext context)
             IOutputProgramGraphNode? node = null;
             if (valueDefinition.AssignmentExpression != null)
             {
-              node = expressionBuilder.BuildExpression(programVariantProperties, valueDefinition.AssignmentExpression, scopeContext).Node;
+              node = expressionBuilder.BuildExpression(programVariantProperties, valueDefinition.AssignmentExpression, scopeContext).Result.Node;
             }
 
             scopeContext.NodeValueTracker.TrackValue(valueDefinition, node);

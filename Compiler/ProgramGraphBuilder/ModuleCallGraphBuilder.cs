@@ -180,18 +180,23 @@ internal class ModuleCallGraphBuilder(ProgramGraphBuilderContext context)
       nodeValueTracker.TrackValue(valueDefinition, node);
     }
 
+    // This is used to keep track of input argument nodes. Each input parameter's initial value gets assigned at the beginning of the module's scope using the
+    // parameter's temporary reference which we will associate with the provided input argument in the loop below.
+    using var temporaryReferenceContext = new NodeValueTrackerTemporaryReferenceContext(nodeValueTracker);
+
     // Track each parameter
     var inputParameterIndex = 0;
     foreach (var parameter in moduleDefinition.Parameters)
     {
       if (parameter.Direction == ModuleParameterDirection.In)
       {
-        nodeValueTracker.TrackValue(parameter.ValueDefinition, inputArguments[inputParameterIndex++]);
+        nodeValueTracker.TrackTemporaryReference(
+          parameter.TemporaryReference,
+          new BuildGraphExpressionResult() { Node = inputArguments[inputParameterIndex++], ValueDefinition = null, ReferenceNodes = [] });
       }
       else
       {
         Debug.Assert(parameter.Direction == ModuleParameterDirection.Out);
-        nodeValueTracker.TrackValue(parameter.ValueDefinition, null);
       }
     }
 
@@ -205,6 +210,8 @@ internal class ModuleCallGraphBuilder(ProgramGraphBuilderContext context)
       GlobalNodeValueTracker = globalNodeValueTracker,
       NativeModuleCallsWithSideEffects = nativeModuleCallsWithSideEffects,
     };
+
+    using var nodeValueTrackerScope = new NodeValueTrackerScope(moduleScopeContext.NodeValueTracker);
 
     var scopeBuilder = new ScopeGraphBuilder(context);
     var (_, returnValue) = scopeBuilder.BuildScope(programVariantProperties, moduleDefinition.Scope, moduleScopeContext);

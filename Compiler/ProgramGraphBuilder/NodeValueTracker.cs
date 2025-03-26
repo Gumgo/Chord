@@ -100,6 +100,9 @@ internal class NodeValueTracker
   public IOutputProgramGraphNode GetValueNode(ValueDefinitionAstNode valueDefinition)
     => _trackedValues[valueDefinition].Node ?? throw new InvalidOperationException($"Value '{valueDefinition.Name}' is uninitialized");
 
+  public IOutputProgramGraphNode? GetValueNodeIfAssigned(ValueDefinitionAstNode valueDefinition)
+    => _trackedValues[valueDefinition].Node;
+
   public void TrackTemporaryReference(TemporaryReferenceAstNode temporaryReference, BuildGraphExpressionResult result)
     => _trackedTemporaryReferences.Add(temporaryReference, new() { TemporaryReferenceContext = _temporaryReferenceContext, Result = result });
 
@@ -109,7 +112,6 @@ internal class NodeValueTracker
   public void AssignNode(BuildGraphExpressionResult assignmentTarget, IOutputProgramGraphNode node)
   {
     Debug.Assert(assignmentTarget.ValueDefinition != null);
-    Debug.Assert(!assignmentTarget.ReferenceNodes.IsEmpty());
 
     // Because we use pass-by-value semantics with a copy-on-write optimization, we need to determine which nodes need to be copied
     var updatedNode = node;

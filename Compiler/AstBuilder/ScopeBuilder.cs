@@ -104,7 +104,11 @@ internal class ScopeBuilder(AstBuilderContext context, DefaultValueExpressionRes
     {
       var parameterValueDefinition = new ValueDefinitionAstNode(parameter.SourceLocation, scopeAstNode, parameter.Name);
       parameterValueDefinition.InitializeDataType(parameter.DataType);
-      parameterValueDefinition.InitializeAssignmentExpression(null);
+
+      // Input parameters get initialized with the temporary reference associated with the provided argument for this parameter. Output parameters are initially
+      // unassigned.
+      parameterValueDefinition.InitializeAssignmentExpression(parameter.Direction == ModuleParameterDirection.In ? parameter.TemporaryReference : null);
+
       parameter.InitializeValueDefinition(parameterValueDefinition);
       scopeAstNode.AddScopeItem(parameterValueDefinition);
 
@@ -300,16 +304,13 @@ internal class ScopeBuilder(AstBuilderContext context, DefaultValueExpressionRes
   {
     var expressionBuilder = new ExpressionBuilder(context, defaultValueExpressionResolver);
 
-    // The loop value expression (if one exists) is first evaluated in the containing scope to resolve where the loop value is written to. Use a sequential
-    // evaluation node so that we can take a reference to the resolved loop value expression without double-evaluating it.
+    // The loop value expression (if one exists) is first evaluated in the containing scope to resolve where the loop value is written to.
     ExpressionAstNode? loopValueExpression = null;
     TemporaryReferenceAstNode? loopValueReference = null;
     if (forLoop.LoopValueExpression != null)
     {
-      var sequentialEvaluation = new SequentialEvaluationAstNode(forLoop.LoopValueExpression.SourceLocation);
-      loopValueExpression = sequentialEvaluation;
-      loopValueReference = sequentialEvaluation.AddEntry(
-        expressionBuilder.BuildExpression(forLoop.LoopValueExpression, containingScope, containingScopeTracker).Expression);
+      loopValueExpression = expressionBuilder.BuildExpression(forLoop.LoopValueExpression, containingScope, containingScopeTracker).Expression;
+      loopValueReference = new TemporaryReferenceAstNode(loopValueExpression);
     }
 
     // The loop range expression is also evaluated in the containing scope

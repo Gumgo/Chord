@@ -9,7 +9,7 @@ internal class ModuleCallInputArgument
 
 internal class ModuleCallOutputArgument
 {
-  public required TemporaryReferenceAstNode ValueReference { get; init; }
+  public required TemporaryReferenceAstNode TemporaryReference { get; init; }
   public required ExpressionAstNode ValueExpression { get; init; }
   public required ExpressionAstNode TargetExpression { get; init; }
 }

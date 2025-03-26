@@ -144,7 +144,7 @@ public class NodeTests
 
       var moduleScope = GetModuleScope(result, "M");
       var expressionStatement = Assert.IsType<ExpressionStatementAstNode>(Assert.Single(moduleScope.ScopeItems));
-      Assert.Null(expressionStatement.AssignmentTargetExpression);
+      Assert.False(expressionStatement.IsAssignment);
     }
 
     {
@@ -163,7 +163,7 @@ public class NodeTests
       var moduleScope = GetModuleScope(result, "M");
       Assert.Equal(2, moduleScope.ScopeItems.Count);
       var expressionStatement = Assert.IsType<ExpressionStatementAstNode>(moduleScope.ScopeItems[1]);
-      Assert.NotNull(expressionStatement.AssignmentTargetExpression);
+      Assert.True(expressionStatement.IsAssignment);
     }
 
     {
@@ -182,7 +182,7 @@ public class NodeTests
       var moduleScope = GetModuleScope(result, "M");
       Assert.Equal(2, moduleScope.ScopeItems.Count);
       var expressionStatement = Assert.IsType<ExpressionStatementAstNode>(moduleScope.ScopeItems[1]);
-      Assert.NotNull(expressionStatement.AssignmentTargetExpression);
+      Assert.True(expressionStatement.IsAssignment);
     }
   }
 
@@ -431,6 +431,6 @@ public class NodeTests
   private static ScopeAstNode GetModuleScope(ScopeAstNode? scope, string name)
   {
     Assert.NotNull(scope);
-    return Assert.Single(scope.ScopeItems.OfType<ScriptModuleDefinitionAstNode>().Where((v) => v.Name == "M")).Scope;
+    return Assert.Single(scope.ScopeItems.OfType<ScriptModuleDefinitionAstNode>().Where((v) => v.Name == name)).Scope;
   }
 }

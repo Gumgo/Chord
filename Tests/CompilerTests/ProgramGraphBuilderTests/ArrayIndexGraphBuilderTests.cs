@@ -25,7 +25,7 @@ public class ArrayIndexGraphBuilderTests
     var result = RunArrayIndexGraphBuilder(arrayNode, indexNode.Output, out _);
 
     Assert.NotNull(result);
-    Assert.NotNull(result.Node); // !!! can we change all the Debug.Asserts to Assert.NotNull?
+    Assert.NotNull(result.Node);
     Assert.IsType<NativeModuleCallProgramGraphNode>(result.Node.Processor);
   }
 
