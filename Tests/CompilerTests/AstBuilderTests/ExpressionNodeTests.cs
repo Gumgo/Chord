@@ -375,8 +375,12 @@ public class ExpressionNodeTests
   {
     Assert.NotNull(scope);
     var moduleDefinition = Assert.IsType<ScriptModuleDefinitionAstNode>(Assert.Single(scope.ScopeItems.OfType<INamedAstNode>().Where((v) => v.Name == "M")));
-    return scopeItemIndex == null
+    var sequentialEvaluationExpression = scopeItemIndex == null
       ? Assert.IsType<ExpressionStatementAstNode>(Assert.Single(moduleDefinition.Scope.ScopeItems)).Expression
       : Assert.IsType<ExpressionStatementAstNode>(moduleDefinition.Scope.ScopeItems[scopeItemIndex.Value]).Expression;
+
+    // All ExpressionStatementAstNode expressions are wrapped in a sequential evaluation expression so return the only entry. This is because assignment
+    // expressions actually do use multiple sequential evaluation entries but we're not testing any of those here.
+    return sequentialEvaluationExpression.Entries.Single().Expression;
   }
 }

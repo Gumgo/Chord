@@ -425,9 +425,9 @@ public class ExpressionGraphBuilderTests
 
     var context = ProgramGraphBuilderTestUtilities.CreateContext(out _);
     var expressionGraphBuilder = new ExpressionGraphBuilder(context);
-    var results = expressionGraphBuilder.BuildSequentialEvaluationExpression(_programVariantProperties, sequentialEvaluationAstNode, CreateScopeContext());
+    var result = expressionGraphBuilder.BuildSequentialEvaluationExpression(_programVariantProperties, sequentialEvaluationAstNode, CreateScopeContext());
 
-    var resultConstantNode = Assert.IsType<ConstantProgramGraphNode>(results.Result.Node?.Processor);
+    var resultConstantNode = Assert.IsType<ConstantProgramGraphNode>(result.Node?.Processor);
     Assert.Equal(1.0f, resultConstantNode.FloatValue);
   }
 

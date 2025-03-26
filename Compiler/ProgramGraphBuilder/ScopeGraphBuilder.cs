@@ -37,7 +37,7 @@ internal class ScopeGraphBuilder(ProgramGraphBuilderContext context)
             foreach (var ifBranch in conditional.IfBranches)
             {
               Debug.Assert(ifBranch.Condition != null);
-              var conditionResult = expressionBuilder.BuildExpression(programVariantProperties, ifBranch.Condition, scopeContext).Result;
+              var conditionResult = expressionBuilder.BuildExpression(programVariantProperties, ifBranch.Condition, scopeContext);
               if (conditionResult.Node == null
                 || !conditionResult.Node.DataType.IsConstantBool()
                 || conditionResult.Node.Processor is not ConstantProgramGraphNode constant)
@@ -77,16 +77,19 @@ internal class ScopeGraphBuilder(ProgramGraphBuilderContext context)
 
         case ExpressionStatementAstNode expressionStatement:
           {
-            var results = expressionBuilder.BuildExpression(programVariantProperties, expressionStatement.Expression, scopeContext);
-            if (expressionStatement.IsAssignment)
+            using var temporaryReferenceContext = new NodeValueTrackerTemporaryReferenceContext(scopeContext.NodeValueTracker);
+            var result = expressionBuilder.BuildSequentialEvaluationExpressionWithoutTemporaryReferenceContext(
+              programVariantProperties,
+              expressionStatement.Expression,
+              scopeContext);
+            if (expressionStatement.AssignmentTarget != null)
             {
               // If we got more than one result back it means this is an assignment expression and the first result is the assignment target. Note: this
               // assumption feels a bit hacky and it would be nice to find a less fragile feeling approach. The problem is that sequential evaluation nodes
               // don't allow temporary references to leave their scope and there's not a good way of allowing that behavior on a case-by-case basis.
-              var assignmentTarget = results.NamedResults[ExpressionStatementAstNode.AssignmentTargetResultName];
-              var node = results.NamedResults[ExpressionStatementAstNode.ExpressionResultName].Node;
-              Debug.Assert(node != null); // If we try to assign a void module call's result, that error should be caught in the AST builder
-              scopeContext.NodeValueTracker.AssignNode(assignmentTarget, node);
+              Debug.Assert(result.Node != null); // If we try to assign a void module call's result, that error should be caught in the AST builder
+              var assignmentTargetResult = scopeContext.NodeValueTracker.GetTemporaryReferenceResult(expressionStatement.AssignmentTarget);
+              scopeContext.NodeValueTracker.AssignNode(assignmentTargetResult, result.Node);
             }
 
             break;
@@ -99,13 +102,13 @@ internal class ScopeGraphBuilder(ProgramGraphBuilderContext context)
             {
               // If a loop value expression was provided, we'll get back its temporary reference. We need to track that temporary reference using this outer
               // scope so that it is available for assignment within the loop scope.
-              var loopValueResult = expressionBuilder.BuildExpression(programVariantProperties, forLoop.LoopValueExpression, scopeContext).Result;
+              var loopValueResult = expressionBuilder.BuildExpression(programVariantProperties, forLoop.LoopValueExpression, scopeContext);
 
               Debug.Assert(forLoop.LoopValueReference != null);
               scopeContext.NodeValueTracker.TrackTemporaryReference(forLoop.LoopValueReference, loopValueResult);
             }
 
-            var rangeResult = expressionBuilder.BuildExpression(programVariantProperties, forLoop.RangeExpression, scopeContext).Result;
+            var rangeResult = expressionBuilder.BuildExpression(programVariantProperties, forLoop.RangeExpression, scopeContext);
             if (rangeResult.Node == null || !rangeResult.Node.DataType.IsArray || rangeResult.Node.Processor is not ArrayProgramGraphNode array)
             {
               throw new InvalidOperationException("For loop range expression did not resolve to an array");
@@ -162,7 +165,7 @@ internal class ScopeGraphBuilder(ProgramGraphBuilderContext context)
             IOutputProgramGraphNode? node = null;
             if (returnStatement.ReturnExpression != null)
             {
-              node = expressionBuilder.BuildExpression(programVariantProperties, returnStatement.ReturnExpression, scopeContext).Result.Node;
+              node = expressionBuilder.BuildExpression(programVariantProperties, returnStatement.ReturnExpression, scopeContext).Node;
             }
 
             return (BuildScopeResult.Return, node);
@@ -173,7 +176,7 @@ internal class ScopeGraphBuilder(ProgramGraphBuilderContext context)
             IOutputProgramGraphNode? node = null;
             if (valueDefinition.AssignmentExpression != null)
             {
-              node = expressionBuilder.BuildExpression(programVariantProperties, valueDefinition.AssignmentExpression, scopeContext).Result.Node;
+              node = expressionBuilder.BuildExpression(programVariantProperties, valueDefinition.AssignmentExpression, scopeContext).Node;
             }
 
             scopeContext.NodeValueTracker.TrackValue(valueDefinition, node);

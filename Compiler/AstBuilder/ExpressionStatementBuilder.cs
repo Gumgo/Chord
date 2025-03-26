@@ -15,7 +15,11 @@ file static class ReportingExtensions
 internal class ExpressionStatementBuilder(AstBuilderContext context, DefaultValueExpressionResolver defaultValueExpressionResolver)
 {
   public static ExpressionStatementAstNode BuildExpressionStatement(ExpressionAstNode expression, ScopeAstNode scope)
-    => new(expression.SourceLocation, scope, expression, false);
+  {
+    var sequentialEvaluation = new SequentialEvaluationAstNode(expression.SourceLocation);
+    sequentialEvaluation.AddEntry(expression);
+    return new(expression.SourceLocation, scope, sequentialEvaluation, null);
+  }
 
   public ExpressionStatementAstNode BuildAssignmentExpressionStatement(
     SourceLocation sourceLocation,
@@ -30,11 +34,11 @@ internal class ExpressionStatementBuilder(AstBuilderContext context, DefaultValu
     //  (2) Evaluate the RHS, calling an operator if necessary and performing any necessary conversions, and grab a temporary reference to the result
     //  (3) If an operator call is invoked, use the LHS temporary reference so that the LHS isn't double-evaluated
     //  (4) Perform conversions to the LHS data type if necessary
-    //  (5) Perform the actual assignment using named results
+    //  (5) Perform the actual assignment using the LHS temporary reference as the target so that the LHS isn't double-evaluated
     var sequentialEvaluation = new SequentialEvaluationAstNode(sourceLocation);
 
     // Evaluate the LHS first and grab a temporary reference
-    var lhsReference = sequentialEvaluation.AddEntry(ExpressionStatementAstNode.AssignmentTargetResultName, assignmentTargetExpression);
+    var lhsReference = sequentialEvaluation.AddEntry(assignmentTargetExpression);
 
     var rhsExpression = expression;
     var operatorTokenType = assignmentTokenType.GetAssignmentOperatorTokenType();
@@ -73,13 +77,13 @@ internal class ExpressionStatementBuilder(AstBuilderContext context, DefaultValu
     }
 
     // Add the converted RHS last so that its type is the final expression's data type
-    sequentialEvaluation.AddEntry(ExpressionStatementAstNode.ExpressionResultName, rhsExpression);
+    sequentialEvaluation.AddEntry(rhsExpression);
 
     if (lhsReference.TryGetReferencedValueDefinition(out var valueDefinition))
     {
       scopeTracker.Assign(valueDefinition);
     }
 
-    return new(sourceLocation, scope, sequentialEvaluation, true);
+    return new(sourceLocation, scope, sequentialEvaluation, lhsReference);
   }
 }

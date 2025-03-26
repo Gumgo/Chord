@@ -144,7 +144,7 @@ public class NodeTests
 
       var moduleScope = GetModuleScope(result, "M");
       var expressionStatement = Assert.IsType<ExpressionStatementAstNode>(Assert.Single(moduleScope.ScopeItems));
-      Assert.False(expressionStatement.IsAssignment);
+      Assert.Null(expressionStatement.AssignmentTarget);
     }
 
     {
@@ -163,7 +163,7 @@ public class NodeTests
       var moduleScope = GetModuleScope(result, "M");
       Assert.Equal(2, moduleScope.ScopeItems.Count);
       var expressionStatement = Assert.IsType<ExpressionStatementAstNode>(moduleScope.ScopeItems[1]);
-      Assert.True(expressionStatement.IsAssignment);
+      Assert.NotNull(expressionStatement.AssignmentTarget);
     }
 
     {
@@ -182,7 +182,7 @@ public class NodeTests
       var moduleScope = GetModuleScope(result, "M");
       Assert.Equal(2, moduleScope.ScopeItems.Count);
       var expressionStatement = Assert.IsType<ExpressionStatementAstNode>(moduleScope.ScopeItems[1]);
-      Assert.True(expressionStatement.IsAssignment);
+      Assert.NotNull(expressionStatement.AssignmentTarget);
     }
   }
 

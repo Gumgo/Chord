@@ -1,10 +1,7 @@
-﻿using System.Diagnostics;
-
-namespace Compiler.Ast.Expression;
+﻿namespace Compiler.Ast.Expression;
 
 internal class SequentialEvaluationEntry
 {
-  public required string? Name { get; init; }
   public required ExpressionAstNode Expression { get; init; }
   public required TemporaryReferenceAstNode TemporaryReference { get; init; }
 }
@@ -24,15 +21,7 @@ internal class SequentialEvaluationAstNode(SourceLocation sourceLocation)
   public TemporaryReferenceAstNode AddEntry(ExpressionAstNode expression)
   {
     var temporaryReference = new TemporaryReferenceAstNode(expression);
-    _entries.Add(new() { Name = null, Expression = expression, TemporaryReference = temporaryReference });
-    return temporaryReference;
-  }
-
-  public TemporaryReferenceAstNode AddEntry(string name, ExpressionAstNode expression)
-  {
-    Debug.Assert(!_entries.Any((entry) => entry.Name == name));
-    var temporaryReference = new TemporaryReferenceAstNode(expression);
-    _entries.Add(new() { Name = name, Expression = expression, TemporaryReference = temporaryReference });
+    _entries.Add(new() { Expression = expression, TemporaryReference = temporaryReference });
     return temporaryReference;
   }
 }
