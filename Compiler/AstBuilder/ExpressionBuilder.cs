@@ -129,6 +129,9 @@ internal class ExpressionBuilder(AstBuilderContext context, DefaultValueExpressi
   // Special "field" on string types which accesses the string's length
   private const string StringLengthFieldName = "length";
 
+  // Special "field" on primitive types which accesses the primitive's latency
+  private const string PrimitiveLatencyFieldName = "latency";
+
   // This will build the expression and modify scope/scopeTracker with any values declared/assigned within the expression (via out module arguments). The
   // resulting BuildExpressionResult will contain two child branch trackers. These should be used in the appropriate branches if the expression is used as the
   // condition in a conditional statement but can be ignored otherwise.
@@ -253,9 +256,13 @@ internal class ExpressionBuilder(AstBuilderContext context, DefaultValueExpressi
           context.Reporting.ResolveAccessError(access, contextExpressionResult.Expression.DataType);
         }
       }
-      else if (contextExpressionResult.Expression.DataType.PrimitiveType == PrimitiveType.String)
+      else if (contextExpressionResult.Expression.DataType.PrimitiveType != null)
       {
-        if (access.Identifier == StringLengthFieldName)
+        if (access.Identifier == PrimitiveLatencyFieldName)
+        {
+          resultExpression = new PrimitiveLatencyAstNode(access.SourceLocation, contextExpressionResult.Expression);
+        }
+        else if (access.Identifier == StringLengthFieldName && contextExpressionResult.Expression.DataType.PrimitiveType == PrimitiveType.String)
         {
           resultExpression = new StringLengthAstNode(access.SourceLocation, contextExpressionResult.Expression);
         }

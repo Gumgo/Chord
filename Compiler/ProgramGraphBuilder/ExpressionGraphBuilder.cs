@@ -41,6 +41,7 @@ internal class ExpressionGraphBuilder(ProgramGraphBuilderContext context)
       LiteralAstNode literal => BuildLiteralExpression(literal),
       ModuleCallAstNode moduleCall => BuildModuleCallExpression(programVariantProperties, moduleCall, scopeContext),
       PlaceholderAstNode placeholder => throw new InvalidOperationException($"{nameof(PlaceholderAstNode)} should not occur within an expression"),
+      PrimitiveLatencyAstNode primitiveLatency => BuildPrimitiveLatencyExpression(programVariantProperties, primitiveLatency, scopeContext),
       ReferenceAstNode reference => BuildReferenceExpression(reference, scopeContext),
       SequentialEvaluationAstNode sequentialEvaluation => BuildSequentialEvaluationExpression(programVariantProperties, sequentialEvaluation, scopeContext),
       StringLengthAstNode stringLength => BuildStringLengthExpression(programVariantProperties, stringLength, scopeContext),
@@ -324,6 +325,18 @@ internal class ExpressionGraphBuilder(ProgramGraphBuilderContext context)
     }
 
     return new() { Node = returnValueNode, ValueDefinition = null, ReferenceNodes = [] };
+  }
+
+  protected internal BuildGraphExpressionResult BuildPrimitiveLatencyExpression(
+    ProgramVariantProperties programVariantProperties,
+    PrimitiveLatencyAstNode primitiveLatency,
+    ProgramGraphScopeContext scopeContext)
+  {
+    var primitiveResult = BuildExpression(programVariantProperties, primitiveLatency.Expression, scopeContext);
+    Debug.Assert(primitiveResult.Node != null);
+    var latencyValue = primitiveResult.Node.Latency;
+    var node = new ConstantProgramGraphNode(latencyValue).Output;
+    return new() { Node = node, ValueDefinition = null, ReferenceNodes = [] };
   }
 
   protected internal BuildGraphExpressionResult BuildSequentialEvaluationExpression(

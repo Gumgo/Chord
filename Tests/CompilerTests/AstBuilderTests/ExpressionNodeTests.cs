@@ -279,6 +279,17 @@ public class ExpressionNodeTests
   }
 
   [Fact]
+  public void PrimitiveLatency()
+  {
+    AstBuilderTestUtilities.RunAstBuilder(WrapExpression("(1.0f).latency"), out var result, out var errorIdentifiers);
+    Assert.Empty(errorIdentifiers);
+
+    var expression = GetExpression(result);
+    var node = Assert.IsType<PrimitiveLatencyAstNode>(expression);
+    Assert.Equal(new AstDataType(RuntimeMutability.Constant, PrimitiveType.Int, 1, false), node.DataType);
+  }
+
+  [Fact]
   public void Reference()
   {
     AstBuilderTestUtilities.RunAstBuilder("module M(): void { val x = 0.0f; x; }", out var result, out var errorIdentifiers);

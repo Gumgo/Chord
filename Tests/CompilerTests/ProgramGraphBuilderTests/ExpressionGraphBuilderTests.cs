@@ -394,6 +394,22 @@ public class ExpressionGraphBuilderTests
   }
 
   [Fact]
+  public void BuildPrimitiveLatencyExpression()
+  {
+    var primitiveLatencyAstNode = new PrimitiveLatencyAstNode(
+      _sourceLocation,
+      new LiteralAstNode(_sourceLocation, 1.0f));
+
+    var context = ProgramGraphBuilderTestUtilities.CreateContext(out _);
+    var expressionGraphBuilder = new ExpressionGraphBuilder(context);
+    var result = expressionGraphBuilder.BuildPrimitiveLatencyExpression(_programVariantProperties, primitiveLatencyAstNode, CreateScopeContext());
+
+    Assert.NotNull(result.Node);
+    var resultConstantNode = Assert.IsType<ConstantProgramGraphNode>(result.Node.Processor);
+    Assert.Equal(0, resultConstantNode.IntValue);
+  }
+
+  [Fact]
   public void BuildReferenceExpression()
   {
     var valueDefinitionAstNode = new ValueDefinitionAstNode(
