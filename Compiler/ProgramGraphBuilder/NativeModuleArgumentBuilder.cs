@@ -11,13 +11,13 @@ internal static class NativeModuleArgumentBuilder
   public static IReadOnlyList<NativeModuleArgument> BuildArguments(NativeModule nativeModule, IReadOnlyList<IOutputProgramGraphNode> inputArguments)
   {
     var results = new List<NativeModuleArgument>();
+    var inputArgumentIndex = 0;
     foreach (var parameter in nativeModule.Signature.Parameters)
     {
       // Native modules only accept primitive types
       Debug.Assert(parameter.DataType.PrimitiveType != null);
       var isConst = parameter.DataType.RuntimeMutability == RuntimeMutability.Constant;
 
-      var inputArgumentIndex = 0;
       switch (parameter.Direction)
       {
         case ModuleParameterDirection.In:

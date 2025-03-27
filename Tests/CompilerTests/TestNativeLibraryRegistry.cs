@@ -144,10 +144,10 @@ internal sealed class TestNativeLibraryRegistry : INativeLibraryRegistry, INativ
         CreateUncallableFunction(CoreNativeLibrary.DelayInt),
         CreateUncallableFunction(CoreNativeLibrary.DelayBool),
 
-        CreateUncallableFunction(CoreNativeLibrary.AddLatencyFloat),
-        CreateUncallableFunction(CoreNativeLibrary.AddLatencyDouble),
-        CreateUncallableFunction(CoreNativeLibrary.AddLatencyInt),
-        CreateUncallableFunction(CoreNativeLibrary.AddLatencyBool),
+        CreateUncallableFunction(CoreNativeLibrary.AddLatencyFloat, (arguments) => arguments[1].IntConstantIn),
+        CreateUncallableFunction(CoreNativeLibrary.AddLatencyDouble, (arguments) => arguments[1].IntConstantIn),
+        CreateUncallableFunction(CoreNativeLibrary.AddLatencyInt, (arguments) => arguments[1].IntConstantIn),
+        CreateUncallableFunction(CoreNativeLibrary.AddLatencyBool, (arguments) => arguments[1].IntConstantIn),
       ],
     };
 
@@ -193,7 +193,8 @@ internal sealed class TestNativeLibraryRegistry : INativeLibraryRegistry, INativ
   private NativeModule CreateSimpleFunction(
     NativeModuleSignature nativeModuleSignature,
     Action<IReadOnlyList<NativeModuleArgument>> function,
-    bool compileTimeOnly = false)
+    bool compileTimeOnly = false,
+    Func<IReadOnlyList<NativeModuleArgument>, int>? queryLatencyFunction = null)
   {
     // Just construct some unique deterministic GUID, its contents don't matter
     var idBytes = new byte[16];
@@ -204,9 +205,9 @@ internal sealed class TestNativeLibraryRegistry : INativeLibraryRegistry, INativ
     writer.Write(_nextNativeModuleId);
     _nextNativeModuleId++;
 
-    static bool Prepare(NativeModuleContext context, IReadOnlyList<NativeModuleArgument> arguments, out int latency)
+    bool Prepare(NativeModuleContext context, IReadOnlyList<NativeModuleArgument> arguments, out int latency)
     {
-      latency = 0;
+      latency = queryLatencyFunction?.Invoke(arguments) ?? 0;
       return true;
     }
 
@@ -264,11 +265,14 @@ internal sealed class TestNativeLibraryRegistry : INativeLibraryRegistry, INativ
     };
   }
 
-  private NativeModule CreateUncallableFunction(NativeModuleSignature nativeModuleSignature)
+  private NativeModule CreateUncallableFunction(
+    NativeModuleSignature nativeModuleSignature,
+    Func<IReadOnlyList<NativeModuleArgument>, int>? queryLatencyFunction = null)
     => CreateSimpleFunction(
       nativeModuleSignature,
       (arguments) => throw new InvalidOperationException("This should not be called at compile time"),
-      compileTimeOnly: false);
+      compileTimeOnly: false,
+      queryLatencyFunction: queryLatencyFunction);
 
   private NativeModule CreateSimpleFunction(NativeModuleSignature nativeModuleSignature, Func<float, float> function)
     => CreateSimpleFunction(

@@ -7,15 +7,19 @@ internal static class CoreNativeLibrary
 {
   // Declare these up-front for convenience
   private static readonly AstDataType _float = new(RuntimeMutability.DependentConstant, PrimitiveType.Float, 1, false);
+  private static readonly AstDataType _varFloat = new(RuntimeMutability.Variable, PrimitiveType.Float, 1, false);
   private static readonly AstDataType _constFloat = new(RuntimeMutability.Constant, PrimitiveType.Float, 1, false);
   private static readonly AstDataType _floatArray = new(RuntimeMutability.DependentConstant, PrimitiveType.Float, 1, true);
   private static readonly AstDataType _double = new(RuntimeMutability.DependentConstant, PrimitiveType.Double, 1, false);
+  private static readonly AstDataType _varDouble = new(RuntimeMutability.Variable, PrimitiveType.Double, 1, false);
   private static readonly AstDataType _constDouble = new(RuntimeMutability.Constant, PrimitiveType.Double, 1, false);
   private static readonly AstDataType _doubleArray = new(RuntimeMutability.DependentConstant, PrimitiveType.Double, 1, true);
   private static readonly AstDataType _int = new(RuntimeMutability.DependentConstant, PrimitiveType.Int, 1, false);
+  private static readonly AstDataType _varInt = new(RuntimeMutability.Variable, PrimitiveType.Int, 1, false);
   private static readonly AstDataType _constInt = new(RuntimeMutability.Constant, PrimitiveType.Int, 1, false);
   private static readonly AstDataType _intArray = new(RuntimeMutability.DependentConstant, PrimitiveType.Int, 1, true);
   private static readonly AstDataType _bool = new(RuntimeMutability.DependentConstant, PrimitiveType.Bool, 1, false);
+  private static readonly AstDataType _varBool = new(RuntimeMutability.Variable, PrimitiveType.Bool, 1, false);
   private static readonly AstDataType _constBool = new(RuntimeMutability.Constant, PrimitiveType.Bool, 1, false);
   private static readonly AstDataType _boolArray = new(RuntimeMutability.DependentConstant, PrimitiveType.Bool, 1, true);
   private static readonly AstDataType _constString = new(RuntimeMutability.Constant, PrimitiveType.String, 1, false);
@@ -138,15 +142,20 @@ internal static class CoreNativeLibrary
   public static readonly NativeModuleSignature ConvertIntFloat = new("as float", 1, In("x", _int), Out("result", _float));
   public static readonly NativeModuleSignature ConvertIntDouble = new("as double", 1, In("x", _int), Out("result", _double));
 
-  public static readonly NativeModuleSignature DelayFloat = new("Delay", 2, In("x", _float), In("samples", _constInt), Out("result", _float));
-  public static readonly NativeModuleSignature DelayDouble = new("Delay", 2, In("x", _double), In("samples", _constInt), Out("result", _double));
-  public static readonly NativeModuleSignature DelayInt = new("Delay", 2, In("x", _int), In("samples", _constInt), Out("result", _int));
-  public static readonly NativeModuleSignature DelayBool = new("Delay", 2, In("x", _bool), In("samples", _constInt), Out("result", _bool));
+  public static readonly NativeModuleSignature DelayFloat = new("Delay", 2, In("x", _varFloat), In("samples", _constInt), Out("result", _varFloat));
+  public static readonly NativeModuleSignature DelayDouble = new("Delay", 2, In("x", _varDouble), In("samples", _constInt), Out("result", _varDouble));
+  public static readonly NativeModuleSignature DelayInt = new("Delay", 2, In("x", _varInt), In("samples", _constInt), Out("result", _varInt));
+  public static readonly NativeModuleSignature DelayBool = new("Delay", 2, In("x", _varBool), In("samples", _constInt), Out("result", _varBool));
 
-  public static readonly NativeModuleSignature AddLatencyFloat = new("AddLatency", 2, In("x", _float), In("samples", _constInt), Out("result", _float));
-  public static readonly NativeModuleSignature AddLatencyDouble = new("AddLatency", 2, In("x", _double), In("samples", _constInt), Out("result", _double));
-  public static readonly NativeModuleSignature AddLatencyInt = new("AddLatency", 2, In("x", _int), In("samples", _constInt), Out("result", _int));
-  public static readonly NativeModuleSignature AddLatencyBool = new("AddLatency", 2, In("x", _bool), In("samples", _constInt), Out("result", _bool));
+  public static readonly NativeModuleSignature AddLatencyFloat = new("AddLatency", 2, In("x", _varFloat), In("samples", _constInt), Out("result", _varFloat));
+  public static readonly NativeModuleSignature AddLatencyDouble = new(
+    "AddLatency",
+    2,
+    In("x", _varDouble),
+    In("samples", _constInt),
+    Out("result", _varDouble));
+  public static readonly NativeModuleSignature AddLatencyInt = new("AddLatency", 2, In("x", _varInt), In("samples", _constInt), Out("result", _varInt));
+  public static readonly NativeModuleSignature AddLatencyBool = new("AddLatency", 2, In("x", _varBool), In("samples", _constInt), Out("result", _varBool));
 #pragma warning restore SA1202 // Elements should be ordered by access
 
   private static NativeModuleParameter In(string name, AstDataType dataType)

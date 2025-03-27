@@ -449,7 +449,7 @@ public class ProgramBuilder(ProgramBuilderContext context)
       .ToArray();
 
     var latencyAligner = new LatencyAligner(programGraphBuilderContext);
-    var latencyAlignedOutputArguments = latencyAligner.AlignLatencies(programVariantProperties, outputArgumentEntries, 1);
+    var latencyAlignedOutputArguments = latencyAligner.AlignLatencies(programVariantProperties, outputArgumentEntries, [1]);
 
     int? outputLatency = null;
     var latencyAlignedOutputArgumentEntries = entryPoint.ModuleDefinition.Parameters

@@ -58,7 +58,7 @@ internal class ModuleCallGraphBuilder(ProgramGraphBuilderContext context)
 
     var inputParameterIndex = 0;
     var outputParameterIndex = 0;
-    var upsampleFactors = new HashSet<int>() { moduleCallUpsampleFactor };
+    var additionalUpsampleFactors = new HashSet<int>() { moduleCallUpsampleFactor };
     var inputArgumentsRequiringLatencyAlignment = new List<LatencyAligner.AlignLatenciesInput>();
     foreach (var parameter in moduleDefinition.Parameters)
     {
@@ -81,7 +81,7 @@ internal class ModuleCallGraphBuilder(ProgramGraphBuilderContext context)
           throw new BuildProgramException();
         }
 
-        upsampleFactors.Add(argumentUpsampleFactor);
+        additionalUpsampleFactors.Add(argumentUpsampleFactor);
       }
       else if (parameter.Direction == ModuleParameterDirection.In)
       {
@@ -108,12 +108,12 @@ internal class ModuleCallGraphBuilder(ProgramGraphBuilderContext context)
       }
     }
 
-    // Now determine a common upsample factor used to align all latency sample counts
-    var commonUpsampleFactor = LeastCommonMultiple.Calculate(upsampleFactors);
-
     // Align input latencies
     var latencyAligner = new LatencyAligner(context);
-    var latencyAlignedInputArguments = latencyAligner.AlignLatencies(programVariantProperties, inputArgumentsRequiringLatencyAlignment, commonUpsampleFactor);
+    var latencyAlignedInputArguments = latencyAligner.AlignLatencies(
+      programVariantProperties,
+      inputArgumentsRequiringLatencyAlignment,
+      additionalUpsampleFactors);
 
     // Add a node with the latency-aligned input arguments
     var nativeModuleCallNode = new NativeModuleCallProgramGraphNode(

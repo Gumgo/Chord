@@ -11,8 +11,17 @@ internal class LatencyAligner(ProgramGraphBuilderContext context)
   public IReadOnlyList<IOutputProgramGraphNode> AlignLatencies(
     ProgramVariantProperties programVariantProperties,
     IReadOnlyList<AlignLatenciesInput> inputs,
-    int commonUpsampleFactor)
+    IEnumerable<int> additionalUpsampleFactors)
   {
+    var allUpsampleFactors = new HashSet<int>(
+      inputs.Where((input) => input.AlignLatency).Select((input) => input.UpsampleFactor).Concat(additionalUpsampleFactors));
+    var (alignmentUpsampleFactor, commonUpsampleFactor) = allUpsampleFactors.Count > 0
+      ? (GreatestCommonDivisor.Calculate(allUpsampleFactors), LeastCommonMultiple.Calculate(allUpsampleFactors))
+      : (1, 1);
+
+    Debug.Assert(commonUpsampleFactor % alignmentUpsampleFactor == 0);
+    var commonUpsampleFactorAlignment = commonUpsampleFactor / alignmentUpsampleFactor;
+
     // Determine latencies of input values in terms of the common upsample factor
     long maxCommonInputLatency = 0;
     foreach (var input in inputs)
@@ -39,11 +48,11 @@ internal class LatencyAligner(ProgramGraphBuilderContext context)
       }
     }
 
-    // Now, align the max common latency to the next common upsample factor multiple so that we can safely divide by each argument's upsample factor to get
+    // Now, align the max common latency to the next alignment upsample factor multiple so that we can safely divide by each argument's upsample factor to get
     // final aligned latency in terms of each argument's upsample factor
     if (maxCommonInputLatency != 0)
     {
-      maxCommonInputLatency = ((maxCommonInputLatency + commonUpsampleFactor - 1) / maxCommonInputLatency) * maxCommonInputLatency;
+      maxCommonInputLatency = ((maxCommonInputLatency + commonUpsampleFactorAlignment - 1) / commonUpsampleFactorAlignment) * commonUpsampleFactorAlignment;
     }
 
     // Add latency to each node as necessary
@@ -59,8 +68,9 @@ internal class LatencyAligner(ProgramGraphBuilderContext context)
           // Determine if this argument needs additional latency
           // $TODO it's unfortunate that constants will still get delayed if they're being piped into non-const inputs. We could potentially add a scope
           // attribute like { [[IgnoreConstLatency(true)]] ... } or something similar to allow the user to control this behavior.
-          Debug.Assert(maxCommonInputLatency % input.UpsampleFactor == 0);
-          var alignedLatency = maxCommonInputLatency / input.UpsampleFactor;
+          var latencyMultiplier = commonUpsampleFactor / input.UpsampleFactor;
+          Debug.Assert(maxCommonInputLatency % latencyMultiplier == 0);
+          var alignedLatency = maxCommonInputLatency / latencyMultiplier;
 
           if (input.Node.Processor is ArrayProgramGraphNode array)
           {

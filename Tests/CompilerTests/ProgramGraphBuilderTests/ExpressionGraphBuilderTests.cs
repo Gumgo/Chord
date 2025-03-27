@@ -1,8 +1,6 @@
 ﻿using Compiler;
 using Compiler.Ast;
 using Compiler.Ast.Expression;
-using Compiler.AstBuilder;
-using Compiler.Parser.Nodes;
 using Compiler.Program.ProgramGraphNodes;
 using Compiler.ProgramGraphBuilder;
 using Compiler.Types;
