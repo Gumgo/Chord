@@ -114,61 +114,67 @@ typedef struct
   size_t m_count;
 } InputStringConstantArray;
 
+// For buffer argument types, when native module callbacks are invoked at compile time (Prepare, InitializeVoice, Invoke, etc.), a m_pSamples will contain a
+// constant value if the argument value is a compile-time constant. Otherwise, m_pSamples will be null.
+
 typedef struct
 {
   int32_t m_sampleCount;
   bool m_isConstant;
-  const float* m_samples;
+  const float* m_pSamples;
 } InputFloatBuffer;
 
 typedef struct
 {
   int32_t m_sampleCount;
   bool m_isConstant;
-  const double* m_samples;
+  const double* m_pSamples;
 } InputDoubleBuffer;
 
 typedef struct
 {
   int32_t m_sampleCount;
   bool m_isConstant;
-  const int32_t* m_samples;
+  const int32_t* m_pSamples;
 } InputIntBuffer;
 
 typedef struct
 {
   int32_t m_sampleCount;
   bool m_isConstant;
-  const int32_t* m_samples;
+  const int32_t* m_pSamples;
 } InputBoolBuffer;
 
 typedef struct
 {
   int32_t m_sampleCount;
   bool m_isConstant;
-  float* m_samples;
+  float* m_pSamples;
 } OutputFloatBuffer;
 
 typedef struct
 {
   int32_t m_sampleCount;
   bool m_isConstant;
-  double* m_samples;
+  double* m_pSamples;
 } OutputDoubleBuffer;
 
 typedef struct
 {
   int32_t m_sampleCount;
   bool m_isConstant;
-  int32_t* m_samples;
+  int32_t* m_pSamples;
 } OutputIntBuffer;
 
 typedef struct
 {
   int32_t m_sampleCount;
   bool m_isConstant;
-  int32_t* m_samples;
+  int32_t* m_pSamples;
 } OutputBoolBuffer;
+
+// For buffer array argument types, when native module callbacks are invoked at compile time (Prepare, InitializeVoice, Invoke, etc.), the m_pSamples field of
+// each element will contain constant value if the element value is a compile-time constant. Otherwise, m_pSamples will be null for that element.
 
 typedef struct
 {

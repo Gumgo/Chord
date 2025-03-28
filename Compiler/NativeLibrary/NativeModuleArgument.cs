@@ -212,6 +212,7 @@ internal class NativeModuleArgument(NativeModuleArgumentType argumentType)
   }
 
   private T? GetNullableValue<T>(NativeModuleArgumentType expectedArgumentType)
+    where T : struct
   {
     Debug.Assert(expectedArgumentType == argumentType);
     return (T?)_value;

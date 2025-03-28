@@ -5,8 +5,9 @@ namespace Tests.CompilerTests.ProgramGraphBuilderTests;
 
 internal class TestProcessorProgramGraphNode : IProcessorProgramGraphNode
 {
-  public TestProcessorProgramGraphNode(int upsampleFactor, int latency)
-    => Output = new OutputProgramGraphNode(this, new(PrimitiveType.Float, upsampleFactor, false), latency);
+  // For convenience, we default to a float in cases where we just need a non-constant value node
+  public TestProcessorProgramGraphNode(int upsampleFactor, int latency, PrimitiveType primitiveType = PrimitiveType.Float)
+    => Output = new OutputProgramGraphNode(this, new(primitiveType, upsampleFactor, false), latency);
 
   public IOutputProgramGraphNode Output { get; }
 }
