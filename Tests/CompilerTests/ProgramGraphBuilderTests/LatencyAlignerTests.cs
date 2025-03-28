@@ -1,8 +1,5 @@
 ﻿using Compiler;
-using Compiler.Program.ProgramGraphNodes;
 using Compiler.ProgramGraphBuilder;
-using Compiler.Types;
-using Compiler.Utilities;
 
 namespace Tests.CompilerTests.ProgramGraphBuilderTests;
 
@@ -18,8 +15,8 @@ public class LatencyAlignerTests
   [InlineData(2, 10)]
   public void NoLatency(int upsampleFactor, int latency)
   {
-    var nodeA = new LatencyTestNode(upsampleFactor, latency);
-    var nodeB = new LatencyTestNode(upsampleFactor, latency);
+    var nodeA = new TestProcessorProgramGraphNode(upsampleFactor, latency);
+    var nodeB = new TestProcessorProgramGraphNode(upsampleFactor, latency);
 
     var latencyAligner = new LatencyAligner(ProgramGraphBuilderTestUtilities.CreateContext(out _));
     var outputNodes = latencyAligner.AlignLatencies(
@@ -42,8 +39,8 @@ public class LatencyAlignerTests
   [Fact]
   public void SameUpsampleFactor()
   {
-    var nodeA = new LatencyTestNode(1, 0);
-    var nodeB = new LatencyTestNode(1, 10);
+    var nodeA = new TestProcessorProgramGraphNode(1, 0);
+    var nodeB = new TestProcessorProgramGraphNode(1, 10);
 
     var latencyAligner = new LatencyAligner(ProgramGraphBuilderTestUtilities.CreateContext(out _));
     var outputNodes = latencyAligner.AlignLatencies(
@@ -67,8 +64,8 @@ public class LatencyAlignerTests
   [Fact]
   public void DifferentUpsampleFactors()
   {
-    var nodeA = new LatencyTestNode(2, 1);
-    var nodeB = new LatencyTestNode(5, 2);
+    var nodeA = new TestProcessorProgramGraphNode(2, 1);
+    var nodeB = new TestProcessorProgramGraphNode(5, 2);
 
     var latencyAligner = new LatencyAligner(ProgramGraphBuilderTestUtilities.CreateContext(out _));
     var outputNodes = latencyAligner.AlignLatencies(
@@ -91,9 +88,9 @@ public class LatencyAlignerTests
   [Fact]
   public void SkipInput()
   {
-    var nodeA = new LatencyTestNode(1, 0);
-    var nodeB = new LatencyTestNode(1, 10);
-    var nodeC = new LatencyTestNode(1, 0);
+    var nodeA = new TestProcessorProgramGraphNode(1, 0);
+    var nodeB = new TestProcessorProgramGraphNode(1, 10);
+    var nodeC = new TestProcessorProgramGraphNode(1, 0);
 
     var latencyAligner = new LatencyAligner(ProgramGraphBuilderTestUtilities.CreateContext(out _));
     var outputNodes = latencyAligner.AlignLatencies(
@@ -114,12 +111,4 @@ public class LatencyAlignerTests
     Assert.Equal(nodeB.Output, outputNodes[1]);
     Assert.Equal(nodeC.Output, outputNodes[2]);
   }
-}
-
-file class LatencyTestNode : IProcessorProgramGraphNode
-{
-  public LatencyTestNode(int upsampleFactor, int latency)
-    => Output = new OutputProgramGraphNode(this, new(PrimitiveType.Float, upsampleFactor, false), latency);
-
-  public IOutputProgramGraphNode Output { get; }
 }

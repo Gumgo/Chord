@@ -101,11 +101,14 @@ internal class NativeModuleCallProgramGraphNode : IProcessorProgramGraphNode
           return new OutputProgramGraphNode(this, new(parameter.DataType.PrimitiveType.Value, parameterUpsampleFactor, false), parameterOutputLatency);
         })
       .ToArray();
+
+    UpsampleFactor = upsampleFactor;
   }
 
   public NativeModule NativeModule { get; }
   public IReadOnlyList<IInputProgramGraphNode> Inputs { get; }
   public IReadOnlyList<IOutputProgramGraphNode> Outputs { get; }
+  public int UpsampleFactor { get; }
 
   private static bool IsInputArgumentCompatible(int upsampleFactor, AstDataType parameterDataType, ProgramDataType argumentDataType)
   {

@@ -1,6 +1,5 @@
 ﻿using Compiler;
 using Compiler.ProgramGraphBuilder;
-using System.Diagnostics;
 using CompilerNamespace = Compiler;
 
 namespace Tests.CompilerTests.ProgramGraphBuilderTests;
