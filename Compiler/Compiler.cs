@@ -238,6 +238,7 @@ public class Compiler(CompilerContext context)
   }
 }
 
+// !!! move all these file scope reporting extension classes to the end of each file for consistency
 file static class ReportingExtensions
 {
   public static void ResolveSourceFilePathError(this IReporting reporting, string sourceFilePath)

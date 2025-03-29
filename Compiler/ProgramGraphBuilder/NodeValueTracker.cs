@@ -1,6 +1,5 @@
 ﻿using Compiler.Ast;
 using Compiler.Program.ProgramGraphNodes;
-using Compiler.Utilities;
 using System.Diagnostics;
 
 namespace Compiler.ProgramGraphBuilder;
