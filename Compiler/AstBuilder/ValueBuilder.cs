@@ -42,34 +42,35 @@ file static class ReportingExtensions
 
 internal class ValueBuilder(AstBuilderContext context, DefaultValueExpressionResolver defaultValueExpressionResolver)
 {
-  public void BuildGlobalValues(SourceFile sourceFile)
+  public void BuildGlobalValues(SourceFile sourceFile, IReadOnlyDictionary<ValueDefinitionAstNode, ValueDefinitionParseTreeNode> valueDefinitionNodeMappings)
   {
     Debug.Assert(sourceFile.Ast != null);
 
     var valueDefinitions = sourceFile.Ast.ScopeItems.OfType<ValueDefinitionAstNode>().Where((scopeItem) => scopeItem.IsDefinedInFile(sourceFile.Path));
     foreach (var valueDefinition in valueDefinitions)
     {
-      BuildGlobalValue(valueDefinition);
+      BuildGlobalValue(valueDefinition, valueDefinitionNodeMappings[valueDefinition]);
     }
   }
 
-  public void BuildGlobalValueExpressions(SourceFile sourceFile)
+  public void BuildGlobalValueExpressions(
+    SourceFile sourceFile,
+    IReadOnlyDictionary<ValueDefinitionAstNode, ValueDefinitionParseTreeNode> valueDefinitionNodeMappings)
   {
     Debug.Assert(sourceFile.Ast != null);
 
     var valueDefinitions = sourceFile.Ast.ScopeItems.OfType<ValueDefinitionAstNode>().Where((scopeItem) => scopeItem.IsDefinedInFile(sourceFile.Path));
     foreach (var valueDefinition in valueDefinitions)
     {
-      BuildGlobalValueExpression(valueDefinition);
+      BuildGlobalValueExpression(valueDefinition, valueDefinitionNodeMappings[valueDefinition]);
     }
   }
 
   public ValueDefinitionAstNode BuildValue(ValueDefinitionParseTreeNode valueDefinition, ScopeAstNode scope, ScopeTracker scopeTracker)
   {
-    var valueDefinitionAstNode = new ValueDefinitionAstNode(valueDefinition.SourceLocation, scope, valueDefinition.Value.Name)
-    {
-      ParseTreeNode = valueDefinition,
-    };
+    // Note: we need to perform multiple passes over global value definitions which is why we need to track the AST node -> parse tree node mappings (via
+    // valueDefinitionNodeMappings), but since local value definitions are processed in one pass, we don't need to add to this mapping here
+    var valueDefinitionAstNode = new ValueDefinitionAstNode(valueDefinition.SourceLocation, scope, valueDefinition.Value.Name);
 
     var dataType = GetValueDataType(valueDefinition.Value, scope);
 
@@ -138,25 +139,22 @@ internal class ValueBuilder(AstBuilderContext context, DefaultValueExpressionRes
     return dataType;
   }
 
-  private void BuildGlobalValue(ValueDefinitionAstNode valueDefinition)
+  private void BuildGlobalValue(ValueDefinitionAstNode valueDefinition, ValueDefinitionParseTreeNode valueDefinitionParseTreeNode)
   {
-    // This is null if this value definition comes from a parameter which should never be the case for global values
-    Debug.Assert(valueDefinition.ParseTreeNode != null);
-
     AstDataType dataType;
-    if (valueDefinition.ParseTreeNode.Value.DataType == null)
+    if (valueDefinitionParseTreeNode.Value.DataType == null)
     {
       context.Reporting.GlobalValueMissingDataTypeError(valueDefinition);
       dataType = AstDataType.Error();
     }
     else
     {
-      dataType = valueDefinition.ParseTreeNode.Value.DataType.ToAstDataType(valueDefinition.ContainingScope, context.Reporting);
+      dataType = valueDefinitionParseTreeNode.Value.DataType.ToAstDataType(valueDefinition.ContainingScope, context.Reporting);
     }
 
     if (!dataType.IsLegalValueType())
     {
-      context.Reporting.IllegalDataTypeError(valueDefinition.ParseTreeNode.Value, isGlobal: true);
+      context.Reporting.IllegalDataTypeError(valueDefinitionParseTreeNode.Value, isGlobal: true);
       dataType = AstDataType.Error();
     }
     else if (!dataType.IsError && dataType.RuntimeMutability != RuntimeMutability.Constant)
@@ -168,13 +166,10 @@ internal class ValueBuilder(AstBuilderContext context, DefaultValueExpressionRes
     valueDefinition.InitializeDataType(dataType);
   }
 
-  private void BuildGlobalValueExpression(ValueDefinitionAstNode valueDefinition)
+  private void BuildGlobalValueExpression(ValueDefinitionAstNode valueDefinition, ValueDefinitionParseTreeNode valueDefinitionParseTreeNode)
   {
-    // This is null if this value definition comes from a parameter which should never be the case for global values
-    Debug.Assert(valueDefinition.ParseTreeNode != null);
-
     ExpressionAstNode? assignmentExpression;
-    if (valueDefinition.ParseTreeNode.AssignmentExpression == null)
+    if (valueDefinitionParseTreeNode.AssignmentExpression == null)
     {
       context.Reporting.GlobalValueMissingInitializationExpressionError(valueDefinition);
       assignmentExpression = null;
@@ -185,7 +180,7 @@ internal class ValueBuilder(AstBuilderContext context, DefaultValueExpressionRes
       var scopeTracker = new ScopeTracker(scope);
       var expressionBuilder = new ExpressionBuilder(context, defaultValueExpressionResolver);
       assignmentExpression = ValidateAndConvertAssignmentExpression(
-        expressionBuilder.BuildExpression(valueDefinition.ParseTreeNode.AssignmentExpression, scope, scopeTracker).Expression,
+        expressionBuilder.BuildExpression(valueDefinitionParseTreeNode.AssignmentExpression, scope, scopeTracker).Expression,
         valueDefinition.DataType,
         scope,
         scopeTracker);

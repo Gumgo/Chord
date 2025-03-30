@@ -356,16 +356,11 @@ public class AstDataTypeTests
 
   private static NamedStructDefinitionAstNode CreateNamedStructDefinition()
   {
-    var reporting = new Reporting();
-    var lexerContext = new LexerContext() { Reporting = reporting };
-    var lexer = new Lexer(lexerContext);
-    var tokens = lexer.Process("test", [.."struct S { }".EnumerateRunes()]);
-    Assert.NotNull(tokens);
-
-    var parserContext = new ParserContext() { Reporting = reporting };
-    var parseTreeNode = StructDefinitionParseTreeNode.Parse(parserContext, new("test", tokens));
-
-    var result = new NamedStructDefinitionAstNode(parseTreeNode, new ScopeAstNode(SourceLocation.FromFile("test"), null, null), false);
+    var result = new NamedStructDefinitionAstNode(
+      SourceLocation.FromFile("test"),
+      new ScopeAstNode(SourceLocation.FromFile("test"), null, null),
+      "S",
+      false);
     result.InitializeBaseTypes();
     result.InitializeFields();
     return result;

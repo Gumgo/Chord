@@ -33,11 +33,11 @@ file static class ReportingExtensions
       parameter.SourceLocation,
       $"Module '{moduleDefinition.Name}' parameter '{parameter.Name}' type '{parameter.DataType.ToLanguageString()}' is not a legal parameter type");
 
-  public static void IllegalReturnTypeError(this IReporting reporting, ScriptModuleDefinitionAstNode moduleDefinition)
+  public static void IllegalReturnTypeError(this IReporting reporting, ModuleDefinitionParseTreeNode moduleDefinition)
     => reporting.Error(
       "IllegalReturnType",
       moduleDefinition.SourceLocation,
-      $"Module '{moduleDefinition.Name}' return type '{moduleDefinition.ParseTreeNode.ReturnDataType.ToLanguageString()}' is not a legal return type");
+      $"Module '{moduleDefinition.Name}' return type '{moduleDefinition.ReturnDataType.ToLanguageString()}' is not a legal return type");
 
   public static void OutParameterHasDefaultExpressionError(
     this IReporting reporting,
@@ -74,7 +74,9 @@ file static class ReportingExtensions
 
 internal class ModuleBuilder(AstBuilderContext context, DefaultValueExpressionResolver defaultValueExpressionResolver)
 {
-  public void BuildModuleSignatures(SourceFile sourceFile)
+  public void BuildModuleSignatures(
+    SourceFile sourceFile,
+    IReadOnlyDictionary<ScriptModuleDefinitionAstNode, ModuleDefinitionParseTreeNode> moduleDefinitionNodeMappings)
   {
     Debug.Assert(sourceFile.Ast != null);
 
@@ -83,11 +85,13 @@ internal class ModuleBuilder(AstBuilderContext context, DefaultValueExpressionRe
       .Where((scopeItem) => scopeItem.IsDefinedInFile(sourceFile.Path));
     foreach (var moduleDefinition in moduleDefinitions)
     {
-      BuildModuleSignature(sourceFile.Ast, moduleDefinition);
+      BuildModuleSignature(sourceFile.Ast, moduleDefinition, moduleDefinitionNodeMappings[moduleDefinition]);
     }
   }
 
-  public void BuildModuleParameterDefaultValueExpressions(SourceFile sourceFile)
+  public void BuildModuleParameterDefaultValueExpressions(
+    SourceFile sourceFile,
+    IReadOnlyDictionary<ScriptModuleDefinitionAstNode, ModuleDefinitionParseTreeNode> moduleDefinitionNodeMappings)
   {
     Debug.Assert(sourceFile.Ast != null);
 
@@ -96,14 +100,17 @@ internal class ModuleBuilder(AstBuilderContext context, DefaultValueExpressionRe
       .Where((scopeItem) => scopeItem.IsDefinedInFile(sourceFile.Path));
     foreach (var moduleDefinition in moduleDefinitions)
     {
-      foreach (var (parameter, parseTreeNode) in moduleDefinition.Parameters.Zip(moduleDefinition.ParseTreeNode.Parameters))
+      var moduleDefinitionParseTreeNode = moduleDefinitionNodeMappings[moduleDefinition];
+      foreach (var (parameter, parseTreeNode) in moduleDefinition.Parameters.Zip(moduleDefinitionParseTreeNode.Parameters))
       {
         defaultValueExpressionResolver.ResolveModuleParameterDefaultValueExpression(parameter);
       }
     }
   }
 
-  public void BuildModuleBodies(SourceFile sourceFile)
+  public void BuildModuleBodies(
+    SourceFile sourceFile,
+    IReadOnlyDictionary<ScriptModuleDefinitionAstNode, ModuleDefinitionParseTreeNode> moduleDefinitionNodeMappings)
   {
     Debug.Assert(sourceFile.Ast != null);
 
@@ -111,21 +118,24 @@ internal class ModuleBuilder(AstBuilderContext context, DefaultValueExpressionRe
     var moduleDefinitions = sourceFile.Ast.ScopeItems.OfType<ScriptModuleDefinitionAstNode>().Where((scopeItem) => scopeItem.IsDefinedInFile(sourceFile.Path));
     foreach (var moduleDefinition in moduleDefinitions)
     {
-      moduleDefinition.InitializeScope(scopeBuilder.BuildModuleScope(sourceFile.Ast, moduleDefinition));
+      moduleDefinition.InitializeScope(scopeBuilder.BuildModuleScope(sourceFile.Ast, moduleDefinition, moduleDefinitionNodeMappings[moduleDefinition]));
     }
   }
 
-  private void BuildModuleSignature(ScopeAstNode globalScope, ScriptModuleDefinitionAstNode moduleDefinition)
+  private void BuildModuleSignature(
+    ScopeAstNode globalScope,
+    ScriptModuleDefinitionAstNode moduleDefinition,
+    ModuleDefinitionParseTreeNode moduleDefinitionParseTreeNode)
   {
     moduleDefinition.InitializeParameters();
 
     var anyDefaultValueExpression = false;
     var didReportDefaultValueOrderingError = false;
-    for (var parameterIndex = 0; parameterIndex < moduleDefinition.ParseTreeNode.Parameters.Count; parameterIndex++)
+    for (var parameterIndex = 0; parameterIndex < moduleDefinitionParseTreeNode.Parameters.Count; parameterIndex++)
     {
       // Detect name conflicts
-      var parameter = moduleDefinition.ParseTreeNode.Parameters[parameterIndex];
-      if (moduleDefinition.ParseTreeNode.Parameters.Take(parameterIndex).Any((otherParameter) => parameter.Name == otherParameter.Name))
+      var parameter = moduleDefinitionParseTreeNode.Parameters[parameterIndex];
+      if (moduleDefinitionParseTreeNode.Parameters.Take(parameterIndex).Any((otherParameter) => parameter.Name == otherParameter.Name))
       {
         context.Reporting.ParameterNameConflictError(parameter, moduleDefinition);
       }
@@ -165,10 +175,10 @@ internal class ModuleBuilder(AstBuilderContext context, DefaultValueExpressionRe
       defaultValueExpressionResolver.TrackModuleParameter(moduleDefinition, moduleParameter, parameter);
     }
 
-    var returnDataType = moduleDefinition.ParseTreeNode.ReturnDataType.ToAstDataType(moduleDefinition.ContainingScope, context.Reporting);
+    var returnDataType = moduleDefinitionParseTreeNode.ReturnDataType.ToAstDataType(moduleDefinition.ContainingScope, context.Reporting);
     if (!returnDataType.IsLegalReturnType())
     {
-      context.Reporting.IllegalReturnTypeError(moduleDefinition);
+      context.Reporting.IllegalReturnTypeError(moduleDefinitionParseTreeNode);
       returnDataType = AstDataType.Error();
     }
 

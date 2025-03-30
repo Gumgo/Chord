@@ -1,5 +1,6 @@
 ﻿using Compiler.Ast;
 using Compiler.NativeLibrary;
+using Compiler.Parser.Nodes;
 
 namespace Compiler.AstBuilder;
 
@@ -76,9 +77,13 @@ internal class AstBuilder(AstBuilderContext context)
     var structBuilder = new StructBuilder(context, defaultValueExpressionResolver);
     var moduleBuilder = new ModuleBuilder(context, defaultValueExpressionResolver);
 
+    var structDefinitionNodeMappings = new Dictionary<NamedStructDefinitionAstNode, StructDefinitionParseTreeNode>();
+    var moduleDefinitionNodeMappings = new Dictionary<ScriptModuleDefinitionAstNode, ModuleDefinitionParseTreeNode>();
+    var valueDefinitionNodeMappings = new Dictionary<ValueDefinitionAstNode, ValueDefinitionParseTreeNode>();
+
     foreach (var sourceFile in sourceFiles)
     {
-      sourceFile.Ast = globalScopeBuilder.BuildGlobalScope(sourceFile);
+      sourceFile.Ast = globalScopeBuilder.BuildGlobalScope(sourceFile, structDefinitionNodeMappings, moduleDefinitionNodeMappings, valueDefinitionNodeMappings);
     }
 
     var sourceFilesDict = sourceFiles.ToDictionary((v) => v.Path);
@@ -89,14 +94,14 @@ internal class AstBuilder(AstBuilderContext context)
 
     foreach (var sourceFile in sourceFiles)
     {
-      valueBuilder.BuildGlobalValues(sourceFile);
+      valueBuilder.BuildGlobalValues(sourceFile, valueDefinitionNodeMappings);
     }
 
-    structBuilder.BuildStructs(sourceFiles);
+    structBuilder.BuildStructs(sourceFiles, structDefinitionNodeMappings);
 
     foreach (var sourceFile in sourceFiles)
     {
-      moduleBuilder.BuildModuleSignatures(sourceFile);
+      moduleBuilder.BuildModuleSignatures(sourceFile, moduleDefinitionNodeMappings);
     }
 
     foreach (var sourceFile in sourceFiles)
@@ -106,14 +111,14 @@ internal class AstBuilder(AstBuilderContext context)
 
     foreach (var sourceFile in sourceFiles)
     {
-      structBuilder.BuildStructFieldDefaultValueExpressions(sourceFile);
-      moduleBuilder.BuildModuleParameterDefaultValueExpressions(sourceFile);
-      valueBuilder.BuildGlobalValueExpressions(sourceFile);
+      structBuilder.BuildStructFieldDefaultValueExpressions(sourceFile, structDefinitionNodeMappings);
+      moduleBuilder.BuildModuleParameterDefaultValueExpressions(sourceFile, moduleDefinitionNodeMappings);
+      valueBuilder.BuildGlobalValueExpressions(sourceFile, valueDefinitionNodeMappings);
     }
 
     foreach (var sourceFile in sourceFiles)
     {
-      moduleBuilder.BuildModuleBodies(sourceFile);
+      moduleBuilder.BuildModuleBodies(sourceFile, moduleDefinitionNodeMappings);
     }
   }
 

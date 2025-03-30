@@ -410,7 +410,6 @@ file class InstrumentPropertyReader(InstrumentPropertyProcessorContext context, 
     return true;
   }
 
-
   public bool TryGetEnum<TEnum>(
     string valueName,
     IReadOnlyList<(string Name, TEnum Value)> values,

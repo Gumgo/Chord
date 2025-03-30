@@ -94,9 +94,12 @@ file static class ReportingExtensions
 
 internal class ScopeBuilder(AstBuilderContext context, DefaultValueExpressionResolver defaultValueExpressionResolver)
 {
-  public ScopeAstNode BuildModuleScope(ScopeAstNode globalScope, ScriptModuleDefinitionAstNode moduleDefinition)
+  public ScopeAstNode BuildModuleScope(
+    ScopeAstNode globalScope,
+    ScriptModuleDefinitionAstNode moduleDefinition,
+    ModuleDefinitionParseTreeNode moduleDefinitionParseTreeNode)
   {
-    var scopeAstNode = new ScopeAstNode(moduleDefinition.ParseTreeNode.Scope.SourceLocation, globalScope, moduleDefinition);
+    var scopeAstNode = new ScopeAstNode(moduleDefinitionParseTreeNode.Scope.SourceLocation, globalScope, moduleDefinition);
     var scopeTracker = new ScopeTracker(globalScope);
 
     // We need to add value definitions for each module parameter so that those values can be looked up by name
@@ -124,7 +127,7 @@ internal class ScopeBuilder(AstBuilderContext context, DefaultValueExpressionRes
     }
 
     var outputParameters = moduleDefinition.Parameters.Where((parameter) => parameter.Direction == ModuleParameterDirection.Out).ToArray();
-    BuildScopeItems(moduleDefinition.ParseTreeNode.Scope, scopeAstNode, scopeTracker, outputParameters);
+    BuildScopeItems(moduleDefinitionParseTreeNode.Scope, scopeAstNode, scopeTracker, outputParameters);
 
     if (!scopeTracker.IsUnreachable)
     {

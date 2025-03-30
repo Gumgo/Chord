@@ -1,19 +1,17 @@
-﻿using Compiler.Parser.Nodes;
-using Compiler.Utilities;
+﻿using Compiler.Utilities;
 
 namespace Compiler.Ast;
 
-internal class NamedStructDefinitionAstNode(StructDefinitionParseTreeNode structDefinition, ScopeAstNode containingScope, bool isExported)
-  : StructDefinitionAstNode(structDefinition.SourceLocation), IScopeItem, INamedAstNode, IExportableAstNode
+internal class NamedStructDefinitionAstNode(SourceLocation sourceLocation, ScopeAstNode containingScope, string name, bool isExported)
+  : StructDefinitionAstNode(sourceLocation), IScopeItem, INamedAstNode, IExportableAstNode
 {
   private readonly InitializableValue<List<NamedStructDefinitionAstNode>> _baseTypes = new();
   private readonly InitializableValue<List<NamedStructDefinitionAstNode>> _flattenedBaseTypes = new();
 
   public override string NodeName => "struct definition";
 
-  public StructDefinitionParseTreeNode ParseTreeNode => structDefinition;
   public ScopeAstNode ContainingScope => containingScope;
-  public string Name => structDefinition.Name;
+  public string Name => name;
   public bool IsExported => isExported;
 
   public IReadOnlyList<NamedStructDefinitionAstNode> BaseTypes => _baseTypes.Value;

@@ -1,5 +1,4 @@
-﻿using Compiler.Parser.Nodes;
-using Compiler.Utilities;
+﻿using Compiler.Utilities;
 
 namespace Compiler.Ast;
 
@@ -11,7 +10,6 @@ internal class ValueDefinitionAstNode(SourceLocation sourceLocation, ScopeAstNod
 
   public override string NodeName => "value definition";
 
-  public ValueDefinitionParseTreeNode? ParseTreeNode { get; init; }
   public ScopeAstNode ContainingScope => containingScope;
   public string Name => name;
   public bool IsExported { get; init; }

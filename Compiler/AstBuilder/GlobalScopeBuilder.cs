@@ -1,4 +1,5 @@
 ﻿using Compiler.Ast;
+using Compiler.Parser.Nodes;
 using Compiler.Types;
 using Compiler.Utilities;
 using System.Diagnostics;
@@ -43,7 +44,11 @@ file static class ReportingExtensions
 // Builds up global scope by adding local and imported scope items (but does not yet fill them out)
 internal class GlobalScopeBuilder(AstBuilderContext context)
 {
-  public ScopeAstNode BuildGlobalScope(SourceFile sourceFile)
+  public ScopeAstNode BuildGlobalScope(
+    SourceFile sourceFile,
+    IDictionary<NamedStructDefinitionAstNode, StructDefinitionParseTreeNode> structDefinitionNodeMappings,
+    IDictionary<ScriptModuleDefinitionAstNode, ModuleDefinitionParseTreeNode> moduleDefinitionNodeMappings,
+    IDictionary<ValueDefinitionAstNode, ValueDefinitionParseTreeNode> valueDefinitionNodeMappings)
   {
     Debug.Assert(sourceFile.ParseTree != null);
 
@@ -55,22 +60,35 @@ internal class GlobalScopeBuilder(AstBuilderContext context)
 
       if (globalScopeItem.ValueDefinition != null)
       {
-        globalScopeItemAstNode = new ValueDefinitionAstNode(
+        var valueDefinition = new ValueDefinitionAstNode(
           globalScopeItem.ValueDefinition.SourceLocation,
           globalScopeAstNode,
           globalScopeItem.ValueDefinition.Value.Name)
         {
-          ParseTreeNode = globalScopeItem.ValueDefinition,
           IsExported = globalScopeItem.IsExported,
         };
+        globalScopeItemAstNode = valueDefinition;
+        valueDefinitionNodeMappings.Add(valueDefinition, globalScopeItem.ValueDefinition);
       }
       else if (globalScopeItem.StructDefinition != null)
       {
-        globalScopeItemAstNode = new NamedStructDefinitionAstNode(globalScopeItem.StructDefinition, globalScopeAstNode, globalScopeItem.IsExported);
+        var namedStructDefinition = new NamedStructDefinitionAstNode(
+          globalScopeItem.StructDefinition.SourceLocation,
+          globalScopeAstNode,
+          globalScopeItem.StructDefinition.Name,
+          globalScopeItem.IsExported);
+        globalScopeItemAstNode = namedStructDefinition;
+        structDefinitionNodeMappings.Add(namedStructDefinition, globalScopeItem.StructDefinition);
       }
       else if (globalScopeItem.ModuleDefinition != null)
       {
-        globalScopeItemAstNode = new ScriptModuleDefinitionAstNode(globalScopeItem.ModuleDefinition, globalScopeAstNode, globalScopeItem.IsExported);
+        var scriptModuleDefinition = new ScriptModuleDefinitionAstNode(
+          globalScopeItem.ModuleDefinition.SourceLocation,
+          globalScopeAstNode,
+          globalScopeItem.ModuleDefinition.Name,
+          globalScopeItem.IsExported);
+        globalScopeItemAstNode = scriptModuleDefinition;
+        moduleDefinitionNodeMappings.Add(scriptModuleDefinition, globalScopeItem.ModuleDefinition);
       }
       else
       {

@@ -48,7 +48,9 @@ file static class ReportingExtensions
 
 internal class StructBuilder(AstBuilderContext context, DefaultValueExpressionResolver defaultValueExpressionResolver)
 {
-  public void BuildStructs(IReadOnlyList<SourceFile> sourceFiles)
+  public void BuildStructs(
+    IReadOnlyList<SourceFile> sourceFiles,
+    IReadOnlyDictionary<NamedStructDefinitionAstNode, StructDefinitionParseTreeNode> structDefinitionNodeMappings)
   {
     var allStructDefinitions = sourceFiles
       .SelectMany(
@@ -61,7 +63,7 @@ internal class StructBuilder(AstBuilderContext context, DefaultValueExpressionRe
 
     foreach (var structDefinition in allStructDefinitions)
     {
-      ResolveBaseTypes(structDefinition);
+      ResolveBaseTypes(structDefinition, structDefinitionNodeMappings[structDefinition]);
     }
 
     foreach (var structDefinition in allStructDefinitions)
@@ -71,7 +73,7 @@ internal class StructBuilder(AstBuilderContext context, DefaultValueExpressionRe
 
     foreach (var structDefinition in allStructDefinitions)
     {
-      BuildFields(structDefinition);
+      BuildFields(structDefinition, structDefinitionNodeMappings);
     }
 
     foreach (var structDefinition in allStructDefinitions)
@@ -80,7 +82,9 @@ internal class StructBuilder(AstBuilderContext context, DefaultValueExpressionRe
     }
   }
 
-  public void BuildStructFieldDefaultValueExpressions(SourceFile sourceFile)
+  public void BuildStructFieldDefaultValueExpressions(
+    SourceFile sourceFile,
+    IReadOnlyDictionary<NamedStructDefinitionAstNode, StructDefinitionParseTreeNode> structDefinitionNodeMappings)
   {
     Debug.Assert(sourceFile.Ast != null);
 
@@ -89,18 +93,19 @@ internal class StructBuilder(AstBuilderContext context, DefaultValueExpressionRe
       .Where((scopeItem) => scopeItem.IsDefinedInFile(sourceFile.Path));
     foreach (var structDefinition in structDefinitions)
     {
-      foreach (var (field, parseTreeNode) in structDefinition.Fields.Zip(structDefinition.ParseTreeNode.Fields))
+      var structDefinitionParseTreeNode = structDefinitionNodeMappings[structDefinition];
+      foreach (var (field, parseTreeNode) in structDefinition.Fields.Zip(structDefinitionParseTreeNode.Fields))
       {
         defaultValueExpressionResolver.ResolveStructFieldDefaultValueExpression(field);
       }
     }
   }
 
-  private void ResolveBaseTypes(NamedStructDefinitionAstNode structDefinition)
+  private void ResolveBaseTypes(NamedStructDefinitionAstNode structDefinition, StructDefinitionParseTreeNode structDefinitionParseTreeNode)
   {
     structDefinition.InitializeBaseTypes();
 
-    foreach (var baseTypeName in structDefinition.ParseTreeNode.BaseTypeNames)
+    foreach (var baseTypeName in structDefinitionParseTreeNode.BaseTypeNames)
     {
       var baseType = NameResolver.TryGetStructByName(structDefinition.ContainingScope, baseTypeName);
       if (baseType == null)
@@ -157,14 +162,17 @@ internal class StructBuilder(AstBuilderContext context, DefaultValueExpressionRe
     }
   }
 
-  private void BuildFields(NamedStructDefinitionAstNode structDefinition)
+  private void BuildFields(
+    NamedStructDefinitionAstNode structDefinition,
+    IReadOnlyDictionary<NamedStructDefinitionAstNode, StructDefinitionParseTreeNode> structDefinitionNodeMappings)
   {
     structDefinition.InitializeFields();
 
-    for (var fieldIndex = 0; fieldIndex < structDefinition.ParseTreeNode.Fields.Count; fieldIndex++)
+    var structDefinitionParseTreeNode = structDefinitionNodeMappings[structDefinition];
+    for (var fieldIndex = 0; fieldIndex < structDefinitionParseTreeNode.Fields.Count; fieldIndex++)
     {
       // Detect field name conflicts
-      var field = structDefinition.ParseTreeNode.Fields[fieldIndex];
+      var field = structDefinitionParseTreeNode.Fields[fieldIndex];
       if (structDefinition.Fields.Take(fieldIndex).Any((otherField) => field.Name == otherField.Name))
       {
         context.Reporting.FieldNameConflictError(field, structDefinition);
@@ -173,7 +181,8 @@ internal class StructBuilder(AstBuilderContext context, DefaultValueExpressionRe
       // Detect field name conflicts within base types
       foreach (var baseType in structDefinition.FlattenedBaseTypes)
       {
-        if (baseType.ParseTreeNode.Fields.Any((baseTypeField) => field.Name == baseTypeField.Name))
+        var baseTypeParseTreeNode = structDefinitionNodeMappings[baseType];
+        if (baseTypeParseTreeNode.Fields.Any((baseTypeField) => field.Name == baseTypeField.Name))
         {
           context.Reporting.FieldNameBaseTypeConflictError(field, structDefinition, baseType);
         }

@@ -1,16 +1,14 @@
-﻿using Compiler.Parser.Nodes;
-using Compiler.Utilities;
+﻿using Compiler.Utilities;
 
 namespace Compiler.Ast;
 
-internal class ScriptModuleDefinitionAstNode(ModuleDefinitionParseTreeNode moduleDefinition, ScopeAstNode containingScope, bool isExported)
-  : ModuleDefinitionAstNode(moduleDefinition.SourceLocation, containingScope, moduleDefinition.Name), IExportableAstNode
+internal class ScriptModuleDefinitionAstNode(SourceLocation sourceLocation, ScopeAstNode containingScope, string name, bool isExported)
+  : ModuleDefinitionAstNode(sourceLocation, containingScope, name), IExportableAstNode
 {
   private readonly InitializableValue<ScopeAstNode> _scope = new();
 
   public override string NodeName => "module definition";
 
-  public ModuleDefinitionParseTreeNode ParseTreeNode => moduleDefinition;
   public bool IsExported => isExported;
 
   public ScopeAstNode Scope => _scope.Value;
