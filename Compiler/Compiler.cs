@@ -62,7 +62,7 @@ public class Compiler(CompilerContext context)
     var parserContext = new ParserContext() { Reporting = reporting };
     var parser = new Parser.Parser(parserContext);
 
-    var instrumentPropertyProcessorContext = new InstrumentPropertyParserContext() { Reporting = reporting };
+    var instrumentPropertyProcessorContext = new InstrumentPropertyProcessorContext() { Reporting = reporting };
     var instrumentPropertyProcessor = new InstrumentPropertyProcessor(instrumentPropertyProcessorContext);
 
     var importerContext = new ImporterContext()

@@ -35,7 +35,7 @@ internal class InstrumentPropertyParseTreeNode : ParseTreeNode
     }
 
     var valueTokens = new List<Token>();
-    while (location.NextToken().TokenType.IsLiteral())
+    while (location.NextToken().TokenType.IsLiteral() || location.NextToken().TokenType == TokenType.Identifier)
     {
       valueTokens.Add(location.ConsumeNextToken(tokenSourceLocations));
     }

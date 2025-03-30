@@ -1,6 +1,5 @@
 ﻿using Compiler.Lexer;
 using Compiler.Parser;
-using System.Diagnostics;
 
 namespace Tests.CompilerTests;
 

@@ -67,6 +67,15 @@ file static class ReportingExtensions
       parseTreeNode.SourceLocation,
       $"Instrument property '{parseTreeNode.Name}' value '{valueName}' must be a number type");
 
+  public static void InstrumentPropertyValueTypeNotAnIdentifierError(
+    this IReporting reporting,
+    InstrumentPropertyParseTreeNode parseTreeNode,
+    string valueName)
+    => reporting.Error(
+      "InstrumentPropertyValueTypeNotAnIdentifier",
+      parseTreeNode.SourceLocation,
+      $"Instrument property '{parseTreeNode.Name}' value '{valueName}' must be an identifier");
+
   public static void InvalidInstrumentPropertyEnumValueError(
     this IReporting reporting,
     InstrumentPropertyParseTreeNode parseTreeNode,
@@ -114,12 +123,12 @@ file static class ReportingExtensions
   }
 }
 
-internal class InstrumentPropertyParserContext
+internal class InstrumentPropertyProcessorContext
 {
   public required IReporting Reporting { get; init; }
 }
 
-internal class InstrumentPropertyProcessor(InstrumentPropertyParserContext context)
+internal class InstrumentPropertyProcessor(InstrumentPropertyProcessorContext context)
 {
   private static readonly Dictionary<string, Action<InstrumentPropertyProcessor, InstrumentPropertyParseTreeNode>> _processors = new()
   {
@@ -186,7 +195,7 @@ internal class InstrumentPropertyProcessor(InstrumentPropertyParserContext conte
     }
 
     var reader = new InstrumentPropertyReader(context, parseTreeNode);
-    if (!reader.TryGetString(InstrumentPropertyNames.VoiceEntryPointNameValueName, out var voiceEntryPointName, out _)
+    if (!reader.TryGetIdentifier(InstrumentPropertyNames.VoiceEntryPointNameValueName, out var voiceEntryPointName, out _)
       || !reader.TryGetInt(InstrumentPropertyNames.MaxVoiceCountValueName, out var maxVoiceCount, out var maxVoiceCountSourceLocation))
     {
       return;
@@ -227,7 +236,7 @@ internal class InstrumentPropertyProcessor(InstrumentPropertyParserContext conte
     var effectActivationModeValues = Enum.GetValues<EffectActivationMode>().Select((v) => (v.ToLanguageString(), v)).ToArray();
 
     var reader = new InstrumentPropertyReader(context, parseTreeNode);
-    if (!reader.TryGetString(InstrumentPropertyNames.EffectEntryPointNameValueName, out var effectEntryPointName, out _)
+    if (!reader.TryGetIdentifier(InstrumentPropertyNames.EffectEntryPointNameValueName, out var effectEntryPointName, out _)
       || !reader.TryGetEnum(
         InstrumentPropertyNames.EffectActivationModeValueName,
         effectActivationModeValues,
@@ -290,7 +299,7 @@ internal class InstrumentPropertyProcessor(InstrumentPropertyParserContext conte
   }
 }
 
-file class InstrumentPropertyReader(InstrumentPropertyParserContext context, InstrumentPropertyParseTreeNode parseTreeNode)
+file class InstrumentPropertyReader(InstrumentPropertyProcessorContext context, InstrumentPropertyParseTreeNode parseTreeNode)
 {
   private int _nextValueIndex;
 
@@ -376,6 +385,31 @@ file class InstrumentPropertyReader(InstrumentPropertyParserContext context, Ins
     _nextValueIndex++;
     return true;
   }
+
+  public bool TryGetIdentifier(string valueName, [NotNullWhen(true)] out string? value, [NotNullWhen(true)] out SourceLocation? sourceLocation)
+  {
+    value = null;
+    sourceLocation = null;
+
+    if (parseTreeNode.Values.Count < _nextValueIndex)
+    {
+      context.Reporting.MissingInstrumentPropertyValueError(parseTreeNode, valueName);
+      return false;
+    }
+
+    var token = parseTreeNode.Values[_nextValueIndex];
+    if (token.TokenType != TokenType.Identifier)
+    {
+      context.Reporting.InstrumentPropertyValueTypeNotAnIdentifierError(parseTreeNode, valueName);
+      return false;
+    }
+
+    value = token.IdentifierValue;
+    sourceLocation = token.SourceLocation;
+    _nextValueIndex++;
+    return true;
+  }
+
 
   public bool TryGetEnum<TEnum>(
     string valueName,

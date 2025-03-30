@@ -2,7 +2,6 @@
 using Compiler.Parser;
 using Compiler.Parser.Nodes;
 using Compiler.Types;
-using System.Diagnostics;
 
 namespace Tests.CompilerTests;
 
