@@ -340,26 +340,26 @@ internal class EntryPointExtractor(EntryPointExtractorContext context)
             }
           }
         }
+      }
 
-        // If no effect processing will run, the voice processing stage must write to the output channels
-        if (effectEntryPoint == null && !outputChannelsParameterFound)
-        {
-          context.Reporting.MissingEntryPointParameterError(
-            VoiceEntryPointType,
-            EffectEntryPointType,
-            false,
-            voiceEntryPoint,
-            ModuleParameterDirection.Out,
-            OutputChannelsParameterName);
-          valid = false;
-        }
+      // If no effect processing will run, the voice processing stage must write to the output channels
+      if (effectEntryPoint == null && !outputChannelsParameterFound)
+      {
+        context.Reporting.MissingEntryPointParameterError(
+          VoiceEntryPointType,
+          EffectEntryPointType,
+          false,
+          voiceEntryPoint,
+          ModuleParameterDirection.Out,
+          OutputChannelsParameterName);
+        valid = false;
+      }
 
-        // The voice entry point should return a bool to indicate when a voice has faded to silence and no longer needs to run
-        if (!_voiceEntryPointReturnTypes.Any(voiceEntryPoint.ReturnDataType.IsIdenticalTo))
-        {
-          context.Reporting.InvalidEntryPointReturnTypeError(VoiceEntryPointType, voiceEntryPoint, _voiceEntryPointReturnTypes);
-          valid = false;
-        }
+      // The voice entry point should return a bool to indicate when a voice has faded to silence and no longer needs to run
+      if (!_voiceEntryPointReturnTypes.Any(voiceEntryPoint.ReturnDataType.IsIdenticalTo))
+      {
+        context.Reporting.InvalidEntryPointReturnTypeError(VoiceEntryPointType, voiceEntryPoint, _voiceEntryPointReturnTypes);
+        valid = false;
       }
     }
 
@@ -449,29 +449,29 @@ internal class EntryPointExtractor(EntryPointExtractorContext context)
             valid = false;
           }
         }
+      }
 
-        // Effect processing must always write to the output channels
-        if (!outputChannelsParameterFound)
-        {
-          context.Reporting.MissingEntryPointParameterError(EffectEntryPointType, effectEntryPoint, ModuleParameterDirection.Out, OutputChannelsParameterName);
-          valid = false;
-        }
+      // Effect processing must always write to the output channels
+      if (!outputChannelsParameterFound)
+      {
+        context.Reporting.MissingEntryPointParameterError(EffectEntryPointType, effectEntryPoint, ModuleParameterDirection.Out, OutputChannelsParameterName);
+        valid = false;
+      }
 
-        // Any parameters produced by voice processing must be consumed by effect processing
-        foreach (var unmatchedParameter in voiceToEffectParameters.Where(unmatchedVoiceToEffectParameters.Contains))
-        {
-          Debug.Assert(voiceEntryPoint != null);
-          context.Reporting.MissingVoiceToEffectParameterDestinationError(VoiceEntryPointType, EffectEntryPointType, voiceEntryPoint, unmatchedParameter);
-          valid = false;
-        }
+      // Any parameters produced by voice processing must be consumed by effect processing
+      foreach (var unmatchedParameter in voiceToEffectParameters.Where(unmatchedVoiceToEffectParameters.Contains))
+      {
+        Debug.Assert(voiceEntryPoint != null);
+        context.Reporting.MissingVoiceToEffectParameterDestinationError(VoiceEntryPointType, EffectEntryPointType, voiceEntryPoint, unmatchedParameter);
+        valid = false;
+      }
 
-        // The effect entry point may return a bool to indicate that effect processing can be disabled (because it will produce silence). If the return type is
-        // void, effect processing will always remain active.
-        if (!_effectEntryPointReturnTypes.Any(effectEntryPoint.ReturnDataType.IsIdenticalTo))
-        {
-          context.Reporting.InvalidEntryPointReturnTypeError(EffectEntryPointType, effectEntryPoint, _effectEntryPointReturnTypes);
-          valid = false;
-        }
+      // The effect entry point may return a bool to indicate that effect processing can be disabled (because it will produce silence). If the return type is
+      // void, effect processing will always remain active.
+      if (!_effectEntryPointReturnTypes.Any(effectEntryPoint.ReturnDataType.IsIdenticalTo))
+      {
+        context.Reporting.InvalidEntryPointReturnTypeError(EffectEntryPointType, effectEntryPoint, _effectEntryPointReturnTypes);
+        valid = false;
       }
     }
 
@@ -507,7 +507,7 @@ internal class EntryPointExtractor(EntryPointExtractorContext context)
     Debug.Assert(sourceLocation != null);
     var entryPointCandidates = rootSourceFileAst.ScopeItems
       .OfType<ScriptModuleDefinitionAstNode>()
-      .Where((moduleDefinition) => moduleDefinition.IsDefinedInFile(rootSourceFileAst.SourceLocation.File))
+      .Where((moduleDefinition) => moduleDefinition.IsDefinedInFile(rootSourceFileAst.SourceLocation.File) && moduleDefinition.Name == entryPointName)
       .ToArray();
     if (entryPointCandidates.Length == 0)
     {
