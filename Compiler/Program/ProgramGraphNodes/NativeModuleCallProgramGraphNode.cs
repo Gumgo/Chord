@@ -30,7 +30,7 @@ internal class NativeModuleCallProgramGraphNode : IProcessorProgramGraphNode
 
     var allDependentConstantInputsConstant = true;
     int? inputLatency = null;
-    foreach (var (inputParameter, inputArgument) in inputParameters.Zip(inputArguments))
+    foreach (var (inputParameter, inputArgument) in inputParameters.ZipSafe(inputArguments))
     {
       if (!IsInputArgumentCompatible(upsampleFactor, inputParameter.DataType, inputArgument.DataType))
       {

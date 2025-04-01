@@ -3,6 +3,7 @@ using Compiler.Lexer;
 using Compiler.Parser.Nodes;
 using Compiler.Parser.Nodes.Expression;
 using Compiler.Types;
+using Compiler.Utilities;
 
 namespace Tests.CompilerTests;
 
@@ -934,7 +935,7 @@ public class ParserExpressionTests
     {
       var arguments = hierarchy.Arguments ?? [];
       Assert.Equal(arguments.Length, callNode.Arguments.Count);
-      foreach (var (argument, hierarchyEntry) in callNode.Arguments.Zip(arguments))
+      foreach (var (argument, hierarchyEntry) in callNode.Arguments.ZipSafe(arguments))
       {
         AssertExpressionHierarchy(argument.ValueExpression, hierarchyEntry);
       }

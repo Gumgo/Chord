@@ -505,7 +505,7 @@ internal class ExpressionBuilder(AstBuilderContext context, DefaultValueExpressi
       moduleExpressionResult.Expression,
       moduleCall.UpsampleFactor,
       moduleCall.Arguments
-        .Zip(argumentExpressionResults)
+        .ZipSafe(argumentExpressionResults)
         .Select(
           (entry) => new ModuleCallBuilder.Argument()
           {

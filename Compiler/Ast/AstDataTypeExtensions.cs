@@ -1,4 +1,5 @@
 ﻿using Compiler.Types;
+using Compiler.Utilities;
 using System.Diagnostics;
 
 namespace Compiler.Ast;
@@ -181,7 +182,7 @@ internal static class AstDataTypeExtensions
         }
 
         var allFieldsIdentical = sortedFields
-          .Zip(otherSortedFields)
+          .ZipSafe(otherSortedFields)
           .All((v) => v.First.Name == v.Second.Name && v.First.DataType.IsIdenticalTo(v.Second.DataType));
         if (!allFieldsIdentical)
         {

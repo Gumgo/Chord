@@ -46,10 +46,10 @@ internal class AstBuilder(AstBuilderContext context)
           }
         }
 
-        if (nativeModule.Signature.ReturnParameterIndex != null)
-        {
-          nativeModuleDefinition.InitializeReturnDataType(nativeModule.Signature.Parameters[nativeModule.Signature.ReturnParameterIndex.Value].DataType);
-        }
+        nativeModuleDefinition.InitializeReturnDataType(
+          nativeModule.Signature.ReturnParameterIndex != null
+            ? nativeModule.Signature.Parameters[nativeModule.Signature.ReturnParameterIndex.Value].DataType
+            : AstDataType.Void());
 
         nativeLibraryScope.AddScopeItem(nativeModuleDefinition);
 

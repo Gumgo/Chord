@@ -94,7 +94,7 @@ internal class StructBuilder(AstBuilderContext context, DefaultValueExpressionRe
     foreach (var structDefinition in structDefinitions)
     {
       var structDefinitionParseTreeNode = structDefinitionNodeMappings[structDefinition];
-      foreach (var (field, parseTreeNode) in structDefinition.Fields.Zip(structDefinitionParseTreeNode.Fields))
+      foreach (var (field, parseTreeNode) in structDefinition.Fields.ZipSafe(structDefinitionParseTreeNode.Fields))
       {
         defaultValueExpressionResolver.ResolveStructFieldDefaultValueExpression(field);
       }

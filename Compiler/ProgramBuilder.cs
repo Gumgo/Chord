@@ -14,7 +14,6 @@ public class ProgramBuilderContext
 {
   public required IReporting Reporting { get; init; }
   public required INativeLibraryRegistry NativeLibraryRegistry { get; init; }
-  public required IFileOperations FileOperations { get; init; }
 }
 
 public class ProgramBuilder(ProgramBuilderContext context)
@@ -32,6 +31,21 @@ public class ProgramBuilder(ProgramBuilderContext context)
 
   public IBuildProgramResult? BuildProgram(ProgramVariantProperties programVariantProperties, ICompileResult compileResult)
   {
+    if (programVariantProperties.InputChannelCount < 0)
+    {
+      throw new ArgumentException("InputChannelCount must not be negative");
+    }
+
+    if (programVariantProperties.OutputChannelCount <= 0)
+    {
+      throw new ArgumentException("OutputChannelCount must be positive");
+    }
+
+    if (programVariantProperties.SampleRate <= 0)
+    {
+      throw new ArgumentException("SampleRate must be positive");
+    }
+
     try
     {
       var compileResultTyped = (CompileResult)compileResult;
@@ -85,7 +99,7 @@ public class ProgramBuilder(ProgramBuilderContext context)
         BuildEntryPoint(
           programVariantProperties,
           compileResultTyped.EntryPoints.EffectEntryPoint,
-          0,
+          voiceGraphOutputLatency,
           globalNodeValueTracker,
           inputParameterNodes,
           programGraphBuilderContext,
@@ -113,6 +127,7 @@ public class ProgramBuilder(ProgramBuilderContext context)
 
       var programLatency = voiceGraphOutputLatency + effectGraphOutputLatency;
 
+      // !!! trim unreachable nodes? I think this is just happens periodically in the optimizer (e.g. every 100 optimizations for example)
       // !!! GRAPH OPTIMIZATION GOES HERE (I think?)
 
       // Now, walk the graph from the outputs to determine which nodes are actually reachable
@@ -135,6 +150,16 @@ public class ProgramBuilder(ProgramBuilderContext context)
       Debug.Assert(!outputChannelsFloatReachable || !outputChannelsDoubleReachable);
       var outputChannels = (outputChannelsFloatReachable ? outputChannelsFloat : outputChannelsDouble).Cast<GraphOutputProgramGraphNode>().ToArray();
 
+      // If a voice graph is present, it should always return remain-active
+      var voiceRemainActive = (GraphOutputProgramGraphNode?)voiceGraphOutputNodes
+        ?.Single((entry) => entry.Key.Type == GraphNodeType.RemainActive)
+        .Node;
+
+      // If an effect graph is present, it may or may not return remain-active
+      var effectRemainActive = (GraphOutputProgramGraphNode?)effectGraphOutputNodes
+        ?.SingleOrDefault((entry) => entry.Key.Type == GraphNodeType.RemainActive)
+        .Node;
+
       // Each voice-to-effect node produced by the voice graph should have a corresponding input node consumed by the effect graph. It's possible that this node
       // is never actually used by the effect graph but it will still have been created.
       var voiceToEffectOutputs = (voiceGraphOutputNodes ?? [])
@@ -146,7 +171,7 @@ public class ProgramBuilder(ProgramBuilderContext context)
       var voiceToEffectInputs = inputParameterNodes
         .Where((entry) => entry.Key.Type == GraphNodeType.VoiceToEffect)
         .OrderBy((entry) => entry.Key.Index)
-        .Select((entry) => entry.Value)
+        .Select((entry) => entry.Value.Processor)
         .Cast<GraphInputProgramGraphNode>()
         .ToArray();
       Debug.Assert(voiceToEffectOutputs.Length == voiceToEffectInputs.Length);
@@ -156,6 +181,8 @@ public class ProgramBuilder(ProgramBuilderContext context)
         InputChannelsFloat = inputChannelsFloatReachable ? inputChannelsFloat : null,
         InputChannelsDouble = inputChannelsDoubleReachable ? inputChannelsDouble : null,
         OutputChannels = outputChannels,
+        VoiceRemainActive = voiceRemainActive,
+        EffectRemainActive = effectRemainActive,
         VoiceToEffectOutputs = voiceToEffectOutputs,
         VoiceToEffectInputs = voiceToEffectInputs,
         VoiceGraph = voiceGraphOutputNodes?.Select((entry) => entry.Node).ToArray(),
@@ -326,7 +353,7 @@ public class ProgramBuilder(ProgramBuilderContext context)
 
     var inputArguments = entryPoint.ModuleDefinition.Parameters
       .Where((parameter) => parameter.Direction == ModuleParameterDirection.In)
-      .Zip(entryPoint.InputParameters)
+      .ZipSafe(entryPoint.InputParameters)
       .Select(
         (entry) =>
         {
@@ -405,7 +432,7 @@ public class ProgramBuilder(ProgramBuilderContext context)
     // Align all output latencies
     var outputArgumentEntries = entryPoint.ModuleDefinition.Parameters
       .Where((parameter) => parameter.Direction == ModuleParameterDirection.Out)
-      .Zip(entryPoint.InputParameters, outputNodes)
+      .ZipSafe(entryPoint.OutputParameters, outputNodes)
       .Select(
         (entry) =>
         {
@@ -454,7 +481,7 @@ public class ProgramBuilder(ProgramBuilderContext context)
     int? outputLatency = null;
     var latencyAlignedOutputArgumentEntries = entryPoint.ModuleDefinition.Parameters
       .Where((parameter) => parameter.Direction == ModuleParameterDirection.Out)
-      .Zip(entryPoint.OutputParameters, latencyAlignedOutputArguments);
+      .ZipSafe(entryPoint.OutputParameters, latencyAlignedOutputArguments);
     foreach (var (parameter, entryPointParameter, node) in latencyAlignedOutputArgumentEntries)
     {
       switch (entryPointParameter.ParameterType)
@@ -520,7 +547,7 @@ public class ProgramBuilder(ProgramBuilderContext context)
     if (returnValueNode != null)
     {
       Debug.Assert(returnValueNode.DataType.PrimitiveType == PrimitiveType.Bool);
-      Debug.Assert(returnValueNode.DataType.UpsampleFactor == 1);
+      Debug.Assert((returnValueNode.DataType.UpsampleFactor ?? 1) == 1); // The return value might be a constant
       Debug.Assert(!returnValueNode.DataType.IsArray);
       var remainActiveGraphOutputNode = new GraphOutputProgramGraphNode(returnValueNode.DataType.PrimitiveType.Value, returnValueNode);
       graphOutputNodes.Add((new() { Type = GraphNodeType.RemainActive, Index = 0 }, remainActiveGraphOutputNode));

@@ -2,6 +2,7 @@
 using Compiler.Ast.Expression;
 using Compiler.Parser.Nodes;
 using Compiler.Types;
+using Compiler.Utilities;
 using System.Diagnostics;
 
 namespace Compiler.AstBuilder;
@@ -101,7 +102,7 @@ internal class ModuleBuilder(AstBuilderContext context, DefaultValueExpressionRe
     foreach (var moduleDefinition in moduleDefinitions)
     {
       var moduleDefinitionParseTreeNode = moduleDefinitionNodeMappings[moduleDefinition];
-      foreach (var (parameter, parseTreeNode) in moduleDefinition.Parameters.Zip(moduleDefinitionParseTreeNode.Parameters))
+      foreach (var (parameter, parseTreeNode) in moduleDefinition.Parameters.ZipSafe(moduleDefinitionParseTreeNode.Parameters))
       {
         defaultValueExpressionResolver.ResolveModuleParameterDefaultValueExpression(parameter);
       }

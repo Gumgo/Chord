@@ -8,12 +8,19 @@ namespace Tests.CompilerTests;
 
 internal sealed class TestNativeLibraryRegistry : INativeLibraryRegistry, INativeLibraryRegistryAccess
 {
-  private static readonly Guid _coreNativeLibraryId = Guid.Parse("07e1e050-8ad1-4018-99d4-b43cf2fc752b"); // This is just a random GUID
+  private static readonly Guid _coreNativeLibraryId = Guid.Parse("07e1e050-8ad1-4018-99d4-b43cf2fc752b");
+  private static readonly Guid _testNativeLibraryId = Guid.Parse("02936ad7-feed-46ed-aa76-bed6c77f6865");
+
   private readonly NativeLibrary _coreNativeLibrary;
+  private readonly NativeLibrary _testNativeLibrary;
+
+  private Guid _nativeLibraryId = Guid.Empty;
   private int _nextNativeModuleId = 1;
 
   public TestNativeLibraryRegistry()
-    => _coreNativeLibrary = new()
+  {
+    _nativeLibraryId = _coreNativeLibraryId;
+    _coreNativeLibrary = new()
     {
       Id = _coreNativeLibraryId,
       Name = CoreNativeLibrary.Name,
@@ -144,12 +151,31 @@ internal sealed class TestNativeLibraryRegistry : INativeLibraryRegistry, INativ
         CreateUncallableFunction(CoreNativeLibrary.DelayInt),
         CreateUncallableFunction(CoreNativeLibrary.DelayBool),
 
-        CreateUncallableFunction(CoreNativeLibrary.AddLatencyFloat, (arguments) => arguments[1].IntConstantIn),
-        CreateUncallableFunction(CoreNativeLibrary.AddLatencyDouble, (arguments) => arguments[1].IntConstantIn),
-        CreateUncallableFunction(CoreNativeLibrary.AddLatencyInt, (arguments) => arguments[1].IntConstantIn),
-        CreateUncallableFunction(CoreNativeLibrary.AddLatencyBool, (arguments) => arguments[1].IntConstantIn),
+        CreateUncallableFunction(CoreNativeLibrary.AddLatencyFloat, queryLatencyFunction: (arguments) => arguments[1].IntConstantIn),
+        CreateUncallableFunction(CoreNativeLibrary.AddLatencyDouble, queryLatencyFunction: (arguments) => arguments[1].IntConstantIn),
+        CreateUncallableFunction(CoreNativeLibrary.AddLatencyInt, queryLatencyFunction: (arguments) => arguments[1].IntConstantIn),
+        CreateUncallableFunction(CoreNativeLibrary.AddLatencyBool, queryLatencyFunction: (arguments) => arguments[1].IntConstantIn),
       ],
     };
+
+    _nativeLibraryId = _testNativeLibraryId;
+    _testNativeLibrary = new()
+    {
+      Id = _testNativeLibraryId,
+      Name = "test",
+      Version = new() { Major = 0, Minor = 0, Patch = 0 },
+
+      Initialize = () => new NativeLibraryContext(0),
+      Deinitialize = (context) => { },
+      InitializeVoice = (context) => new NativeLibraryVoiceContext(0),
+      DeinitializeVoice = (context, voiceContext) => { },
+
+      Modules =
+      [
+        CreateUncallableFunction(new("SideEffects", null), hasSideEffects: true, alwaysRuntime: true),
+      ],
+    };
+  }
 
   public void Dispose()
   {
@@ -157,8 +183,17 @@ internal sealed class TestNativeLibraryRegistry : INativeLibraryRegistry, INativ
 
   public bool TryGetNativeLibrary(string name, [NotNullWhen(true)] out NativeLibrary? nativeLibrary)
   {
-    nativeLibrary = name == CoreNativeLibrary.Name ? _coreNativeLibrary : null;
-    return nativeLibrary != null;
+    foreach (var library in new[] { _coreNativeLibrary, _testNativeLibrary })
+    {
+      if (name == library.Name)
+      {
+        nativeLibrary = library;
+        return true;
+      }
+    }
+
+    nativeLibrary = null;
+    return false;
   }
 
   public bool TryGetNativeLibraryAndContext(
@@ -166,10 +201,19 @@ internal sealed class TestNativeLibraryRegistry : INativeLibraryRegistry, INativ
     [NotNullWhen(true)] out NativeLibrary? nativeLibrary,
     [NotNullWhen(true)] out NativeLibraryContext? context)
   {
-    var isCore = id == _coreNativeLibraryId;
-    nativeLibrary = isCore ? _coreNativeLibrary : null;
-    context = isCore ? new(0) : null; // Context is always null for the core native library
-    return isCore;
+    foreach (var library in new[] { _coreNativeLibrary, _testNativeLibrary })
+    {
+      if (id == library.Id)
+      {
+        nativeLibrary = library;
+        context = new(0); // Context is always null for the core and test native libraries
+        return true;
+      }
+    }
+
+    nativeLibrary = null;
+    context = null;
+    return false;
   }
 
   private static TElement Index<TElement>(TElement?[] array, int index)
@@ -194,6 +238,8 @@ internal sealed class TestNativeLibraryRegistry : INativeLibraryRegistry, INativ
     NativeModuleSignature nativeModuleSignature,
     Action<IReadOnlyList<NativeModuleArgument>> function,
     bool compileTimeOnly = false,
+    bool hasSideEffects = false,
+    bool alwaysRuntime = false,
     Func<IReadOnlyList<NativeModuleArgument>, int>? queryLatencyFunction = null)
   {
     // Just construct some unique deterministic GUID, its contents don't matter
@@ -250,11 +296,11 @@ internal sealed class TestNativeLibraryRegistry : INativeLibraryRegistry, INativ
 
     return new()
     {
-      NativeLibraryId = _coreNativeLibraryId,
+      NativeLibraryId = _nativeLibraryId,
       Id = new Guid(idBytes),
       Signature = nativeModuleSignature,
-      HasSideEffects = false,
-      AlwaysRuntime = false,
+      HasSideEffects = hasSideEffects,
+      AlwaysRuntime = alwaysRuntime,
 
       Prepare = Prepare,
       InitializeVoice = InitializeVoice,
@@ -267,11 +313,15 @@ internal sealed class TestNativeLibraryRegistry : INativeLibraryRegistry, INativ
 
   private NativeModule CreateUncallableFunction(
     NativeModuleSignature nativeModuleSignature,
+    bool hasSideEffects = false,
+    bool alwaysRuntime = false,
     Func<IReadOnlyList<NativeModuleArgument>, int>? queryLatencyFunction = null)
     => CreateSimpleFunction(
       nativeModuleSignature,
       (arguments) => throw new InvalidOperationException("This should not be called at compile time"),
       compileTimeOnly: false,
+      hasSideEffects: hasSideEffects,
+      alwaysRuntime: alwaysRuntime,
       queryLatencyFunction: queryLatencyFunction);
 
   private NativeModule CreateSimpleFunction(NativeModuleSignature nativeModuleSignature, Func<float, float> function)

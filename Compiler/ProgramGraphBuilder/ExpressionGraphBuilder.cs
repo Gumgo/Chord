@@ -311,7 +311,7 @@ internal class ExpressionGraphBuilder(ProgramGraphBuilderContext context)
     // outputArgument.TargetExpression is just a temporary reference to a previously-evaluated expression pointing to the output argument storage location
     // and outputArgument.ValueExpression uses the output argument's temporary reference and performs any necessary conversions. Therefore, we can simply
     // evaluate both of these expressions and then perform a node assignment using the results.
-    foreach (var (outputArgument, outputNode) in moduleCall.OutputArguments.Zip(outputNodes))
+    foreach (var (outputArgument, outputNode) in moduleCall.OutputArguments.ZipSafe(outputNodes))
     {
       using var temporaryReferenceContext = new NodeValueTrackerTemporaryReferenceContext(scopeContext.NodeValueTracker);
       scopeContext.NodeValueTracker.TrackTemporaryReference(

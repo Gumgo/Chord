@@ -13,6 +13,12 @@ internal class ProgramGraph
   // This is an array of either float or double output nodes, one for each output channel
   public required IReadOnlyList<GraphOutputProgramGraphNode> OutputChannels { get; init; }
 
+  // This is not null if a voice graph is present
+  public required GraphOutputProgramGraphNode? VoiceRemainActive { get; init; }
+
+  // This is not null if an effect graph is present and returns a remain-active result
+  public required GraphOutputProgramGraphNode? EffectRemainActive { get; init; }
+
   // Voice-to-effect outputs from the voice graph
   public required IReadOnlyList<GraphOutputProgramGraphNode> VoiceToEffectOutputs { get; init; }
 

@@ -42,7 +42,7 @@ internal static class NameResolver
       return null;
     }
 
-    var items = GetItemsByName(scope, identifier, searchParentScopes: reference == null)
+    var items = GetItemsByName(searchScope, identifier, searchParentScopes: reference == null)
       .Where((item) => item is not NamedStructDefinitionAstNode) // Filter out structs - they can't be referenced by AstReference
       .ToArray();
 

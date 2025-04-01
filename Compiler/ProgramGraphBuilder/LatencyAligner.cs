@@ -94,10 +94,10 @@ internal class LatencyAligner(ProgramGraphBuilderContext context)
                 {
                   Debug.Assert(element.Connection != null);
                   Debug.Assert(alignedLatency >= element.Connection.Latency);
-                  var additionalLatency = (int)(alignedLatency - input.Node.Latency);
+                  var additionalLatency = (int)(alignedLatency - element.Connection.Latency);
                   return additionalLatency == 0
-                    ? input.Node
-                    : DelayAndAddLatency(programVariantProperties, input.Node, input.UpsampleFactor, additionalLatency, input.SourceLocation);
+                    ? element.Connection
+                    : DelayAndAddLatency(programVariantProperties, element.Connection, input.UpsampleFactor, additionalLatency, input.SourceLocation);
                 })
               .ToArray();
 
