@@ -1,5 +1,6 @@
 ﻿using Compiler.Ast;
 using Compiler.Program.ProgramGraphNodes;
+using Compiler.Utilities;
 using System.Diagnostics;
 
 namespace Compiler.ProgramGraphBuilder;
@@ -142,7 +143,7 @@ internal class NodeValueTracker
             .ToDictionary())
           .Output,
         NativeModuleCallProgramGraphNode => throw new InvalidOperationException("Not a valid reference node"),
-        _ => throw new InvalidOperationException("Unhandled program stage graph node type"),
+        _ => throw UnhandledSubclassException.Create(referenceNode.Processor),
       };
     }
 

@@ -1,6 +1,7 @@
 ﻿using Compiler.Ast;
 using Compiler.Program;
 using Compiler.Program.ProgramGraphNodes;
+using Compiler.Utilities;
 using System.Diagnostics;
 
 namespace Compiler.ProgramGraphBuilder;
@@ -71,7 +72,7 @@ internal class ScopeGraphBuilder(ProgramGraphBuilderContext context)
           break;
 
         default:
-          throw new InvalidOperationException("Unhandled scope item type");
+          throw UnhandledSubclassException.Create(scopeItem);
       }
 
       if (result != null)

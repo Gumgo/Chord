@@ -26,6 +26,17 @@ internal enum RuntimeMutability : int
   Variable,
 }
 
+internal enum OptimizationRuleComponentType : int
+{
+  NativeModuleCall,
+  Constant,
+  Array,
+  Input,
+  Output,
+  InputReference,
+  EndOfList,
+}
+
 [StructLayout(LayoutKind.Sequential)]
 internal unsafe struct DataType
 {
@@ -280,11 +291,95 @@ internal unsafe struct NativeModule
 }
 
 [StructLayout(LayoutKind.Sequential)]
+internal unsafe struct NativeModuleCallOptimizationRuleComponentData
+{
+  public fixed byte NativeLibraryId[64];
+  public fixed byte NativeModuleId[64];
+  public int UpsampleFactor;
+  public int OutputIndex;
+}
+
+[StructLayout(LayoutKind.Explicit)]
+internal unsafe struct ConstantOptimizationRuleComponentValue
+{
+  [FieldOffset(0)] public float FloatValue;
+  [FieldOffset(0)] public double DoubleValue;
+  [FieldOffset(0)] public int IntValue;
+  [FieldOffset(0)] public bool BoolValue;
+  [FieldOffset(0)] public sbyte* StringValue;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+internal unsafe struct ConstantOptimizationRuleComponentData
+{
+  public PrimitiveType PrimitiveType;
+  public ConstantOptimizationRuleComponentValue Value;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+internal unsafe struct ArrayOptimizationRuleComponentData
+{
+  public int ElementCount;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+internal unsafe struct InputOptimizationRuleComponentData
+{
+  public bool MustBeConstant;
+  public bool HasConstraint;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+internal unsafe struct InputReferenceOptimizationRuleComponentData
+{
+  public int Index;
+}
+
+[StructLayout(LayoutKind.Explicit)]
+internal unsafe struct OptimizationRuleComponentData
+{
+  [FieldOffset(0)] public NativeModuleCallOptimizationRuleComponentData NativeModuleCallData;
+  [FieldOffset(0)] public ConstantOptimizationRuleComponentData ConstantData;
+  [FieldOffset(0)] public ArrayOptimizationRuleComponentData ArrayData;
+  [FieldOffset(0)] public InputOptimizationRuleComponentData InputData;
+  [FieldOffset(0)] public InputReferenceOptimizationRuleComponentData InputReferenceData;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+internal unsafe struct OptimizationRuleComponent
+{
+  public OptimizationRuleComponentType Type;
+  public OptimizationRuleComponentData Data;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+internal unsafe struct OptimizationRule
+{
+  public sbyte* Name;
+  public OptimizationRuleComponent* InputPattern;
+  public OptimizationRuleComponent** OutputPatterns;
+}
+
+[StructLayout(LayoutKind.Sequential)]
 internal unsafe struct NativeLibraryVersion
 {
   public uint Major;
   public uint Minor;
   public uint Patch;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+internal unsafe struct NativeModuleEntry
+{
+  public NativeModule* NativeModule;
+  public NativeModuleEntry* Next;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+internal unsafe struct OptimizationRuleEntry
+{
+  public OptimizationRule* OptimizationRule;
+  public OptimizationRuleEntry* Next;
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -297,7 +392,8 @@ internal unsafe struct NativeLibrary
   public delegate* unmanaged[Cdecl]<void*, void> Deinitialize;
   public delegate* unmanaged[Cdecl]<void*, void*> InitializeVoice;
   public delegate* unmanaged[Cdecl]<void*, void*, void> DeinitializeVoice;
-  public NativeModule* NativeModules;
+  public NativeModuleEntry* NativeModules;
+  public OptimizationRuleEntry* OptimizationRules;
 }
 
 internal static unsafe class Delegates

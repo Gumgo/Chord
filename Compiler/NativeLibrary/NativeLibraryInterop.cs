@@ -50,6 +50,30 @@ file static class ReportingExtensions
       + "was not written during compile time invocation";
     reporting.Error("OutputStringNotWritten", sourceLocation, message);
   }
+
+  public static void NullOptimizationRuleNameError(this IReporting reporting, SourceLocation sourceLocation)
+    => reporting.Error("NullOptimizationRuleName", sourceLocation, "Optimization rule name was null");
+
+  public static void NullConstantOptimizationRuleComponentStringValueError(
+    this IReporting reporting,
+    SourceLocation sourceLocation,
+    string optimizationRuleName)
+    => reporting.Error(
+      "NullConstantOptimizationRuleComponentStringValue",
+      sourceLocation,
+      $"Optimization rule '{optimizationRuleName}' constant component string value was null");
+
+  public static void InvalidConstantOptimizationRuleComponentPrimitiveTypeError(
+    this IReporting reporting,
+    SourceLocation sourceLocation,
+    string optimizationRuleName)
+    => reporting.Error(
+      "InvalidConstantOptimizationRuleComponentPrimitiveType",
+      sourceLocation,
+      $"Invalid constant component primitive type in optimization rule '{optimizationRuleName}'");
+
+  public static void InvalidOptimizationRuleComponentTypeError(this IReporting reporting, SourceLocation sourceLocation, string optimizationRuleName)
+    => reporting.Error("InvalidOptimizationRuleComponentType", sourceLocation, $"Invalid component type in optimization rule '{optimizationRuleName}'");
 }
 
 file static class NativeEnumExtensions
@@ -88,6 +112,7 @@ internal class NativeLibraryInteropContext
   public required IReporting Reporting { get; init; }
 }
 
+// !!! write unit tests
 internal class NativeLibraryInterop(NativeLibraryInteropContext context)
 {
   // Native modules may use AVX2 so we need to assume 32-byte pointer and size alignment on all buffers
@@ -104,18 +129,33 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
     }
 
     var sourceLocation = SourceLocation.FromNativeLibrary(nativeLibraryName);
+
     var nativeModules = new List<NativeModule>();
-    var currentNativeModule = nativeLibraryNative->NativeModules;
-    while (currentNativeModule != null)
+    var currentNativeModuleEntry = nativeLibraryNative->NativeModules;
+    while (currentNativeModuleEntry != null)
     {
-      var nativeModule = NativeModuleFromNative(sourceLocation, nativeLibraryId, currentNativeModule);
+      var nativeModule = NativeModuleFromNative(sourceLocation, nativeLibraryId, currentNativeModuleEntry->NativeModule);
       if (nativeModule == null)
       {
         continue;
       }
 
       nativeModules.Add(nativeModule);
-      currentNativeModule = currentNativeModule->NextNativeModule;
+      currentNativeModuleEntry = currentNativeModuleEntry->Next;
+    }
+
+    var optimizationRules = new List<OptimizationRule>();
+    var currentOptimizationRuleEntry = nativeLibraryNative->OptimizationRules;
+    while (currentOptimizationRuleEntry != null)
+    {
+      var optimizationRule = OptimizationRuleFromNative(sourceLocation, currentOptimizationRuleEntry->OptimizationRule);
+      if (optimizationRule == null)
+      {
+        continue;
+      }
+
+      optimizationRules.Add(optimizationRule);
+      currentOptimizationRuleEntry = currentOptimizationRuleEntry->Next;
     }
 
     var initialize = nativeLibraryNative->Initialize;
@@ -155,6 +195,7 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
       InitializeVoice = InitializeVoiceWrapper,
       DeinitializeVoice = DeinitializeVoiceWrapper,
       Modules = nativeModules,
+      OptimizationRules = optimizationRules,
     };
   }
 
@@ -842,6 +883,158 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
       Invoke = invoke != null ? InvokeWrapper : null,
     };
   }
+
+  private unsafe OptimizationRule? OptimizationRuleFromNative(SourceLocation sourceLocation, NativeTypes.OptimizationRule* optimizationRuleNative)
+  {
+    var name = Marshal.PtrToStringUTF8((nint)optimizationRuleNative->Name);
+    if (name == null)
+    {
+      context.Reporting.NullOptimizationRuleNameError(sourceLocation);
+    }
+
+    var nameOrUnnamed = name ?? "<unnamed>";
+
+    var inputPattern = OptimizationRulePatternFromNative(sourceLocation, nameOrUnnamed, optimizationRuleNative->InputPattern);
+    var outputPatterns = new List<IReadOnlyList<OptimizationRuleComponent>>();
+
+    var currentOutputPatternPointer = optimizationRuleNative->OutputPatterns;
+    var anyOutputPatternError = false;
+    while (true)
+    {
+      var currentOutputPattern = *currentOutputPatternPointer;
+      if (currentOutputPattern == null)
+      {
+        break;
+      }
+
+      var outputPattern = OptimizationRulePatternFromNative(sourceLocation, nameOrUnnamed, currentOutputPattern);
+      if (outputPattern != null)
+      {
+        outputPatterns.Add(outputPattern);
+      }
+      else
+      {
+        anyOutputPatternError = true;
+      }
+    }
+
+    if (name == null || inputPattern == null || anyOutputPatternError)
+    {
+      return null;
+    }
+
+    return new() { Name = name, InputPattern = inputPattern, OutputPatterns = outputPatterns };
+  }
+
+  private unsafe List<OptimizationRuleComponent>? OptimizationRulePatternFromNative(
+    SourceLocation sourceLocation,
+    string optimizationRuleName,
+    NativeTypes.OptimizationRuleComponent* optimizationRulePatternNative)
+  {
+    var pattern = new List<OptimizationRuleComponent>();
+    var currentComponent = optimizationRulePatternNative;
+    while (true)
+    {
+      var component = OptimizationRuleComponentFromNative(sourceLocation, optimizationRuleName, currentComponent, out var endOfList);
+      if (endOfList)
+      {
+        return pattern;
+      }
+      else if (component != null)
+      {
+        pattern.Add(component);
+      }
+      else
+      {
+        return null;
+      }
+    }
+  }
+
+  private unsafe OptimizationRuleComponent? OptimizationRuleComponentFromNative(
+    SourceLocation sourceLocation,
+    string optimizationRuleName,
+    NativeTypes.OptimizationRuleComponent* optimizationRuleComponentNative,
+    out bool endOfList)
+  {
+    endOfList = false;
+    switch (optimizationRuleComponentNative->Type)
+    {
+      case NativeTypes.OptimizationRuleComponentType.NativeModuleCall:
+        {
+          var nativeModuleCallData = &optimizationRuleComponentNative->Data.NativeModuleCallData;
+          return new NativeModuleCallOptimizationRuleComponent(
+            new Guid(new Span<byte>(nativeModuleCallData->NativeModuleId, 64), true),
+            new Guid(new Span<byte>(nativeModuleCallData->NativeLibraryId, 64), true),
+            nativeModuleCallData->UpsampleFactor,
+            nativeModuleCallData->OutputIndex);
+        }
+
+      case NativeTypes.OptimizationRuleComponentType.Constant:
+        {
+          var constantData = &optimizationRuleComponentNative->Data.ConstantData;
+          switch (optimizationRuleComponentNative->Data.ConstantData.PrimitiveType)
+          {
+            case NativeTypes.PrimitiveType.Float:
+              return new ConstantOptimizationRuleComponent(constantData->Value.FloatValue);
+
+            case NativeTypes.PrimitiveType.Double:
+              return new ConstantOptimizationRuleComponent(constantData->Value.DoubleValue);
+
+            case NativeTypes.PrimitiveType.Int:
+              return new ConstantOptimizationRuleComponent(constantData->Value.IntValue);
+
+            case NativeTypes.PrimitiveType.Bool:
+              return new ConstantOptimizationRuleComponent(constantData->Value.BoolValue);
+
+            case NativeTypes.PrimitiveType.String:
+              {
+                var stringValue = Marshal.PtrToStringUTF8((nint)constantData->Value.StringValue);
+                if (stringValue == null)
+                {
+                  context.Reporting.NullConstantOptimizationRuleComponentStringValueError(sourceLocation, optimizationRuleName);
+                  return null;
+                }
+
+                return new ConstantOptimizationRuleComponent(stringValue);
+              }
+
+            default:
+              context.Reporting.InvalidConstantOptimizationRuleComponentPrimitiveTypeError(sourceLocation, optimizationRuleName);
+              return null;
+          }
+        }
+
+      case NativeTypes.OptimizationRuleComponentType.Array:
+        {
+          var arrayData = &optimizationRuleComponentNative->Data.ArrayData;
+          return new ArrayOptimizationRuleComponent(arrayData->ElementCount);
+        }
+
+      case NativeTypes.OptimizationRuleComponentType.Input:
+        {
+          var inputData = &optimizationRuleComponentNative->Data.InputData;
+          return new InputOptimizationRuleComponent(inputData->MustBeConstant, inputData->HasConstraint);
+        }
+
+      case NativeTypes.OptimizationRuleComponentType.Output:
+        return new OutputOptimizationRuleComponent();
+
+      case NativeTypes.OptimizationRuleComponentType.InputReference:
+        {
+          var inputReferenceData = &optimizationRuleComponentNative->Data.InputReferenceData;
+          return new InputReferenceOptimizationRuleComponent(inputReferenceData->Index);
+        }
+
+      case NativeTypes.OptimizationRuleComponentType.EndOfList:
+        endOfList = true;
+        return null;
+
+      default:
+        context.Reporting.InvalidOptimizationRuleComponentTypeError(sourceLocation, optimizationRuleName);
+        return null;
+    }
+}
 
   private class OutputStringData
   {

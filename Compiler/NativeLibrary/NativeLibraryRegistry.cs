@@ -92,6 +92,19 @@ file static class ReportingExtensions
     reporting.Warning("NativeModuleIdConflict", sourceLocation, message);
   }
 
+  public static void OptimizationRuleNotLoadedWarning(this IReporting reporting, SourceLocation sourceLocation, string nativeLibrary, string optimizationRule)
+    => reporting.Warning(
+      "OptimizationRuleNotLoaded",
+      sourceLocation,
+      $"Native library '{nativeLibrary}' optimization rule '{optimizationRule}' contains one or more errors and was not loaded");
+
+  public static void OptimizationRuleNameConflictError(this IReporting reporting, SourceLocation sourceLocation, string nativeLibrary, string optimizationRule)
+  {
+    var message = $"Native library '{nativeLibrary}' optimization rule '{optimizationRule}' was not loaded "
+      + $"because its name conflicts with the name of a previously-loaded optimization rule";
+    reporting.Warning("OptimizationRuleNameConflict", sourceLocation, message);
+  }
+
   public static void CoreNativeLibraryMissingOrInvalidError(this IReporting reporting, string coreNativeLibrary)
     => reporting.Error("CoreNativeLibraryMissingOrInvalid", $"Native library '{coreNativeLibrary}' is missing or contains invalid data");
 }
@@ -350,6 +363,7 @@ internal class NativeLibraryRegistry : INativeLibraryRegistry, INativeLibraryReg
             InitializeVoice = nativeLibrary.InitializeVoice,
             DeinitializeVoice = nativeLibrary.DeinitializeVoice,
             Modules = validNativeModules,
+            OptimizationRules = nativeLibrary.OptimizationRules, // We validate optimization rules after all native libraries are loaded
           };
 
           context->NativeLibraries.Add(validatedNativeLibrary);
@@ -360,6 +374,45 @@ internal class NativeLibraryRegistry : INativeLibraryRegistry, INativeLibraryReg
         listNativeLibraries(&listNativeLibrariesContext, &ListNativeLibrariesCallback);
 #pragma warning restore CS8500 // This takes the address of, gets the size of, or declares a pointer to a managed type
       }
+    }
+
+    // Validate optimization rules after all native libraries have been loaded. This is because optimization rules may refer to other native libraries.
+    for (var i = 0; i < _nativeLibraries.Count; i++)
+    {
+      var nativeLibrary = _nativeLibraries[i];
+      var sourceLocation = SourceLocation.FromNativeLibrary(nativeLibrary.Name);
+
+      var validOptimizationRules = new List<OptimizationRule>();
+      foreach (var optimizationRule in nativeLibrary.OptimizationRules)
+      {
+        if (!nativeLibraryValidator.ValidateOptimizationRule(_nativeLibraries, nativeLibrary, optimizationRule))
+        {
+          _context.Reporting.OptimizationRuleNotLoadedWarning(sourceLocation, nativeLibrary.Name, optimizationRule.Name);
+          continue;
+        }
+
+        var conflictingOptimizationRule = validOptimizationRules.FirstOrDefault((v) => v.Name == optimizationRule.Name);
+        if (conflictingOptimizationRule != null)
+        {
+          _context.Reporting.OptimizationRuleNameConflictError(sourceLocation, nativeLibrary.Name, optimizationRule.Name);
+          continue;
+        }
+
+        validOptimizationRules.Add(optimizationRule);
+      }
+
+      _nativeLibraries[i] = new NativeLibrary()
+      {
+        Id = nativeLibrary.Id,
+        Name = nativeLibrary.Name,
+        Version = nativeLibrary.Version,
+        Initialize = nativeLibrary.Initialize,
+        Deinitialize = nativeLibrary.Deinitialize,
+        InitializeVoice = nativeLibrary.InitializeVoice,
+        DeinitializeVoice = nativeLibrary.DeinitializeVoice,
+        Modules = nativeLibrary.Modules,
+        OptimizationRules = validOptimizationRules,
+      };
     }
   }
 

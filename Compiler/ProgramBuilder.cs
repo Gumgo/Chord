@@ -131,8 +131,10 @@ public class ProgramBuilder(ProgramBuilderContext context)
       // !!! GRAPH OPTIMIZATION GOES HERE (I think?)
 
       // Now, walk the graph from the outputs to determine which nodes are actually reachable
-      var reachableVoiceGraphNodes = DetermineReachableNodes((voiceGraphOutputNodes ?? []).Select((entry) => entry.Node));
-      var reachableEffectGraphNodes = DetermineReachableNodes((effectGraphOutputNodes ?? []).Select((entry) => entry.Node));
+      var reachableVoiceGraphNodes = ProgramGraphOptimizer.ProgramGraphOptimizer.DetermineReachableNodes(
+        (voiceGraphOutputNodes ?? []).Select((entry) => entry.Node));
+      var reachableEffectGraphNodes = ProgramGraphOptimizer.ProgramGraphOptimizer.DetermineReachableNodes(
+        (effectGraphOutputNodes ?? []).Select((entry) => entry.Node));
 
       // The input channels may be reachable as either float, double, neither, or both
       var inputChannelsFloatReachable = inputChannelsFloat.Any(
@@ -268,68 +270,6 @@ public class ProgramBuilder(ProgramBuilderContext context)
     Debug.Assert(delayOutputNodes.IsEmpty());
 
     return delayedNode;
-  }
-
-  private static HashSet<IProcessorProgramGraphNode> DetermineReachableNodes(IEnumerable<IProcessorProgramGraphNode> outputNodes)
-  {
-    var reachableNodes = new HashSet<IProcessorProgramGraphNode>();
-    var nodeStack = new Stack<IProcessorProgramGraphNode>();
-
-    void VisitNode(IProcessorProgramGraphNode node)
-    {
-      if (reachableNodes.Add(node))
-      {
-        nodeStack.Push(node);
-      }
-    }
-
-    foreach (var node in outputNodes)
-    {
-      VisitNode(node);
-    }
-
-    while (nodeStack.TryPop(out var node))
-    {
-      switch (node)
-      {
-        case ArrayProgramGraphNode array:
-          foreach (var element in array.Elements)
-          {
-            Debug.Assert(element.Connection != null);
-            VisitNode(element.Connection.Processor);
-          }
-
-          break;
-
-        case ConstantProgramGraphNode constant:
-          break;
-
-        case GraphInputProgramGraphNode graphInput:
-          break;
-
-        case GraphOutputProgramGraphNode graphOutput:
-          Debug.Assert(graphOutput.Input.Connection != null);
-          VisitNode(graphOutput.Input.Connection.Processor);
-          break;
-
-        case NativeModuleCallProgramGraphNode nativeModuleCall:
-          foreach (var input in nativeModuleCall.Inputs)
-          {
-            Debug.Assert(input.Connection != null);
-            VisitNode(input.Connection.Processor);
-          }
-
-          break;
-
-        case StructProgramGraphNode @struct:
-          throw new InvalidOperationException("Struct nodes should not exist in the graph at this point in time");
-
-        default:
-          throw new InvalidOperationException($"Unhandled {nameof(IProcessorProgramGraphNode)} implementation");
-      }
-    }
-
-    return reachableNodes;
   }
 
   private void BuildEntryPoint(

@@ -148,7 +148,7 @@ internal class GlobalValueInitializationOrderResolver(GlobalValueInitializationO
           break;
 
         default:
-          throw new InvalidOperationException("Unhandled scope item type");
+          throw UnhandledSubclassException.Create(scopeItem);
       }
     }
   }
@@ -297,7 +297,7 @@ internal class GlobalValueInitializationOrderResolver(GlobalValueInitializationO
           break;
 
         default:
-          throw new InvalidOperationException("Unhandled expression type");
+          throw UnhandledSubclassException.Create(expression);
       }
     }
 

@@ -34,4 +34,5 @@ internal class NativeLibrary
   public required DeinitializeVoiceCallback DeinitializeVoice { get; init; }
 
   public required IReadOnlyList<NativeModule> Modules { get; init; }
+  public required IReadOnlyList<OptimizationRule> OptimizationRules { get; init; }
 }

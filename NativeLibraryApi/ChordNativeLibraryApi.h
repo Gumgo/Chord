@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-// Note: library and module names should be null-terminated UTF8-encoded strings but their data types are char* for convenience
+// Note: library and module names (and any other char* types) should be null-terminated UTF8-encoded strings but their data types are char* for convenience
 
 typedef enum
 {
@@ -312,9 +312,104 @@ typedef struct
   NativeModuleSetVoiceActive m_pSetVoiceActive;
   NativeModuleInvokeCompileTime m_pInvokeCompileTime;
   NativeModuleInvoke m_pInvoke;
-
-  NativeModule* m_pNextNativeModule;
 } NativeModule;
+
+typedef enum
+{
+  // Matches against a specific native module call
+  k_optimizationRuleComponentNativeModuleCall,
+
+  // Matches against a constant value or provides a constant value for output
+  k_optimizationRuleComponentConstant,
+
+  // Matches against an array of values or provides an array of values for output
+  k_optimizationRuleComponentArray,
+
+  // Matches against a native module input, possibly with constraints
+  k_optimizationRuleComponentInput,
+
+  // Matches against a native module output (no additional data is needed)
+  k_optimizationRuleComponentOutput,
+
+  // References a previously-matched native module input by its index in the component list; can only be used in output patterns
+  k_optimizationRuleComponentInputReference,
+
+  // Marks the end of the component list
+  k_optimizationRuleComponentEndOfList,
+} OptimizationRuleComponentType;
+
+typedef struct
+{
+  uint8_t m_nativeLibraryId[64];
+  uint8_t m_nativeModuleId[64];
+
+  // The upsample factor of this native module call relative to the rule's root native module call
+  int32_t m_upsampleFactor;
+
+  // The parameter index of the output from the native module call that is being matched
+  int32_t m_outputIndex;
+} NativeModuleCallOptimizationRuleComponentData;
+
+typedef union
+{
+  float m_floatValue;
+  double m_doubleValue;
+  int32_t m_intValue;
+  bool m_boolValue;
+  const char* m_pStringValue;
+} ConstantOptimizationRuleComponentValue;
+
+typedef struct
+{
+  PrimitiveType m_primitiveType;
+  ConstantOptimizationRuleComponentValue m_value;
+} ConstantOptimizationRuleComponentData;
+
+typedef struct
+{
+  int32_t m_elementCount;
+} ArrayOptimizationRuleComponentData;
+
+typedef struct
+{
+  bool m_mustBeConstant;
+
+  // If true, a component providing further constraints (e.g. ConstantOptimizationRuleComponentData, ArrayOptimizationRuleComponentData) must follow
+  bool m_hasConstraint;
+} InputOptimizationRuleComponentData;
+
+typedef struct
+{
+  int32_t m_index;
+} InputReferenceOptimizationRuleComponentData;
+
+typedef union
+{
+  NativeModuleCallOptimizationRuleComponentData m_nativeModuleCallData;
+  ConstantOptimizationRuleComponentData m_constantData;
+  ArrayOptimizationRuleComponentData m_arrayData;
+  InputOptimizationRuleComponentData m_inputData;
+  InputReferenceOptimizationRuleComponentData m_inputReferenceData;
+} OptimizationRuleComponentData;
+
+typedef struct
+{
+  OptimizationRuleComponentType m_type;
+  OptimizationRuleComponentData m_data;
+} OptimizationRuleComponent;
+
+typedef struct
+{
+  // The name should be a unique identifier within this native library's optimization rules
+  const char* m_pName;
+
+  // A list of optimization rule components which must be matched for this optimization rule to apply
+  OptimizationRuleComponent* m_pInputPattern;
+
+  // A null-terminated list of length equal to the number of output parameters in the input pattern. Each entry is a list of optimization rule components to
+  // replace that output component.
+  OptimizationRuleComponent** m_ppOutputPatterns;
+} OptimizationRule;
 
 typedef struct
 {
@@ -337,6 +432,18 @@ typedef void (*NativeLibraryDeinitializeVoice)(void *pContext, void *pVoiceConte
 
 typedef struct
 {
+  const NativeModule* m_pNativeModule;
+  NativeModuleEntry* m_pNext;
+} NativeModuleEntry;
+
+typedef struct
+{
+  const OptimizationRule* m_pOptimizationRule;
+  OptimizationRuleEntry* m_pNext;
+} OptimizationRuleEntry;
+
+typedef struct
+{
   uint8_t m_id[64];
   NativeLibraryVersion m_version;
   const char* m_pName;
@@ -344,7 +451,8 @@ typedef struct
   NativeLibraryDeinitialize m_pDeinitialize;
   NativeLibraryInitializeVoice m_pInitializeVoice;
   NativeLibraryDeinitializeVoice m_pInitializeVoice;
-  NativeModule* m_pNativeModules;
+  const NativeModuleEntry* m_pNativeModules;
+  const OptimizationRuleEntry* m_pOptimizationRules;
 } NativeLibrary;
 
 // Callback provided to ListNativeLibraries.

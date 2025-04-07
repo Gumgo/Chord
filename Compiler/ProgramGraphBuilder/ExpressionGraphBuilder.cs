@@ -50,7 +50,7 @@ internal class ExpressionGraphBuilder(ProgramGraphBuilderContext context)
       TemporaryReferenceAstNode temporaryReference => BuildTemporaryReferenceExpression(temporaryReference, scopeContext),
       TernaryAstNode ternary => BuildTernaryExpression(programVariantProperties, ternary, scopeContext),
       TransformArrayAstNode transformArray => BuildTransformArrayExpression(programVariantProperties, transformArray, scopeContext),
-      _ => throw new InvalidOperationException("Unhandled expression type"),
+      _ => throw UnhandledSubclassException.Create(expression),
     };
 
   // This function does not cause temporary references to go out of scope when it returns; that responsibility falls on the caller, but this allows the caller
