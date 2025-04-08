@@ -156,6 +156,8 @@ internal sealed class TestNativeLibraryRegistry : INativeLibraryRegistry, INativ
         CreateUncallableFunction(CoreNativeLibrary.AddLatencyInt, queryLatencyFunction: (arguments) => arguments[1].IntConstantIn),
         CreateUncallableFunction(CoreNativeLibrary.AddLatencyBool, queryLatencyFunction: (arguments) => arguments[1].IntConstantIn),
       ],
+
+      OptimizationRules = [],
     };
 
     _nativeLibraryId = _testNativeLibraryId;
@@ -174,6 +176,8 @@ internal sealed class TestNativeLibraryRegistry : INativeLibraryRegistry, INativ
       [
         CreateUncallableFunction(new("SideEffects", null), hasSideEffects: true, alwaysRuntime: true),
       ],
+
+      OptimizationRules = [],
     };
   }
 

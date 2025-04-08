@@ -5,16 +5,17 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using static Compiler.NativeLibrary.NativeTypes.NativeBoolExtensions;
 
 namespace Compiler.NativeLibrary;
 
 file static class ReportingExtensions
 {
   public static void NullNativeLibraryNameError(this IReporting reporting)
-    => reporting.Error("NullNativeLibraryName", "Native library name was null");
+    => reporting.Error("NullNativeLibraryName", "Native library name is null");
 
   public static void NullNativeModuleNameError(this IReporting reporting, SourceLocation sourceLocation)
-    => reporting.Error("NullNativeModuleName", sourceLocation, "Native module name was null");
+    => reporting.Error("NullNativeModuleName", sourceLocation, "Native module name is null");
 
   public static void InvalidNativeModuleParameterDirectionError(this IReporting reporting, SourceLocation sourceLocation, string nativeModuleName)
     => reporting.Error(
@@ -23,7 +24,7 @@ file static class ReportingExtensions
       $"Invalid native module parameter direction in native module '{nativeModuleName}'");
 
   public static void NullNativeModuleParameterNameError(this IReporting reporting, SourceLocation sourceLocation, string nativeModuleName)
-    => reporting.Error("NullNativeModuleName", sourceLocation, $"Native module '{nativeModuleName}' parameter name was null");
+    => reporting.Error("NullNativeModuleParameterName", sourceLocation, $"Native module '{nativeModuleName}' parameter name is null");
 
   public static void InvalidNativeModuleParameterRuntimeMutabilityError(this IReporting reporting, SourceLocation sourceLocation, string nativeModuleName)
     => reporting.Error(
@@ -52,7 +53,7 @@ file static class ReportingExtensions
   }
 
   public static void NullOptimizationRuleNameError(this IReporting reporting, SourceLocation sourceLocation)
-    => reporting.Error("NullOptimizationRuleName", sourceLocation, "Optimization rule name was null");
+    => reporting.Error("NullOptimizationRuleName", sourceLocation, "Optimization rule name is null");
 
   public static void NullConstantOptimizationRuleComponentStringValueError(
     this IReporting reporting,
@@ -61,7 +62,7 @@ file static class ReportingExtensions
     => reporting.Error(
       "NullConstantOptimizationRuleComponentStringValue",
       sourceLocation,
-      $"Optimization rule '{optimizationRuleName}' constant component string value was null");
+      $"Optimization rule '{optimizationRuleName}' constant component string value is null");
 
   public static void InvalidConstantOptimizationRuleComponentPrimitiveTypeError(
     this IReporting reporting,
@@ -112,7 +113,6 @@ internal class NativeLibraryInteropContext
   public required IReporting Reporting { get; init; }
 }
 
-// !!! write unit tests
 internal class NativeLibraryInterop(NativeLibraryInteropContext context)
 {
   // Native modules may use AVX2 so we need to assume 32-byte pointer and size alignment on all buffers
@@ -120,7 +120,7 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
 
   public unsafe NativeLibrary? NativeLibraryFromNative(NativeTypes.NativeLibrary* nativeLibraryNative)
   {
-    var nativeLibraryId = new Guid(new Span<byte>(nativeLibraryNative->Id, 64), true);
+    var nativeLibraryId = new Guid(new Span<byte>(nativeLibraryNative->Id, sizeof(Guid)), true);
     var nativeLibraryName = Marshal.PtrToStringUTF8((nint)nativeLibraryNative->Name);
     if (nativeLibraryName == null)
     {
@@ -131,31 +131,23 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
     var sourceLocation = SourceLocation.FromNativeLibrary(nativeLibraryName);
 
     var nativeModules = new List<NativeModule>();
-    var currentNativeModuleEntry = nativeLibraryNative->NativeModules;
-    while (currentNativeModuleEntry != null)
+    for (var nativeModuleIndex = (nuint)0; nativeModuleIndex < nativeLibraryNative->NativeModuleCount; nativeModuleIndex++)
     {
-      var nativeModule = NativeModuleFromNative(sourceLocation, nativeLibraryId, currentNativeModuleEntry->NativeModule);
-      if (nativeModule == null)
+      var nativeModule = NativeModuleFromNative(sourceLocation, nativeLibraryId, nativeLibraryNative->NativeModules[nativeModuleIndex]);
+      if (nativeModule != null)
       {
-        continue;
+        nativeModules.Add(nativeModule);
       }
-
-      nativeModules.Add(nativeModule);
-      currentNativeModuleEntry = currentNativeModuleEntry->Next;
     }
 
     var optimizationRules = new List<OptimizationRule>();
-    var currentOptimizationRuleEntry = nativeLibraryNative->OptimizationRules;
-    while (currentOptimizationRuleEntry != null)
+    for (var optimizationRuleIndex = (nuint)0; optimizationRuleIndex < nativeLibraryNative->OptimizationRuleCount; optimizationRuleIndex++)
     {
-      var optimizationRule = OptimizationRuleFromNative(sourceLocation, currentOptimizationRuleEntry->OptimizationRule);
-      if (optimizationRule == null)
+      var optimizationRule = OptimizationRuleFromNative(sourceLocation, nativeLibraryNative->OptimizationRules[optimizationRuleIndex]);
+      if (optimizationRule != null)
       {
-        continue;
+        optimizationRules.Add(optimizationRule);
       }
-
-      optimizationRules.Add(optimizationRule);
-      currentOptimizationRuleEntry = currentOptimizationRuleEntry->Next;
     }
 
     var initialize = nativeLibraryNative->Initialize;
@@ -203,8 +195,13 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
     NativeModuleContext nativeModuleContext,
     out NativeTypes.NativeModuleContext nativeModuleContextNative)
   {
-    var memoryHandle = GCHandle.Alloc(nativeModuleContext.Reporting, GCHandleType.Pinned);
+    // Note: we are using GCHandleType.Normal rather than GCHandleType.Pinned because we just need to pass the Reporting pointer through the native context and
+    // then back to a managed context. We don't have to dereference the Reporting pointer from within native code.
+    var memoryHandle = GCHandle.Alloc(nativeModuleContext.Reporting, GCHandleType.Normal);
 
+    // $TODO I'm not sure if null-terminated UTF32 is the right choice for these messages. Other options are:
+    // - UTF32 and count - this is used for string primitive values and the C++ string helper functions will use this (so it might be the right option?)
+    // - null-terminated UTF8 - this is used for fixed values like module names for ASCII compatibility (in common cases)
     static string ReadUnicodeMessage(uint* message)
     {
       // PtrToStringUni() doesn't handle UTF32 but it's easy to do manually since characters are fixed-width
@@ -223,7 +220,7 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
       var reportingContextHandle = GCHandle.FromIntPtr((nint)reportingContext);
       Debug.Assert(reportingContextHandle.Target != null);
       var pinnedReporting = (IReporting)reportingContextHandle.Target;
-      pinnedReporting.Warning(null, ReadUnicodeMessage(message));
+      pinnedReporting.Warning("NativeModuleCall", ReadUnicodeMessage(message));
     }
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
@@ -232,7 +229,7 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
       var reportingContextHandle = GCHandle.FromIntPtr((nint)reportingContext);
       Debug.Assert(reportingContextHandle.Target != null);
       var pinnedReporting = (IReporting)reportingContextHandle.Target;
-      pinnedReporting.Error(null, ReadUnicodeMessage(message));
+      pinnedReporting.Error("NativeModuleCall", ReadUnicodeMessage(message));
     }
 
     nativeModuleContextNative = new()
@@ -244,8 +241,8 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
       InputChannelCount = nativeModuleContext.InputChannelCount,
       OutputChannelCount = nativeModuleContext.OutputChannelCount,
       UpsampleFactor = nativeModuleContext.UpsampleFactor,
-      IsCompileTime = true,
-      ReportingContext = (void*)memoryHandle.AddrOfPinnedObject(),
+      IsCompileTime = NativeTypes.NativeBool.True,
+      ReportingContext = (void*)GCHandle.ToIntPtr(memoryHandle),
       ReportWarning = &ReportWarningWrapper,
       ReportError = &ReportErrorWrapper,
     };
@@ -280,12 +277,12 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
       case NativeModuleArgumentType.FloatBufferIn:
         {
           var samples = AllocateBufferIfNotNull(nativeModuleArgument.FloatBufferIn, out memoryHandle);
-          argumentNative.FloatBufferIn = new() { SampleCount = 1, IsConstant = samples != null, Samples = samples };
+          argumentNative.FloatBufferIn = new() { SampleCount = 1, IsConstant = NativeTypes.NativeBoolFactory.Create(samples != null), Samples = samples };
           break;
         }
 
       case NativeModuleArgumentType.FloatBufferOut:
-        argumentNative.FloatBufferOut = new() { SampleCount = 1, IsConstant = true, Samples = AllocateBuffer(0.0f, out memoryHandle) };
+        argumentNative.FloatBufferOut = new() { SampleCount = 1, IsConstant = NativeTypes.NativeBool.True, Samples = AllocateBuffer(0.0f, out memoryHandle) };
         break;
 
       case NativeModuleArgumentType.FloatBufferArrayIn:
@@ -299,7 +296,7 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
           for (var elementIndex = 0; elementIndex < nativeModuleArgument.FloatBufferArrayIn.Length; elementIndex++)
           {
             var samples = AllocateBufferIfNotNull(nativeModuleArgument.FloatBufferArrayIn[elementIndex], memoryHandles);
-            arrayElements[elementIndex] = new() { SampleCount = 1, IsConstant = samples != null, Samples = samples };
+            arrayElements[elementIndex] = new() { SampleCount = 1, IsConstant = NativeTypes.NativeBoolFactory.Create(samples != null), Samples = samples };
           }
 
           memoryHandle = memoryHandles;
@@ -326,12 +323,12 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
       case NativeModuleArgumentType.DoubleBufferIn:
         {
           var samples = AllocateBufferIfNotNull(nativeModuleArgument.DoubleBufferIn, out memoryHandle);
-          argumentNative.DoubleBufferIn = new() { SampleCount = 1, IsConstant = samples != null, Samples = samples };
+          argumentNative.DoubleBufferIn = new() { SampleCount = 1, IsConstant = NativeTypes.NativeBoolFactory.Create(samples != null), Samples = samples };
           break;
         }
 
       case NativeModuleArgumentType.DoubleBufferOut:
-        argumentNative.DoubleBufferOut = new() { SampleCount = 1, IsConstant = true, Samples = AllocateBuffer(0.0, out memoryHandle) };
+        argumentNative.DoubleBufferOut = new() { SampleCount = 1, IsConstant = NativeTypes.NativeBool.True, Samples = AllocateBuffer(0.0, out memoryHandle) };
         break;
 
       case NativeModuleArgumentType.DoubleBufferArrayIn:
@@ -345,7 +342,7 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
           for (var elementIndex = 0; elementIndex < nativeModuleArgument.DoubleBufferArrayIn.Length; elementIndex++)
           {
             var samples = AllocateBufferIfNotNull(nativeModuleArgument.DoubleBufferArrayIn[elementIndex], memoryHandles);
-            arrayElements[elementIndex] = new() { SampleCount = 1, IsConstant = samples != null, Samples = samples };
+            arrayElements[elementIndex] = new() { SampleCount = 1, IsConstant = NativeTypes.NativeBoolFactory.Create(samples != null), Samples = samples };
           }
 
           memoryHandle = memoryHandles;
@@ -372,12 +369,12 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
       case NativeModuleArgumentType.IntBufferIn:
         {
           var samples = AllocateBufferIfNotNull(nativeModuleArgument.IntBufferIn, out memoryHandle);
-          argumentNative.IntBufferIn = new() { SampleCount = 1, IsConstant = samples != null, Samples = samples };
+          argumentNative.IntBufferIn = new() { SampleCount = 1, IsConstant = NativeTypes.NativeBoolFactory.Create(samples != null), Samples = samples };
           break;
         }
 
       case NativeModuleArgumentType.IntBufferOut:
-        argumentNative.IntBufferOut = new() { SampleCount = 1, IsConstant = true, Samples = AllocateBuffer(0, out memoryHandle) };
+        argumentNative.IntBufferOut = new() { SampleCount = 1, IsConstant = NativeTypes.NativeBool.True, Samples = AllocateBuffer(0, out memoryHandle) };
         break;
 
       case NativeModuleArgumentType.IntBufferArrayIn:
@@ -391,7 +388,7 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
           for (var elementIndex = 0; elementIndex < nativeModuleArgument.IntBufferArrayIn.Length; elementIndex++)
           {
             var samples = AllocateBufferIfNotNull(nativeModuleArgument.IntBufferArrayIn[elementIndex], memoryHandles);
-            arrayElements[elementIndex] = new() { SampleCount = 1, IsConstant = samples != null, Samples = samples };
+            arrayElements[elementIndex] = new() { SampleCount = 1, IsConstant = NativeTypes.NativeBoolFactory.Create(samples != null), Samples = samples };
           }
 
           memoryHandle = memoryHandles;
@@ -399,7 +396,7 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
         }
 
       case NativeModuleArgumentType.BoolConstantIn:
-        argumentNative.BoolConstantIn = nativeModuleArgument.BoolConstantIn;
+        argumentNative.BoolConstantIn = NativeTypes.NativeBoolFactory.Create(nativeModuleArgument.BoolConstantIn);
         break;
 
       case NativeModuleArgumentType.BoolConstantOut:
@@ -408,7 +405,7 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
       case NativeModuleArgumentType.BoolConstantArrayIn:
         {
           var handle = GCHandle.Alloc(nativeModuleArgument.BoolConstantArrayIn, GCHandleType.Pinned);
-          argumentNative.BoolConstantArrayIn.Elements = (bool*)handle.AddrOfPinnedObject();
+          argumentNative.BoolConstantArrayIn.Elements = (NativeTypes.NativeBool*)handle.AddrOfPinnedObject();
           argumentNative.BoolConstantArrayIn.Count = (nuint)nativeModuleArgument.FloatConstantArrayIn.Length;
           memoryHandle = new DisposableCallback(handle.Free);
           break;
@@ -420,12 +417,12 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
             ? null
             : (nativeModuleArgument.BoolBufferIn.Value ? -1 : 0);
           var samples = AllocateBufferIfNotNull(packedBoolValue, out memoryHandle);
-          argumentNative.BoolBufferIn = new() { SampleCount = 1, IsConstant = samples != null, Samples = samples };
+          argumentNative.BoolBufferIn = new() { SampleCount = 1, IsConstant = NativeTypes.NativeBoolFactory.Create(samples != null), Samples = samples };
           break;
         }
 
       case NativeModuleArgumentType.BoolBufferOut:
-        argumentNative.BoolBufferOut = new() { SampleCount = 1, IsConstant = true, Samples = AllocateBuffer(0, out memoryHandle) };
+        argumentNative.BoolBufferOut = new() { SampleCount = 1, IsConstant = NativeTypes.NativeBool.True, Samples = AllocateBuffer(0, out memoryHandle) };
         break;
 
       case NativeModuleArgumentType.BoolBufferArrayIn:
@@ -438,11 +435,10 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
 
           for (var elementIndex = 0; elementIndex < nativeModuleArgument.BoolBufferArrayIn.Length; elementIndex++)
           {
-            int? packedBoolValue = nativeModuleArgument.BoolBufferIn == null
-              ? null
-              : (nativeModuleArgument.BoolBufferIn.Value ? -1 : 0);
+            var elementValue = nativeModuleArgument.BoolBufferArrayIn[elementIndex];
+            int? packedBoolValue = elementValue == null ? null : (elementValue.Value ? -1 : 0);
             var samples = AllocateBufferIfNotNull(packedBoolValue, memoryHandles);
-            arrayElements[elementIndex] = new() { SampleCount = 1, IsConstant = samples != null, Samples = samples };
+            arrayElements[elementIndex] = new() { SampleCount = 1, IsConstant = NativeTypes.NativeBoolFactory.Create(samples != null), Samples = samples };
           }
 
           memoryHandle = memoryHandles;
@@ -461,8 +457,8 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
       case NativeModuleArgumentType.StringConstantOut:
         {
           var outputStringData = new OutputStringData();
-          var handle = GCHandle.Alloc(outputStringData, GCHandleType.Pinned);
-          argumentNative.StringConstantOut.Context = (void*)handle.AddrOfPinnedObject();
+          var handle = GCHandle.Alloc(outputStringData, GCHandleType.Normal);
+          argumentNative.StringConstantOut.Context = (void*)GCHandle.ToIntPtr(handle);
 
           [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
           static void SetValue(void* context, uint* value, nuint length)
@@ -567,8 +563,8 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
     var argumentsHandle = GCHandle.Alloc(argumentsArrayNative, GCHandleType.Pinned);
     argumentsNative = new NativeTypes.NativeModuleArguments()
     {
-      ArgumentCount = (nuint)nativeModuleArguments.Count,
       Arguments = (NativeTypes.NativeModuleArgument*)argumentsHandle.AddrOfPinnedObject(),
+      ArgumentCount = (nuint)nativeModuleArguments.Count,
     };
 
     return new DisposableCallback(
@@ -618,7 +614,7 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
         return true;
 
       case NativeModuleArgumentType.FloatBufferOut:
-        if (!argumentNative->FloatBufferOut.IsConstant)
+        if (!argumentNative->FloatBufferOut.IsConstant.ToBool())
         {
           context.Reporting.NonConstantOutputArgumentError(sourceLocation, nativeModuleName, parameter.Name);
           return false;
@@ -632,7 +628,7 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
         return true;
 
       case NativeModuleArgumentType.DoubleBufferOut:
-        if (!argumentNative->DoubleBufferOut.IsConstant)
+        if (!argumentNative->DoubleBufferOut.IsConstant.ToBool())
         {
           context.Reporting.NonConstantOutputArgumentError(sourceLocation, nativeModuleName, parameter.Name);
           return false;
@@ -646,7 +642,7 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
         return true;
 
       case NativeModuleArgumentType.IntBufferOut:
-        if (!argumentNative->IntBufferOut.IsConstant)
+        if (!argumentNative->IntBufferOut.IsConstant.ToBool())
         {
           context.Reporting.NonConstantOutputArgumentError(sourceLocation, nativeModuleName, parameter.Name);
           return false;
@@ -656,11 +652,11 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
         return true;
 
       case NativeModuleArgumentType.BoolConstantOut:
-        argument.BoolConstantOut = argumentNative->BoolConstantOut;
+        argument.BoolConstantOut = argumentNative->BoolConstantOut.ToBool();
         return true;
 
       case NativeModuleArgumentType.BoolBufferOut:
-        if (!argumentNative->BoolBufferOut.IsConstant)
+        if (!argumentNative->BoolBufferOut.IsConstant.ToBool())
         {
           context.Reporting.NonConstantOutputArgumentError(sourceLocation, nativeModuleName, parameter.Name);
           return false;
@@ -746,11 +742,13 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
       return null;
     }
 
+    // We've validated the raw value conversions so it's safe to construct the data type. Other errors (such as a negative upsample factor) will get caught when
+    // we check for AstDataType legality later during native library validation.
     var dataType = new AstDataType(
       runtimeMutability.Value,
       primitiveType.Value,
       nativeModuleParameterNative->DataType.UpsampleFactor,
-      nativeModuleParameterNative->DataType.IsArray);
+      nativeModuleParameterNative->DataType.IsArray.ToBool());
 
     return new(direction.Value, name, dataType);
   }
@@ -768,19 +766,18 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
       ? nativeModuleNative->Signature.ReturnParameterIndex
       : null;
     var parameters = new List<NativeModuleParameter>();
-    var currentParameter = nativeModuleNative->Signature.Parameters;
     var anyInvalidParameters = false;
-    while (currentParameter != null)
+    for (var parameterIndex = (nuint)0; parameterIndex < nativeModuleNative->Signature.ParameterCount; parameterIndex++)
     {
-      var parameter = NativeModuleParameterFromNative(sourceLocation, nativeModuleName, currentParameter);
-      if (parameter == null)
+      var parameter = NativeModuleParameterFromNative(sourceLocation, nativeModuleName, &nativeModuleNative->Signature.Parameters[parameterIndex]);
+      if (parameter != null)
+      {
+        parameters.Add(parameter);
+      }
+      else
       {
         anyInvalidParameters = true;
-        continue;
       }
-
-      parameters.Add(parameter);
-      currentParameter = currentParameter->NextParameter;
     }
 
     if (anyInvalidParameters)
@@ -801,7 +798,7 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
       using var disposeArgumentsAuto = NativeModuleArgumentsToNative(arguments, out var argumentsNative);
 
       int latencyInner = 0;
-      var result = prepare == null || prepare(&contextNative, &argumentsNative, &latencyInner);
+      var result = prepare == null || prepare(&contextNative, &argumentsNative, &latencyInner).ToBool();
       latency = latencyInner;
       return result;
     }
@@ -836,7 +833,7 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
       if (setVoiceActive != null)
       {
         using var disposeContextAuto = NativeModuleContextToNative(context, out var contextNative);
-        setVoiceActive(&contextNative, voiceActive);
+        setVoiceActive(&contextNative, NativeTypes.NativeBoolFactory.Create(voiceActive));
       }
     }
 
@@ -870,10 +867,10 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
     return new()
     {
       NativeLibraryId = nativeLibraryId,
-      Id = new Guid(new Span<byte>(nativeModuleNative->Id, 64), true),
+      Id = new Guid(new Span<byte>(nativeModuleNative->Id, sizeof(Guid)), true),
       Signature = new(nativeModuleName, nativeModuleNative->Signature.ReturnParameterIndex, [..parameters]),
-      HasSideEffects = nativeModuleNative->HasSideEffects,
-      AlwaysRuntime = nativeModuleNative->AlwaysRuntime,
+      HasSideEffects = nativeModuleNative->HasSideEffects.ToBool(),
+      AlwaysRuntime = nativeModuleNative->AlwaysRuntime.ToBool(),
 
       Prepare = PrepareWrapper,
       InitializeVoice = InitializeVoiceWrapper,
@@ -911,6 +908,7 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
       if (outputPattern != null)
       {
         outputPatterns.Add(outputPattern);
+        currentOutputPatternPointer++;
       }
       else
       {
@@ -943,6 +941,7 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
       else if (component != null)
       {
         pattern.Add(component);
+        currentComponent++;
       }
       else
       {
@@ -964,8 +963,8 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
         {
           var nativeModuleCallData = &optimizationRuleComponentNative->Data.NativeModuleCallData;
           return new NativeModuleCallOptimizationRuleComponent(
-            new Guid(new Span<byte>(nativeModuleCallData->NativeModuleId, 64), true),
-            new Guid(new Span<byte>(nativeModuleCallData->NativeLibraryId, 64), true),
+            new Guid(new Span<byte>(nativeModuleCallData->NativeModuleId, sizeof(Guid)), true),
+            new Guid(new Span<byte>(nativeModuleCallData->NativeLibraryId, sizeof(Guid)), true),
             nativeModuleCallData->UpsampleFactor,
             nativeModuleCallData->OutputIndex);
         }
@@ -985,7 +984,7 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
               return new ConstantOptimizationRuleComponent(constantData->Value.IntValue);
 
             case NativeTypes.PrimitiveType.Bool:
-              return new ConstantOptimizationRuleComponent(constantData->Value.BoolValue);
+              return new ConstantOptimizationRuleComponent(constantData->Value.BoolValue.ToBool());
 
             case NativeTypes.PrimitiveType.String:
               {
@@ -1014,7 +1013,7 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
       case NativeTypes.OptimizationRuleComponentType.Input:
         {
           var inputData = &optimizationRuleComponentNative->Data.InputData;
-          return new InputOptimizationRuleComponent(inputData->MustBeConstant, inputData->HasConstraint);
+          return new InputOptimizationRuleComponent(inputData->MustBeConstant.ToBool(), inputData->HasConstraint.ToBool());
         }
 
       case NativeTypes.OptimizationRuleComponentType.Output:

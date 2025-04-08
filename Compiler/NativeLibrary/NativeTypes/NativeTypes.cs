@@ -4,6 +4,12 @@ using SizeT = nuint;
 
 namespace Compiler.NativeLibrary.NativeTypes;
 
+internal enum NativeBool : sbyte
+{
+  False,
+  True,
+}
+
 internal enum ModuleParameterDirection : int
 {
   In,
@@ -43,7 +49,7 @@ internal unsafe struct DataType
   public RuntimeMutability RuntimeMutability;
   public PrimitiveType PrimitiveType;
   public int UpsampleFactor;
-  public bool IsArray;
+  public NativeBool IsArray;
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -52,8 +58,7 @@ internal unsafe struct NativeModuleParameter
   public ModuleParameterDirection Direction;
   public sbyte* Name;
   public DataType DataType;
-  public bool DisallowBufferSharing;
-  public NativeModuleParameter* NextParameter;
+  public NativeBool DisallowBufferSharing;
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -61,6 +66,7 @@ internal unsafe struct NativeModuleSignature
 {
   public sbyte* Name;
   public NativeModuleParameter* Parameters;
+  public SizeT ParameterCount;
   public int ReturnParameterIndex;
 }
 
@@ -109,7 +115,7 @@ internal unsafe struct InputIntConstantArray
 [StructLayout(LayoutKind.Sequential)]
 internal unsafe struct InputBoolConstantArray
 {
-  public bool* Elements;
+  public NativeBool* Elements;
   public SizeT Count;
 }
 
@@ -124,7 +130,7 @@ internal unsafe struct InputStringConstantArray
 internal unsafe struct InputFloatBuffer
 {
   public int SampleCount;
-  public bool IsConstant;
+  public NativeBool IsConstant;
   public float* Samples;
 }
 
@@ -132,7 +138,7 @@ internal unsafe struct InputFloatBuffer
 internal unsafe struct InputDoubleBuffer
 {
   public int SampleCount;
-  public bool IsConstant;
+  public NativeBool IsConstant;
   public double* Samples;
 }
 
@@ -140,7 +146,7 @@ internal unsafe struct InputDoubleBuffer
 internal unsafe struct InputIntBuffer
 {
   public int SampleCount;
-  public bool IsConstant;
+  public NativeBool IsConstant;
   public int* Samples;
 }
 
@@ -148,7 +154,7 @@ internal unsafe struct InputIntBuffer
 internal unsafe struct InputBoolBuffer
 {
   public int SampleCount;
-  public bool IsConstant;
+  public NativeBool IsConstant;
   public int* Samples;
 }
 
@@ -156,7 +162,7 @@ internal unsafe struct InputBoolBuffer
 internal unsafe struct OutputFloatBuffer
 {
   public int SampleCount;
-  public bool IsConstant;
+  public NativeBool IsConstant;
   public float* Samples;
 }
 
@@ -164,7 +170,7 @@ internal unsafe struct OutputFloatBuffer
 internal unsafe struct OutputDoubleBuffer
 {
   public int SampleCount;
-  public bool IsConstant;
+  public NativeBool IsConstant;
   public double* Samples;
 }
 
@@ -172,7 +178,7 @@ internal unsafe struct OutputDoubleBuffer
 internal unsafe struct OutputIntBuffer
 {
   public int SampleCount;
-  public bool IsConstant;
+  public NativeBool IsConstant;
   public int* Samples;
 }
 
@@ -180,7 +186,7 @@ internal unsafe struct OutputIntBuffer
 internal unsafe struct OutputBoolBuffer
 {
   public int SampleCount;
-  public bool IsConstant;
+  public NativeBool IsConstant;
   public int* Samples;
 }
 
@@ -236,8 +242,8 @@ internal unsafe struct NativeModuleArgument
   [FieldOffset(0)] public OutputIntBuffer IntBufferOut;
   [FieldOffset(0)] public InputIntBufferArray IntBufferArrayIn;
 
-  [FieldOffset(0)] public bool BoolConstantIn;
-  [FieldOffset(0)] public bool BoolConstantOut;
+  [FieldOffset(0)] public NativeBool BoolConstantIn;
+  [FieldOffset(0)] public NativeBool BoolConstantOut;
   [FieldOffset(0)] public InputBoolConstantArray BoolConstantArrayIn;
   [FieldOffset(0)] public InputBoolBuffer BoolBufferIn;
   [FieldOffset(0)] public OutputBoolBuffer BoolBufferOut;
@@ -251,8 +257,8 @@ internal unsafe struct NativeModuleArgument
 [StructLayout(LayoutKind.Sequential)]
 internal unsafe struct NativeModuleArguments
 {
-  public SizeT ArgumentCount;
   public NativeModuleArgument* Arguments;
+  public SizeT ArgumentCount;
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -265,7 +271,7 @@ internal unsafe struct NativeModuleContext
   public int InputChannelCount;
   public int OutputChannelCount;
   public int UpsampleFactor;
-  public bool IsCompileTime;
+  public NativeBool IsCompileTime;
 
   public void* ReportingContext;
   public delegate* unmanaged[Cdecl]<void*, uint*, void> ReportWarning;
@@ -275,26 +281,24 @@ internal unsafe struct NativeModuleContext
 [StructLayout(LayoutKind.Sequential)]
 internal unsafe struct NativeModule
 {
-  public fixed byte Id[64];
+  public fixed byte Id[16];
   public NativeModuleSignature Signature;
-  public bool HasSideEffects;
-  public bool AlwaysRuntime;
+  public NativeBool HasSideEffects;
+  public NativeBool AlwaysRuntime;
 
-  public delegate* unmanaged[Cdecl]<NativeModuleContext*, NativeModuleArguments*, int*, bool> Prepare;
+  public delegate* unmanaged[Cdecl]<NativeModuleContext*, NativeModuleArguments*, int*, NativeBool> Prepare;
   public delegate* unmanaged[Cdecl]<NativeModuleContext*, NativeModuleArguments*, MemoryRequirement*, void*> InitializeVoice;
   public delegate* unmanaged[Cdecl]<NativeModuleContext*, void> DeinitializeVoice;
-  public delegate* unmanaged[Cdecl]<NativeModuleContext*, bool, void> SetVoiceActive;
+  public delegate* unmanaged[Cdecl]<NativeModuleContext*, NativeBool, void> SetVoiceActive;
   public delegate* unmanaged[Cdecl]<NativeModuleContext*, NativeModuleArguments*, void> InvokeCompileTime;
   public delegate* unmanaged[Cdecl]<NativeModuleContext*, NativeModuleArguments*, void*, nuint, void> Invoke;
-
-  public NativeModule* NextNativeModule;
 }
 
 [StructLayout(LayoutKind.Sequential)]
 internal unsafe struct NativeModuleCallOptimizationRuleComponentData
 {
-  public fixed byte NativeLibraryId[64];
-  public fixed byte NativeModuleId[64];
+  public fixed byte NativeLibraryId[16];
+  public fixed byte NativeModuleId[16];
   public int UpsampleFactor;
   public int OutputIndex;
 }
@@ -305,7 +309,7 @@ internal unsafe struct ConstantOptimizationRuleComponentValue
   [FieldOffset(0)] public float FloatValue;
   [FieldOffset(0)] public double DoubleValue;
   [FieldOffset(0)] public int IntValue;
-  [FieldOffset(0)] public bool BoolValue;
+  [FieldOffset(0)] public NativeBool BoolValue;
   [FieldOffset(0)] public sbyte* StringValue;
 }
 
@@ -325,8 +329,8 @@ internal unsafe struct ArrayOptimizationRuleComponentData
 [StructLayout(LayoutKind.Sequential)]
 internal unsafe struct InputOptimizationRuleComponentData
 {
-  public bool MustBeConstant;
-  public bool HasConstraint;
+  public NativeBool MustBeConstant;
+  public NativeBool HasConstraint;
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -369,35 +373,37 @@ internal unsafe struct NativeLibraryVersion
 }
 
 [StructLayout(LayoutKind.Sequential)]
-internal unsafe struct NativeModuleEntry
-{
-  public NativeModule* NativeModule;
-  public NativeModuleEntry* Next;
-}
-
-[StructLayout(LayoutKind.Sequential)]
-internal unsafe struct OptimizationRuleEntry
-{
-  public OptimizationRule* OptimizationRule;
-  public OptimizationRuleEntry* Next;
-}
-
-[StructLayout(LayoutKind.Sequential)]
 internal unsafe struct NativeLibrary
 {
-  public fixed byte Id[64];
+  public fixed byte Id[16];
   public NativeLibraryVersion Version;
   public sbyte* Name;
   public delegate* unmanaged[Cdecl]<void*> Initialize;
   public delegate* unmanaged[Cdecl]<void*, void> Deinitialize;
   public delegate* unmanaged[Cdecl]<void*, void*> InitializeVoice;
   public delegate* unmanaged[Cdecl]<void*, void*, void> DeinitializeVoice;
-  public NativeModuleEntry* NativeModules;
-  public OptimizationRuleEntry* OptimizationRules;
+
+  public NativeModule** NativeModules;
+  public nuint NativeModuleCount;
+
+  public OptimizationRule** OptimizationRules;
+  public nuint OptimizationRuleCount;
 }
 
 internal static unsafe class Delegates
 {
   [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
   public delegate void ListNativeLibraries(void* context, delegate* unmanaged[Cdecl]<void*, NativeLibrary*, void> listNativeLibrariesCallback);
+}
+
+internal static class NativeBoolExtensions
+{
+  public static bool ToBool(this NativeBool value)
+    => value != NativeBool.False;
+}
+
+internal static class NativeBoolFactory
+{
+  public static NativeBool Create(bool value)
+    => value ? NativeBool.True : NativeBool.False;
 }

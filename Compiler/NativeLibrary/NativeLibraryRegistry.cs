@@ -438,8 +438,8 @@ internal class NativeLibraryRegistry : INativeLibraryRegistry, INativeLibraryReg
     _dllHandles.Clear();
   }
 
-  // This is a struct because it gets allocated on the stack so we can safely store off a pointer
-  private readonly struct ListNativeLibrariesContext
+  // This is a ref struct to ensure that it only gets allocated on the stack so we can safely store off a pointer
+  private readonly ref struct ListNativeLibrariesContext
   {
     public required IReporting Reporting { get; init; }
     public required NativeLibraryInterop NativeLibraryInterop { get; init; }

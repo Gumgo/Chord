@@ -50,14 +50,13 @@ typedef struct
 
   // If true, this parameter's buffer memory will never be shared with another parameter of the opposite direction.
   bool m_disallowBufferSharing;
-
-  NativeModuleParameter* m_pNextParameter;
 } NativeModuleParameter;
 
 typedef struct
 {
   const char* m_pName;
   NativeModuleParameter* m_pParameters;
+  size_t m_parameterCount;
   int32_t m_returnParameterIndex;
 } NativeModuleSignature;
 
@@ -240,8 +239,8 @@ typedef struct
 
 typedef struct
 {
-  size_t m_argumentCount;
   NativeModuleArgument* m_pArguments;
+  size_t m_argumentCount;
 } NativeModuleArguments;
 
 typedef void (*ReportWarning)(void* pReportingContext, uint32_t* pMessage);
@@ -297,7 +296,7 @@ typedef void (*NativeModuleInvoke)(
 
 typedef struct
 {
-  uint8_t m_id[64];
+  uint8_t m_id[16];
   NativeModuleSignature m_signature;
 
   // If true, this native module will not be deduplicated or optimized away in the program graph
@@ -340,8 +339,8 @@ typedef enum
 
 typedef struct
 {
-  uint8_t m_nativeLibraryId[64];
-  uint8_t m_nativeModuleId[64];
+  uint8_t m_nativeLibraryId[16];
+  uint8_t m_nativeModuleId[16];
 
   // The upsample factor of this native module call relative to the rule's root native module call
   int32_t m_upsampleFactor;
@@ -432,27 +431,19 @@ typedef void (*NativeLibraryDeinitializeVoice)(void *pContext, void *pVoiceConte
 
 typedef struct
 {
-  const NativeModule* m_pNativeModule;
-  NativeModuleEntry* m_pNext;
-} NativeModuleEntry;
-
-typedef struct
-{
-  const OptimizationRule* m_pOptimizationRule;
-  OptimizationRuleEntry* m_pNext;
-} OptimizationRuleEntry;
-
-typedef struct
-{
-  uint8_t m_id[64];
+  uint8_t m_id[16];
   NativeLibraryVersion m_version;
   const char* m_pName;
   NativeLibraryInitialize m_pInitialize;
   NativeLibraryDeinitialize m_pDeinitialize;
   NativeLibraryInitializeVoice m_pInitializeVoice;
   NativeLibraryDeinitializeVoice m_pInitializeVoice;
-  const NativeModuleEntry* m_pNativeModules;
-  const OptimizationRuleEntry* m_pOptimizationRules;
+
+  const NativeModule* const* m_pNativeModules;
+  size_t m_nativeModuleCount;
+
+  const OptimizationRule* const* m_pOptimizationRules;
+  size_t m_optimizationRuleCount;
 } NativeLibrary;
 
 // Callback provided to ListNativeLibraries.
