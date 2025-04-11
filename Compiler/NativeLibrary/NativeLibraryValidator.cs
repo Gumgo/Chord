@@ -98,12 +98,12 @@ file static class ReportingExtensions
   {
     var message = $"Native module '{nativeModule.Name}' cannot have both '{RuntimeMutability.DependentConstant.ToLanguageString()}' inputs "
       + $"and non-'{RuntimeMutability.DependentConstant.ToLanguageString()}' outputs";
-    reporting.Error("VariableInputsAndNonVariableOutputs", sourceLocation, message);
+    reporting.Error("DependentConstantInputsAndNonDependentConstantOutputs", sourceLocation, message);
   }
 
   public static void DependentConstantAndVariableInputsError(this IReporting reporting, SourceLocation sourceLocation, NativeModuleSignature nativeModule)
     => reporting.Error(
-      "VariableInputsAndNonVariableOutputs",
+      "DependentConstantAndVariableInputs",
       sourceLocation,
       $"Native module '{nativeModule.Name}' cannot have both '{RuntimeMutability.DependentConstant.ToLanguageString()}' and variable inputs");
 
@@ -115,7 +115,7 @@ file static class ReportingExtensions
 
   public static void InvokeCompileTimeAndInvokeNotProvidedError(this IReporting reporting, SourceLocation sourceLocation, NativeModuleSignature nativeModule)
     => reporting.Error(
-      "InvokeCompileTimeAndInvoke",
+      "InvokeCompileTimeAndInvokeNotProvided",
       sourceLocation,
       $"Neither InvokeCompileTime nor Invoke was provided for native module '{nativeModule.Name}'");
 
@@ -335,7 +335,6 @@ internal class NativeLibraryValidatorContext
   public required IReporting Reporting { get; init; }
 }
 
-// !!! write unit tests
 // $TODO do we need to perform validation on ID or version?
 // $TODO in C++, optimization rules should be specified in a syntax that looks something like this:
 // auto rule1 = OptimizationRule(
@@ -354,7 +353,7 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
     var valid = true;
     var sourceLocation = SourceLocation.FromNativeLibrary(nativeLibrary.Name);
 
-    if (Lexer.Lexer.IsValidIdentifier(nativeLibrary.Name))
+    if (!Lexer.Lexer.IsValidIdentifier(nativeLibrary.Name))
     {
       context.Reporting.InvalidNativeLibraryNameError(sourceLocation, nativeLibrary.Name);
       valid = false;
@@ -453,7 +452,7 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
     // constant inputs can cause the module to run at either compile time or at runtime. If it runs at compile time, then only constant outputs are allowed, and
     // if it runs at runtime, then only variable outputs are allowed.
     var anyNonDependentConstantOutputs = nativeModule.Signature.Parameters.Any(
-      (parameter) => parameter.Direction == ModuleParameterDirection.In && parameter.DataType.RuntimeMutability != RuntimeMutability.DependentConstant);
+      (parameter) => parameter.Direction == ModuleParameterDirection.Out && parameter.DataType.RuntimeMutability != RuntimeMutability.DependentConstant);
     if (anyDependentConstantInputs && anyNonDependentConstantOutputs)
     {
       context.Reporting.DependentConstantInputsAndNonDependentConstantOutputsError(sourceLocation, nativeModule.Signature);
@@ -486,7 +485,7 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
     // Either InvokeCompileTime() or Invoke() (or both) should to be provided
     if (nativeModule.Invoke == null && nativeModule.InvokeCompileTime == null)
     {
-      context.Reporting.InvokeNotProvidedError(sourceLocation, nativeModule.Signature);
+      context.Reporting.InvokeCompileTimeAndInvokeNotProvidedError(sourceLocation, nativeModule.Signature);
       valid = false;
     }
 
@@ -513,7 +512,7 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
     // Note: for simplicity, at least for now, each optimization pattern only gets the first error reported
     var sourceLocation = SourceLocation.FromNativeLibrary(nativeLibrary.Name);
 
-    if (Lexer.Lexer.IsValidIdentifier(optimizationRule.Name))
+    if (!Lexer.Lexer.IsValidIdentifier(optimizationRule.Name))
     {
       context.Reporting.InvalidOptimizationRuleNameError(sourceLocation, optimizationRule);
       return false;
@@ -532,7 +531,7 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
     }
 
     // First, validate the input pattern
-    var inputPatternValidateContext = new ValidateOptimizationRuleComponentContext()
+    var inputPatternValidateContext = new ValidateOptimizationRulePatternContext()
     {
       NativeLibraries = nativeLibraries,
       SourceLocation = sourceLocation,
@@ -541,7 +540,7 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
       Components = optimizationRule.InputPattern,
     };
 
-    if (ValidateOptimizationRuleComponent(inputPatternValidateContext) == null)
+    if (ValidateOptimizationRulePattern(inputPatternValidateContext) == null)
     {
       return false;
     }
@@ -566,7 +565,7 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
         return false;
       }
 
-      var outputPatternValidateContext = new ValidateOptimizationRuleComponentContext()
+      var outputPatternValidateContext = new ValidateOptimizationRulePatternContext()
       {
         NativeLibraries = nativeLibraries,
         SourceLocation = sourceLocation,
@@ -576,7 +575,7 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
         InputPatternComponentResults = inputPatternValidateContext.Components.Select((v) => inputPatternValidateContext.ComponentResults[v]).ToArray(),
       };
 
-      var result = ValidateOptimizationRuleComponent(outputPatternValidateContext);
+      var result = ValidateOptimizationRulePattern(outputPatternValidateContext);
       if (result == null)
       {
         return false;
@@ -591,7 +590,7 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
       var expectedDataType = inputPatternValidateContext.ComponentResults[output].DataType;
       Debug.Assert(expectedDataType != null);
 
-      if (result.DataType.IsAssignableTo(expectedDataType))
+      if (!result.DataType.IsAssignableTo(expectedDataType))
       {
         context.Reporting.IncompatibleOptimizationRuleOutputPatternResultTypeError(sourceLocation, optimizationRule, outputPatternIndex);
         return false;
@@ -601,7 +600,7 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
     return true;
   }
 
-  private ValidateOptimizationRuleComponentResult? ValidateOptimizationRuleComponent(ValidateOptimizationRuleComponentContext validateContext)
+  private ValidateOptimizationRuleComponentResult? ValidateOptimizationRulePattern(ValidateOptimizationRulePatternContext validateContext)
   {
     var result = ValidateNextOptimizationRuleComponent(validateContext);
     if (result == null)
@@ -621,7 +620,7 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
     return result;
   }
 
-  private ValidateOptimizationRuleComponentResult? ValidateNextOptimizationRuleComponent(ValidateOptimizationRuleComponentContext validateContext)
+  private ValidateOptimizationRuleComponentResult? ValidateNextOptimizationRuleComponent(ValidateOptimizationRulePatternContext validateContext)
   {
     Debug.Assert(validateContext.NextComponentIndex <= validateContext.Components.Count);
     if (validateContext.NextComponentIndex == validateContext.Components.Count)
@@ -639,10 +638,10 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
       NativeModuleCallOptimizationRuleComponent nativeModuleCallComponent
         => ValidateNativeModuleCallOptimizationRuleComponent(validateContext, nativeModuleCallComponent),
       ConstantOptimizationRuleComponent constantComponent
-        => new(ModuleParameterDirection.In, new(RuntimeMutability.Constant, constantComponent.PrimitiveType, 1, false)),
+        => new(component, ModuleParameterDirection.In, new(RuntimeMutability.Constant, constantComponent.PrimitiveType, 1, false)),
       ArrayOptimizationRuleComponent arrayComponent => ValidateArrayOptimizationRuleComponent(validateContext, arrayComponent),
       InputOptimizationRuleComponent inputComponent => ValidateInputOptimizationRuleComponent(validateContext, inputComponent),
-      OutputOptimizationRuleComponent => new(ModuleParameterDirection.Out, null),
+      OutputOptimizationRuleComponent => new(component, ModuleParameterDirection.Out, null),
       InputReferenceOptimizationRuleComponent inputReferenceComponent
         => ValidateInputReferenceOptimizationRuleComponent(validateContext, inputReferenceComponent),
       _ => throw UnhandledSubclassException.Create(component),
@@ -658,7 +657,7 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
   }
 
   private ValidateOptimizationRuleComponentResult? ValidateNativeModuleCallOptimizationRuleComponent(
-    ValidateOptimizationRuleComponentContext validateContext,
+    ValidateOptimizationRulePatternContext validateContext,
     NativeModuleCallOptimizationRuleComponent component)
   {
     var componentNativeLibrary = validateContext.NativeLibraries.FirstOrDefault((v) => v.Id == component.NativeLibraryId);
@@ -753,7 +752,20 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
         parameterResult.DataType = parameterResult.DataType != null
           ? new[] { parameterDataType, parameterResult.DataType }.CommonDataType()
           : parameterDataType;
-        Debug.Assert(parameterResult.DataType != null);
+        Debug.Assert(!parameterResult.DataType.IsError);
+
+        // If the parameter is an array component, its element data type constraints must also be upgraded
+        if (parameterResult.ElementResults != null)
+        {
+          var elementDataType = parameterResult.ElementDataType;
+          foreach (var elementResult in parameterResult.ElementResults)
+          {
+            elementResult.DataType = elementResult.DataType != null
+              ? new[] { elementDataType, elementResult.DataType }.CommonDataType()
+              : elementDataType;
+            Debug.Assert(!elementResult.DataType.IsError);
+          }
+        }
       }
       else
       {
@@ -770,11 +782,14 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
     }
 
     // The output data type comes from the selected output parameter (which will generally be the return value parameter)
-    return new(ModuleParameterDirection.In, GetNativeModuleCallDataType(componentNativeModule.Signature.Parameters[component.OutputIndex].DataType));
+    return new(
+      component,
+      ModuleParameterDirection.In,
+      GetNativeModuleCallDataType(componentNativeModule.Signature.Parameters[component.OutputIndex].DataType));
   }
 
   private ValidateOptimizationRuleComponentResult? ValidateArrayOptimizationRuleComponent(
-    ValidateOptimizationRuleComponentContext validateContext,
+    ValidateOptimizationRulePatternContext validateContext,
     ArrayOptimizationRuleComponent component)
   {
     AstDataType? dataType = null;
@@ -800,7 +815,7 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
     }
 
     // Make sure the element's data types are all compatible
-    if (elementResults.Any((v) => v.DataType != null && v.DataType.IsArray))
+    if (elementResults.Any((v) => v.Component is ArrayOptimizationRuleComponent || (v.DataType != null && v.DataType.IsArray)))
     {
       context.Reporting.InvalidArrayOptimizationRuleComponentElementDataTypeError(
         validateContext.SourceLocation,
@@ -813,8 +828,8 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
     var elementDataTypes = elementResults.Select((v) => v.DataType).WhereNotNull().ToArray();
     if (!elementDataTypes.IsEmpty())
     {
-      dataType = elementDataTypes.CommonDataType();
-      if (dataType == null)
+      dataType = elementDataTypes.CommonDataType().ArrayDataType();
+      if (dataType.IsError)
       {
         context.Reporting.InconsistentArrayOptimizationRuleComponentElementDataTypesError(
           validateContext.SourceLocation,
@@ -829,11 +844,11 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
       dataType = AstDataType.EmptyArray();
     }
 
-    return new(ModuleParameterDirection.In, dataType);
+    return new(component, ModuleParameterDirection.In, dataType, elementResults: elementResults);
   }
 
   private ValidateOptimizationRuleComponentResult? ValidateInputOptimizationRuleComponent(
-    ValidateOptimizationRuleComponentContext validateContext,
+    ValidateOptimizationRulePatternContext validateContext,
     InputOptimizationRuleComponent component)
   {
     // This component type is only allowed to appear in input patterns
@@ -864,11 +879,11 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
       dataType = constraintResult.DataType;
     }
 
-    return new(ModuleParameterDirection.In, dataType, mustBeConstant: component.MustBeConstant);
+    return new(component, ModuleParameterDirection.In, dataType, mustBeConstant: component.MustBeConstant);
   }
 
   private ValidateOptimizationRuleComponentResult? ValidateInputReferenceOptimizationRuleComponent(
-    ValidateOptimizationRuleComponentContext validateContext,
+    ValidateOptimizationRulePatternContext validateContext,
     InputReferenceOptimizationRuleComponent component)
   {
     // This component type is only allowed to appear in output patterns
@@ -884,7 +899,7 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
     var inputComponentResult = component.Index >= 0 && component.Index < validateContext.InputPatternComponentResults.Count
       ? validateContext.InputPatternComponentResults[component.Index]
       : null;
-    if (inputComponentResult == null)
+    if (inputComponentResult == null || inputComponentResult.Component is not InputOptimizationRuleComponent)
     {
       context.Reporting.InvalidInputReferenceOptimizationRuleComponentIndexError(
         validateContext.SourceLocation,
@@ -896,10 +911,10 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
     // All inputs within the input pattern should be passed into a module call so their data types should be known
     Debug.Assert(inputComponentResult.DataType != null);
 
-    return new(ModuleParameterDirection.In, inputComponentResult.DataType);
+    return new(component, ModuleParameterDirection.In, inputComponentResult.DataType);
   }
 
-  private class ValidateOptimizationRuleComponentContext
+  private class ValidateOptimizationRulePatternContext
   {
     public required IReadOnlyList<NativeLibrary> NativeLibraries { get; init; }
     public required SourceLocation SourceLocation { get; init; }
@@ -915,13 +930,21 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
   {
     private AstDataType? _dataType;
 
-    public ValidateOptimizationRuleComponentResult(ModuleParameterDirection direction, AstDataType? dataType, bool? mustBeConstant = false)
+    public ValidateOptimizationRuleComponentResult(
+      OptimizationRuleComponent component,
+      ModuleParameterDirection direction,
+      AstDataType? dataType,
+      bool? mustBeConstant = false,
+      IReadOnlyList<ValidateOptimizationRuleComponentResult>? elementResults = null)
     {
+      Component = component;
       Direction = direction;
       MustBeConstant = mustBeConstant ?? false;
       DataType = dataType;
+      ElementResults = elementResults;
     }
 
+    public OptimizationRuleComponent Component { get; }
     public ModuleParameterDirection Direction { get; }
 
     public AstDataType? DataType
@@ -939,5 +962,28 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
 
     public bool MustBeConstant { get; }
     public bool OutputConsumed { get; set; }
+
+    // If this is not null, this is the result of an array component
+    public IReadOnlyList<ValidateOptimizationRuleComponentResult>? ElementResults { get; }
+
+    // This is accessible for array component results only. It should be used to constrain element data types after the array data type has been constrained by
+    // a module call parameter data type.
+    public AstDataType ElementDataType
+    {
+      get
+      {
+        if (ElementResults == null)
+        {
+          throw new InvalidOperationException("Cannot get element data type of non-array component result");
+        }
+
+        if (DataType == null)
+        {
+          throw new InvalidOperationException("Data type of array component has not yet been resolved");
+        }
+
+        return DataType.ElementDataType();
+      }
+    }
   }
 }

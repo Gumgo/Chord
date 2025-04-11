@@ -23,7 +23,6 @@ file static class ReportingExtensions
     => reporting.Error("ArrayIndexOutOfBounds", sourceLocation, "Attempted to index array using out-of-bounds index value");
 }
 
-// !!! for unit testing: make each of these cases into a public function (same for other builders, like scope builder) so they can be selectively called
 internal class ExpressionGraphBuilder(ProgramGraphBuilderContext context)
 {
   public BuildGraphExpressionResult BuildExpression(

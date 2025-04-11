@@ -963,8 +963,8 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
         {
           var nativeModuleCallData = &optimizationRuleComponentNative->Data.NativeModuleCallData;
           return new NativeModuleCallOptimizationRuleComponent(
-            new Guid(new Span<byte>(nativeModuleCallData->NativeModuleId, sizeof(Guid)), true),
             new Guid(new Span<byte>(nativeModuleCallData->NativeLibraryId, sizeof(Guid)), true),
+            new Guid(new Span<byte>(nativeModuleCallData->NativeModuleId, sizeof(Guid)), true),
             nativeModuleCallData->UpsampleFactor,
             nativeModuleCallData->OutputIndex);
         }

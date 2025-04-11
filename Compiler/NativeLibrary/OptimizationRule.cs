@@ -13,8 +13,8 @@ internal class NativeModuleCallOptimizationRuleComponent(
   int outputIndex)
   : OptimizationRuleComponent
 {
-  public Guid NativeLibraryId => nativeModuleId;
-  public Guid NativeModuleId => nativeLibraryId;
+  public Guid NativeLibraryId => nativeLibraryId;
+  public Guid NativeModuleId => nativeModuleId;
   public int UpsampleFactor => upsampleFactor;
   public int OutputIndex => outputIndex;
 }
