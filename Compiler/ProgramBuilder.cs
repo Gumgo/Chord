@@ -4,6 +4,7 @@ using Compiler.NativeLibrary;
 using Compiler.Program;
 using Compiler.Program.ProgramGraphNodes;
 using Compiler.ProgramGraphBuilder;
+using Compiler.ProgramGraphOptimizer;
 using Compiler.Types;
 using Compiler.Utilities;
 using System.Diagnostics;
@@ -48,12 +49,13 @@ public class ProgramBuilder(ProgramBuilderContext context)
 
     try
     {
+      var nativeLibraryRegistry = (INativeLibraryRegistryAccess)context.NativeLibraryRegistry;
       var compileResultTyped = (CompileResult)compileResult;
 
       var programGraphBuilderContext = new ProgramGraphBuilderContext()
       {
         Reporting = context.Reporting,
-        NativeLibraryRegistry = (INativeLibraryRegistryAccess)context.NativeLibraryRegistry,
+        NativeLibraryRegistry = nativeLibraryRegistry,
         CoreNativeModules = compileResultTyped.CoreNativeModules,
       };
 
@@ -127,14 +129,39 @@ public class ProgramBuilder(ProgramBuilderContext context)
 
       var programLatency = voiceGraphOutputLatency + effectGraphOutputLatency;
 
-      // !!! trim unreachable nodes? I think this is just happens periodically in the optimizer (e.g. every 100 optimizations for example)
-      // !!! GRAPH OPTIMIZATION GOES HERE (I think?)
+      // Determine what optimization rules to include based on which native libraries were imported
+      var optimizationRules = compileResultTyped.NativeLibraries
+        .SelectMany(
+          (name) =>
+          {
+            if (!nativeLibraryRegistry.TryGetNativeLibrary(name, out var nativeLibrary))
+            {
+              throw new InvalidOperationException("Failed to access native library");
+            }
+
+            return nativeLibrary.OptimizationRules;
+          })
+        .ToArray();
+
+      var programGraphOptimizerContext = new ProgramGraphOptimizerContext() { Reporting = context.Reporting, NativeLibraryRegistry = nativeLibraryRegistry };
+      var programGraphOptimizer = new ProgramGraphOptimizer.ProgramGraphOptimizer(
+        programGraphOptimizerContext,
+        programGraphBuilderContext,
+        optimizationRules);
+
+      if (voiceGraphOutputNodes != null)
+      {
+        programGraphOptimizer.OptimizeProgramGraph(programVariantProperties, voiceGraphOutputNodes.Select((v) => v.Node).ToArray());
+      }
+
+      if (effectGraphOutputNodes != null)
+      {
+        programGraphOptimizer.OptimizeProgramGraph(programVariantProperties, effectGraphOutputNodes.Select((v) => v.Node).ToArray());
+      }
 
       // Now, walk the graph from the outputs to determine which nodes are actually reachable
-      var reachableVoiceGraphNodes = ProgramGraphOptimizer.ProgramGraphOptimizer.DetermineReachableNodes(
-        (voiceGraphOutputNodes ?? []).Select((entry) => entry.Node));
-      var reachableEffectGraphNodes = ProgramGraphOptimizer.ProgramGraphOptimizer.DetermineReachableNodes(
-        (effectGraphOutputNodes ?? []).Select((entry) => entry.Node));
+      var reachableVoiceGraphNodes = ProgramGraphNodeReachability.DetermineReachableNodes((voiceGraphOutputNodes ?? []).Select((entry) => entry.Node));
+      var reachableEffectGraphNodes = ProgramGraphNodeReachability.DetermineReachableNodes((effectGraphOutputNodes ?? []).Select((entry) => entry.Node));
 
       // The input channels may be reachable as either float, double, neither, or both
       var inputChannelsFloatReachable = inputChannelsFloat.Any(

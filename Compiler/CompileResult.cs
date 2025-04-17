@@ -6,6 +6,9 @@ namespace Compiler;
 
 internal class CompileResult : ICompileResult
 {
+  // List of all imported native libraries
+  public required IReadOnlyList<string> NativeLibraries { get; init; }
+
   // These are listed in the order in which they should be initialized
   public required IReadOnlyList<ValueDefinitionAstNode> GlobalValueDefinitions { get; init; }
 

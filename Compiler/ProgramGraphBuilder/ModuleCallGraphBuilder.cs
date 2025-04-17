@@ -131,16 +131,15 @@ internal class ModuleCallGraphBuilder(ProgramGraphBuilderContext context)
     // hasn't explicitly written dependent-constant-optimized code.
     // Note: if HasSideEffects is true but AlwaysRuntime is false, we can still call the native module at compile time (and its side effects will just happen at
     // compile time). HasSideEffects = true and AlwaysRuntime = false is generally a weird combination and probably shouldn't be used in practice.
-    if (!moduleDefinition.NativeModule.AlwaysRuntime
-      && inputArguments.All((inputArgument) => inputArgument.DataType.IsConstant)
-      && moduleDefinition.ReturnDataType.RuntimeMutability != RuntimeMutability.Variable)
+    var callOutputArguments = TryCallNativeModule(
+      programVariantProperties,
+      callSourceLocation,
+      nativeModuleCallNode.NativeModule,
+      moduleCallUpsampleFactor,
+      inputArguments);
+    if (callOutputArguments != null)
     {
-      outputArguments = CallNativeModule(
-        programVariantProperties,
-        callSourceLocation,
-        nativeModuleCallNode.NativeModule,
-        moduleCallUpsampleFactor,
-        inputArguments);
+      outputArguments = callOutputArguments;
     }
     else if (moduleDefinition.NativeModule.HasSideEffects)
     {
@@ -223,6 +222,23 @@ internal class ModuleCallGraphBuilder(ProgramGraphBuilderContext context)
       .ToArray();
 
     return (returnValue, outputParametersValues);
+  }
+
+  public IReadOnlyList<IOutputProgramGraphNode>? TryCallNativeModule(
+    ProgramVariantProperties programVariantProperties,
+    SourceLocation callSourceLocation,
+    NativeModule nativeModule,
+    int upsampleFactor,
+    IReadOnlyList<IOutputProgramGraphNode> inputArguments)
+  {
+    var outputParameters = nativeModule.Signature.Parameters.Where((v) => v.Direction == ModuleParameterDirection.Out);
+    var canCall = !nativeModule.AlwaysRuntime
+      && inputArguments.All((inputArgument) => inputArgument.DataType.IsConstant)
+      && outputParameters.All((v) => v.DataType.RuntimeMutability != RuntimeMutability.Variable);
+
+    return canCall
+      ? CallNativeModule(programVariantProperties, callSourceLocation, nativeModule, upsampleFactor, inputArguments)
+      : null;
   }
 
   // If this module call C is being issued with dependent-constant runtime mutability, it means that it is being called from within a module definition M which

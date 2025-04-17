@@ -226,6 +226,17 @@ file static class ReportingExtensions
       sourceLocation,
       $"Optimization rule '{optimizationRule.Name}' {PatternName(outputPatternIndex)} native module call component specifies invalid upsample factor");
 
+  public static void NativeModuleCallOptimizationRuleComponentWithSideEffectsDisallowedError(
+    this IReporting reporting,
+    SourceLocation sourceLocation,
+    OptimizationRule optimizationRule,
+    int? outputPatternIndex)
+  {
+    var message = $"Optimization rule '{optimizationRule.Name}' {PatternName(outputPatternIndex)} native module call component "
+      + "references native module with side effects which is disallowed within optimization rules";
+    reporting.Error("NativeModuleCallOptimizationRuleComponentWithSideEffectsDisallowed", sourceLocation, message);
+  }
+
   public static void InvalidNativeModuleCallOptimizationRuleComponentOutputIndexError(
     this IReporting reporting,
     SourceLocation sourceLocation,
@@ -683,6 +694,15 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
     if (component.UpsampleFactor <= 0)
     {
       context.Reporting.InvalidNativeModuleCallOptimizationRuleComponentUpsampleFactorError(
+        validateContext.SourceLocation,
+        validateContext.OptimizationRule,
+        validateContext.OutputPatternIndex);
+      return null;
+    }
+
+    if (componentNativeModule.HasSideEffects)
+    {
+      context.Reporting.NativeModuleCallOptimizationRuleComponentWithSideEffectsDisallowedError(
         validateContext.SourceLocation,
         validateContext.OptimizationRule,
         validateContext.OutputPatternIndex);

@@ -405,8 +405,10 @@ typedef struct
   // A list of optimization rule components which must be matched for this optimization rule to apply
   OptimizationRuleComponent* m_pInputPattern;
 
-  // A null-terminated list of length equal to the number of output parameters in the input pattern. Each entry is a list of optimization rule components to
-  // replace that output component.
+  // A null-terminated list of length equal to the number of unused output parameters in the input pattern, where an unused output parameter is one which does
+  // not get passed into any input or to the input pattern's root value. Each entry is a list of optimization rule components to replace that output component.
+  // The order of these output patterns matches the order of the output components within the input pattern but the input pattern's root value is always listed
+  // first.
   OptimizationRuleComponent** m_ppOutputPatterns;
 } OptimizationRule;
 

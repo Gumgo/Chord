@@ -60,7 +60,7 @@ public class NativeLibraryValidatorTests
     id: _nativeModuleFloatArrayInFloatOutId,
     name: "FloatArrayOut");
 
-  private static readonly Guid _nativeModuleConstFloatInConstFloatOutId = new("40000000-0000-0000-0000-000000000000");
+  private static readonly Guid _nativeModuleConstFloatInConstFloatOutId = new("70000000-0000-0000-0000-000000000000");
   private static readonly NativeModule _nativeModuleConstFloatInConstFloatOut = BuildNativeModule(
     [
       new(ModuleParameterDirection.In, "x", new(RuntimeMutability.Constant, PrimitiveType.Float, 1, false)),
@@ -68,6 +68,23 @@ public class NativeLibraryValidatorTests
     ],
     id: _nativeModuleConstFloatInConstFloatOutId,
     name: "ConstFloatInConstFloatOut");
+
+
+  private static readonly Guid _nativeModuleFloatOutSideEffectsId = new("80000000-0000-0000-0000-000000000000");
+  private static readonly NativeModule _nativeModuleFloatOutSideEffects = new()
+  {
+    NativeLibraryId = _nativeLibraryId,
+    Id = _nativeModuleId,
+    Signature = new("FloatOutSideEffects", 0, [new(ModuleParameterDirection.Out, "x", new(RuntimeMutability.Variable, PrimitiveType.Float, 1, false))]),
+    HasSideEffects = true,
+    AlwaysRuntime = false,
+    Prepare = Prepare,
+    InitializeVoice = InitializeVoice,
+    DeinitializeVoice = DeinitializeVoice,
+    SetVoiceActive = SetVoiceActive,
+    InvokeCompileTime = null,
+    Invoke = Invoke,
+  };
 
 
   private static readonly NativeModule[] _optimizationRuleNativeModules =
@@ -79,6 +96,7 @@ public class NativeLibraryValidatorTests
     _nativeModuleConstFloatInFloatOut,
     _nativeModuleFloatArrayOut,
     _nativeModuleConstFloatInConstFloatOut,
+    _nativeModuleFloatOutSideEffects,
   ];
 
   [Fact]
@@ -949,6 +967,27 @@ public class NativeLibraryValidatorTests
     Assert.False(result);
     Assert.Equal(["InvalidNativeModuleCallOptimizationRuleComponentUpsampleFactor"], reporting.ErrorIdentifiers);
   }
+
+  [Fact]
+  public void NativeModuleCallOptimizationRuleComponentWithSideEffectsDisallowed()
+  {
+    var optimizationRule = new OptimizationRule()
+    {
+      Name = "Rule",
+      InputPattern =
+      [
+        new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatOutSideEffectsId, 1, 0),
+        new OutputOptimizationRuleComponent(),
+      ],
+      OutputPatterns = [[new ConstantOptimizationRuleComponent(1.0f)]],
+    };
+
+    var result = ValidateOptimizationRule(_optimizationRuleNativeModules, optimizationRule, out var reporting);
+
+    Assert.False(result);
+    Assert.Equal(["NativeModuleCallOptimizationRuleComponentWithSideEffectsDisallowed"], reporting.ErrorIdentifiers);
+  }
+
 
   [Theory]
   [InlineData(-1)]

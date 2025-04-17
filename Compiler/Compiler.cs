@@ -91,7 +91,7 @@ public class Compiler(CompilerContext context)
 
       sourceFile.ParseTree = parser.Process(sourceFile.Path, sourceFile.Tokens);
 
-      // Process instrument properties in this file (these are listed before imports so we'll process them first)
+      // ProcessInputPattern instrument properties in this file (these are listed before imports so we'll process them first)
       instrumentPropertyProcessor.Process(rootSourceFile.Path, sourceFile);
 
       // This will add imports to the source file's import list. We'll then enqueue any new imports.
@@ -168,6 +168,10 @@ public class Compiler(CompilerContext context)
 
     return new CompileResult()
     {
+      NativeLibraries = [..sourceFiles
+        .SelectMany((v) => v.Value.NativeImports.Select((nativeImport) => nativeImport.ResolvedPath))
+        .ToHashSet()
+        .OrderBy((v) => v)],
       GlobalValueDefinitions = globalValueInitializationOrder,
       EntryPoints = entryPoints,
       SourceFileAsts = sourceFiles
