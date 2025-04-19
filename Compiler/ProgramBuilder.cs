@@ -143,6 +143,12 @@ public class ProgramBuilder(ProgramBuilderContext context)
           })
         .ToArray();
 
+      var optimizationRuleCycleDetectorSettings = new OptimizationRuleCycleDetector.Settings()
+      {
+        StartCycleDetectionOptimizationRuleCount = ProgramBuilderConstants.StartCycleDetectionOptimizationRuleCount,
+        TooManyNodesThreshold = ProgramBuilderConstants.TooManyNodesThreshold,
+      };
+
       var programGraphOptimizerContext = new ProgramGraphOptimizerContext() { Reporting = context.Reporting, NativeLibraryRegistry = nativeLibraryRegistry };
       var programGraphOptimizer = new ProgramGraphOptimizer.ProgramGraphOptimizer(
         programGraphOptimizerContext,
@@ -151,12 +157,20 @@ public class ProgramBuilder(ProgramBuilderContext context)
 
       if (voiceGraphOutputNodes != null)
       {
-        programGraphOptimizer.OptimizeProgramGraph(programVariantProperties, voiceGraphOutputNodes.Select((v) => v.Node).ToArray());
+        programGraphOptimizer.OptimizeProgramGraph(
+          programVariantProperties,
+          voiceGraphOutputNodes.Select((v) => v.Node).ToArray(),
+          "voice",
+          optimizationRuleCycleDetectorSettings);
       }
 
       if (effectGraphOutputNodes != null)
       {
-        programGraphOptimizer.OptimizeProgramGraph(programVariantProperties, effectGraphOutputNodes.Select((v) => v.Node).ToArray());
+        programGraphOptimizer.OptimizeProgramGraph(
+          programVariantProperties,
+          effectGraphOutputNodes.Select((v) => v.Node).ToArray(),
+          "effect",
+          optimizationRuleCycleDetectorSettings);
       }
 
       // Now, walk the graph from the outputs to determine which nodes are actually reachable

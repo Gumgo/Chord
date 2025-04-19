@@ -15,6 +15,7 @@ internal class ProgramGraphOptimizerContext
 
 internal class ProgramGraphOptimizer
 {
+  private readonly ProgramGraphOptimizerContext _context;
   private readonly OptimizationRuleRecognizer _optimizationRuleRecognizer;
   private readonly OptimizationRuleApplicator _optimizationRuleApplicator;
   private readonly OptimizationRuleComponentDepthTracker _optimizationRuleComponentDepthTracker;
@@ -26,6 +27,8 @@ internal class ProgramGraphOptimizer
     ProgramGraphBuilderContext programGraphBuilderContext,
     IReadOnlyList<OptimizationRule> optimizationRules)
   {
+    _context = context;
+
     var optimizationRuleRecognizerContext = new OptimizationRuleRecognizerContext() { NativeLibraryRegistry = context.NativeLibraryRegistry };
     _optimizationRuleRecognizer = new(optimizationRuleRecognizerContext, optimizationRules);
 
@@ -40,10 +43,17 @@ internal class ProgramGraphOptimizer
     _optimizationRuleComponentDepthTracker = new(context.NativeLibraryRegistry, optimizationRules);
   }
 
-  public void OptimizeProgramGraph(ProgramVariantProperties programVariantProperties, IReadOnlyList<IProcessorProgramGraphNode> programGraph)
+  public void OptimizeProgramGraph(
+    ProgramVariantProperties programVariantProperties,
+    IReadOnlyList<IProcessorProgramGraphNode> programGraph,
+    string graphType,
+    OptimizationRuleCycleDetector.Settings optimizationRuleCycleDetectorSettings)
   {
     // First, do an initial simplification pass to remove unused nodes and deduplicate
     ProgramGraphSimplifier.SimplifyGraph(programGraph);
+
+    var cycleDetectorContext = new OptimizationRuleCycleDetectorContext() { Reporting = _context.Reporting };
+    var cycleDetector = new OptimizationRuleCycleDetector(cycleDetectorContext, optimizationRuleCycleDetectorSettings);
 
     // Walk through the graph in BFS order
     var graphWalker = new GraphWalker(programGraph);
@@ -67,6 +77,8 @@ internal class ProgramGraphOptimizer
       {
         graphWalker.ReplaceNode(oldNode, newNode);
       }
+
+      cycleDetector.DetectCycles(programGraph, detectOptimizationRuleResult.OptimizationRule, graphType);
 
       var rewindDepth = int.MaxValue;
       void UpdateRewindDepth(NativeModuleCallProgramGraphNode nativeModuleCallNode)

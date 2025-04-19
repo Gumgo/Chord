@@ -122,7 +122,7 @@ internal class ProgramGraphSimplifier
           throw new InvalidOperationException("Struct nodes should not exist in the graph at this point in time");
 
         default:
-          throw new InvalidOperationException($"Unhandled {nameof(IProcessorProgramGraphNode)} implementation");
+          throw UnhandledSubclassException.Create(node);
       }
 
       // All inputs must be identical
