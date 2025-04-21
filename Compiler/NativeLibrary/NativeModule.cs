@@ -25,7 +25,7 @@ internal class NativeModuleContext
 
 internal class NativeModule
 {
-  public delegate bool PrepareCallback(NativeModuleContext context, IReadOnlyList<NativeModuleArgument> arguments, out int latency);
+  public delegate bool PrepareCallback(NativeModuleContext context, IReadOnlyList<NativeModuleArgument> arguments, out IReadOnlyList<int> outArgumentLatencies);
   public delegate NativeModuleVoiceContext InitializeVoiceCallback(
     NativeModuleContext context,
     IReadOnlyList<NativeModuleArgument> arguments,

@@ -14,6 +14,9 @@ file static class ReportingExtensions
   public static void MaxUpsampleFactorExceededError(this IReporting reporting, SourceLocation sourceLocation)
     => reporting.Error("MaxUpsampleFactorExceeded", sourceLocation, "Maximum upsample factor exceeded");
 
+  public static void NegativeLatencyError(this IReporting reporting, SourceLocation sourceLocation, NativeModule nativeModule)
+    => reporting.Error("NegativeLatency", sourceLocation, $"Call of native module '{nativeModule.Signature.Name}' produced an output with negative latency");
+
   public static void NonPowerOfTwoScratchMemoryAlignmentError(this IReporting reporting, SourceLocation sourceLocation)
     => reporting.Error("NonPowerOfTwoScratchMemorySize", sourceLocation, "Scratch memory alignment requirement is not a power of two");
 }
@@ -50,6 +53,11 @@ internal class ModuleCallGraphBuilder(ProgramGraphBuilderContext context)
   {
     // This is always resolved when performing actual calls
     Debug.Assert(moduleCallDependentConstantRuntimeMutability != RuntimeMutability.DependentConstant);
+
+    Debug.Assert(
+      inputArgumentSourceLocations.Count == moduleDefinition.NativeModule.Signature.Parameters.Count((v) => v.Direction == ModuleParameterDirection.In));
+    Debug.Assert(
+      outputArgumentSourceLocations.Count == moduleDefinition.NativeModule.Signature.Parameters.Count((v) => v.Direction == ModuleParameterDirection.Out));
 
     // First, determine which inputs are non-constants from the perspective of the module call
     bool IsVariable(RuntimeMutability runtimeMutability)
@@ -125,6 +133,15 @@ internal class ModuleCallGraphBuilder(ProgramGraphBuilderContext context)
       latencyAlignedInputArguments,
       callSourceLocation);
     var outputArguments = nativeModuleCallNode.Outputs;
+
+    foreach (var outputArgument in outputArguments)
+    {
+      if (outputArgument.Latency < 0)
+      {
+        context.Reporting.NegativeLatencyError(callSourceLocation, moduleDefinition.NativeModule);
+        throw new BuildProgramException();
+      }
+    }
 
     // If we can, call the native module to immediately resolve its outputs. At this point, we can simply ignore runtime mutability and call the native module
     // if all inputs are constant (as long as there are no other restrictions). This will allow for constant folding optimizations to apply even if the user
@@ -378,7 +395,19 @@ internal class ModuleCallGraphBuilder(ProgramGraphBuilderContext context)
     NativeModuleDefinitionAstNode moduleDefinition,
     IReadOnlyList<IOutputProgramGraphNode> inputArguments,
     ProgramGraphScopeContext scopeContext)
-    => BuildNativeModuleCall(
+  {
+    var outputArgumentSourceLocations = moduleCall.OutputArguments.Select((v) => v.ValueExpression.SourceLocation).ToList();
+
+    // If there is a return value, use the module call's source location
+    if (moduleDefinition.NativeModule.Signature.ReturnParameterIndex != null)
+    {
+      var returnOutArgumentIndex = moduleDefinition.NativeModule.Signature.Parameters
+        .Take(moduleDefinition.NativeModule.Signature.ReturnParameterIndex.Value)
+        .Count((v) => v.Direction == ModuleParameterDirection.Out);
+      outputArgumentSourceLocations.Insert(returnOutArgumentIndex, moduleCall.SourceLocation);
+    }
+
+    return BuildNativeModuleCall(
       programVariantProperties,
       CalculateModuleCallScopeDependentConstantRuntimeMutability(moduleCall.DependentConstantRuntimeMutability, scopeContext),
       CalculateModuleCallScopeUpsampleFactor(moduleCall.UpsampleFactor, scopeContext),
@@ -386,8 +415,9 @@ internal class ModuleCallGraphBuilder(ProgramGraphBuilderContext context)
       inputArguments,
       moduleCall.SourceLocation,
       moduleCall.InputArguments.Select((v) => v.ValueExpression.SourceLocation).ToArray(),
-      moduleCall.OutputArguments.Select((v) => v.ValueExpression.SourceLocation).ToArray(),
+      outputArgumentSourceLocations,
       scopeContext.NativeModuleCallsWithSideEffects);
+  }
 
   private (IOutputProgramGraphNode? ReturnValue, IReadOnlyList<IOutputProgramGraphNode> OutputParameterValues) BuildScriptModuleCall(
     ProgramVariantProperties programVariantProperties,

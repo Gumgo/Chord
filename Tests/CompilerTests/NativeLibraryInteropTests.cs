@@ -157,9 +157,9 @@ public unsafe class NativeLibraryInteropTests
     };
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
-    static NativeTypes.NativeBool Prepare(NativeTypes.NativeModuleContext* context, NativeTypes.NativeModuleArguments* arguments, int* latency)
+    static NativeTypes.NativeBool Prepare(NativeTypes.NativeModuleContext* context, NativeTypes.NativeModuleArguments* arguments, int* outArgumentLatencies)
     {
-      *latency = 10;
+      *outArgumentLatencies = 10;
       return NativeTypes.NativeBool.True;
     }
 
@@ -501,9 +501,9 @@ public unsafe class NativeLibraryInteropTests
       new(NativeModuleArgumentType.DoubleBufferOut),
     };
 
-    var didPrepare = nativeModule.Prepare(CreateNativeModuleContext(), nativeModuleArguments, out var latency);
+    var didPrepare = nativeModule.Prepare(CreateNativeModuleContext(), nativeModuleArguments, out var outArgumentLatencies);
     Assert.True(didPrepare);
-    Assert.Equal(10, latency);
+    Assert.Equal([10], outArgumentLatencies);
 
     nativeModuleVoiceContext = nativeModule.InitializeVoice(CreateNativeModuleContext(), nativeModuleArguments, out var scratchMemoryRequirement);
     Assert.Equal(16u, scratchMemoryRequirement.Size);
@@ -805,6 +805,72 @@ public unsafe class NativeLibraryInteropTests
       0);
 
     Assert.Equal(["OutputStringNotWritten"], reporting.ErrorIdentifiers);
+  }
+
+  [Fact]
+  public void NonZeroLatencyForConstantArgument()
+  {
+    var memoryHandles = new DisposableCollection();
+
+    [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
+    static NativeTypes.NativeBool Prepare(NativeTypes.NativeModuleContext* context, NativeTypes.NativeModuleArguments* arguments, int* outArgumentLatencies)
+    {
+      *outArgumentLatencies = 10;
+      return NativeTypes.NativeBool.True;
+    }
+
+    var nativeModuleParameters = new NativeTypes.NativeModuleParameter[]
+    {
+      new()
+      {
+        Direction = NativeTypes.ModuleParameterDirection.Out,
+        Name = GetUTF8String("x", memoryHandles),
+        DataType = new()
+        {
+          RuntimeMutability = NativeTypes.RuntimeMutability.Constant,
+          PrimitiveType = NativeTypes.PrimitiveType.Float,
+          UpsampleFactor = 1,
+          IsArray = NativeFalse,
+        },
+      },
+    };
+
+    var nativeModuleNative = new NativeTypes.NativeModule()
+    {
+      Signature = new()
+      {
+        Name = GetUTF8String("Foo", memoryHandles),
+        Parameters = GetPointer(nativeModuleParameters, memoryHandles),
+        ParameterCount = (nuint)nativeModuleParameters.Length,
+        ReturnParameterIndex = 0,
+      },
+      HasSideEffects = NativeFalse,
+      AlwaysRuntime = NativeFalse,
+      Prepare = &Prepare,
+    };
+
+    var nativeLibraryNative = SingleModuleNativeLibrary(nativeModuleNative, memoryHandles);
+    var nativeLibrary = RunNativeLibraryFromNative(&nativeLibraryNative, out var reporting);
+
+    Assert.NotNull(nativeLibrary);
+    var nativeModule = Assert.Single(nativeLibrary.Modules);
+    Assert.Empty(reporting.ErrorIdentifiers);
+
+    var nativeModuleContext = new NativeModuleContext()
+    {
+      NativeLibraryContext = new(0),
+      NativeLibraryVoiceContext = new(0),
+      VoiceContext = new(0),
+      SampleRate = 44100,
+      InputChannelCount = 1,
+      OutputChannelCount = 1,
+      UpsampleFactor = 1,
+      Reporting = reporting,
+    };
+
+    nativeModule.Prepare(nativeModuleContext, [new(NativeModuleArgumentType.FloatConstantOut)], out _);
+
+    Assert.Equal(["NonZeroLatencyForConstantArgument"], reporting.ErrorIdentifiers);
   }
 
   [Fact]

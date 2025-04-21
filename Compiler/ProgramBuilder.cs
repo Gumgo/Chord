@@ -305,7 +305,7 @@ public class ProgramBuilder(ProgramBuilderContext context)
       [element, latencyNode.Output],
       sourceLocation,
       [sourceLocation, sourceLocation],
-      [sourceLocation, sourceLocation],
+      [sourceLocation],
       nativeModuleCallsWithSideEffects);
     Debug.Assert(delayedNode != null);
     Debug.Assert(delayOutputNodes.IsEmpty());

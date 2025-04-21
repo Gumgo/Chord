@@ -270,7 +270,9 @@ typedef struct
 } NativeModuleContext;
 
 // Called before a native module is going to be inserted into the graph. Any necessary argument validation should occur here and latency should be output.
-typedef bool (*NativeModulePrepare)(const NativeModuleContext *pContext, const NativeModuleArguments* pArguments, int32_t *pLatencyOut);
+// pOutArgumentLatenciesOut is an array whose length is equal to the number of output arguments. Each output latency should be specified in terms of that
+// argument's upsample factor.
+typedef bool (*NativeModulePrepare)(const NativeModuleContext *pContext, const NativeModuleArguments* pArguments, int32_t *pOutArgumentLatenciesOut);
 
 // Called on program initialization. This should allocate/initialize any necessary memory and report scratch memory requirements.
 typedef void* (*NativeModuleInitializeVoice)(

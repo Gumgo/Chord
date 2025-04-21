@@ -210,6 +210,8 @@ internal class OptimizationRuleApplicator(OptimizationRuleApplicatorContext cont
           var sourceLocation = SourceLocation.FromNativeLibrary(nativeLibrary.Name);
           var upsampleFactor = nativeModuleCallComponent.UpsampleFactor * upsampleFactorMultiplier;
 
+          // Note: at this point we have already performed latency compensation so latency reporting is ignored (it is assumed that native module calls swapped
+          // out via optimization rules have the same latencies)
           var nativeModuleCallNode = new NativeModuleCallProgramGraphNode(
             context.NativeLibraryRegistry,
             context.Reporting,

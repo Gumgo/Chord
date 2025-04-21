@@ -7,6 +7,19 @@ namespace Tests.CompilerTests;
 
 public class NativeLibraryValidatorTests
 {
+  private static readonly HashSet<NativeModuleArgumentType> _outArgumentTypes =
+  [
+    NativeModuleArgumentType.FloatConstantOut,
+    NativeModuleArgumentType.FloatBufferOut,
+    NativeModuleArgumentType.DoubleConstantOut,
+    NativeModuleArgumentType.DoubleBufferOut,
+    NativeModuleArgumentType.IntConstantOut,
+    NativeModuleArgumentType.IntBufferOut,
+    NativeModuleArgumentType.BoolConstantOut,
+    NativeModuleArgumentType.BoolBufferOut,
+    NativeModuleArgumentType.StringConstantOut,
+  ];
+
   private static readonly Guid _nativeLibraryId = new("01234567-89ab-cdef-0123-456789abcdef");
   private static readonly Guid _nativeModuleId = new("456789ab-cdef-0123-4567-89abcdef0123");
 
@@ -74,7 +87,7 @@ public class NativeLibraryValidatorTests
   private static readonly NativeModule _nativeModuleFloatOutSideEffects = new()
   {
     NativeLibraryId = _nativeLibraryId,
-    Id = _nativeModuleId,
+    Id = _nativeModuleFloatOutSideEffectsId,
     Signature = new("FloatOutSideEffects", 0, [new(ModuleParameterDirection.Out, "x", new(RuntimeMutability.Variable, PrimitiveType.Float, 1, false))]),
     HasSideEffects = true,
     AlwaysRuntime = false,
@@ -85,7 +98,6 @@ public class NativeLibraryValidatorTests
     InvokeCompileTime = null,
     Invoke = Invoke,
   };
-
 
   private static readonly NativeModule[] _optimizationRuleNativeModules =
   [
@@ -1389,9 +1401,9 @@ public class NativeLibraryValidatorTests
       Invoke = Invoke,
     };
 
-  private static bool Prepare(NativeModuleContext context, IReadOnlyList<NativeModuleArgument> arguments, out int latency)
+  private static bool Prepare(NativeModuleContext context, IReadOnlyList<NativeModuleArgument> arguments, out IReadOnlyList<int> outArgumentLatencies)
   {
-    latency = 0;
+    outArgumentLatencies = arguments.Where((v) => _outArgumentTypes.Contains(v.ArgumentType)).Select((_) => 0).ToArray();
     return true;
   }
 

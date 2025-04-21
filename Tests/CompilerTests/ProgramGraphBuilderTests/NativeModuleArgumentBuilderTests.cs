@@ -439,7 +439,7 @@ public class NativeModuleArgumentBuilderTests
 
   private static NativeModule BuildNativeModule(ModuleParameterDirection parameterDirection, AstDataType parameterDataType)
   {
-    static bool Prepare(NativeModuleContext context, IReadOnlyList<NativeModuleArgument> arguments, out int latency)
+    static bool Prepare(NativeModuleContext context, IReadOnlyList<NativeModuleArgument> arguments, out IReadOnlyList<int> outArgumentlatencies)
       => throw new InvalidOperationException("This should not run during tests");
 
     static NativeModuleVoiceContext InitializeVoice(

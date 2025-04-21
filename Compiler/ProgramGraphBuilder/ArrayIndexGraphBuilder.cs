@@ -83,7 +83,7 @@ internal class ArrayIndexGraphBuilder(ProgramGraphBuilderContext context)
         [arrayNode.Output, indexNode],
         sourceLocation,
         [sourceLocation, sourceLocation], // This is technically the source location of the module call, not the arguments, so we could slightly improve this
-        [],
+        [sourceLocation],
         nativeModuleCallsWithSideEffects);
 
       // An indexing operation should not have side effects so it should not have been added to this list

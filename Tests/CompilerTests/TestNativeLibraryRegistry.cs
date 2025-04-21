@@ -1,8 +1,8 @@
 ﻿using Compiler;
 using Compiler.NativeLibrary;
+using Compiler.Types;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Xml.Linq;
 
 namespace Tests.CompilerTests;
 
@@ -14,7 +14,7 @@ internal sealed class TestNativeLibraryRegistry : INativeLibraryRegistry, INativ
   private readonly NativeLibrary _coreNativeLibrary;
   private readonly NativeLibrary _testNativeLibrary;
 
-  private Guid _nativeLibraryId = Guid.Empty;
+  private readonly Guid _nativeLibraryId = Guid.Empty;
   private int _nextNativeModuleId = 1;
 
   public TestNativeLibraryRegistry()
@@ -151,10 +151,10 @@ internal sealed class TestNativeLibraryRegistry : INativeLibraryRegistry, INativ
         CreateUncallableFunction(CoreNativeLibrary.DelayInt),
         CreateUncallableFunction(CoreNativeLibrary.DelayBool),
 
-        CreateUncallableFunction(CoreNativeLibrary.AddLatencyFloat, queryLatencyFunction: (arguments) => arguments[1].IntConstantIn),
-        CreateUncallableFunction(CoreNativeLibrary.AddLatencyDouble, queryLatencyFunction: (arguments) => arguments[1].IntConstantIn),
-        CreateUncallableFunction(CoreNativeLibrary.AddLatencyInt, queryLatencyFunction: (arguments) => arguments[1].IntConstantIn),
-        CreateUncallableFunction(CoreNativeLibrary.AddLatencyBool, queryLatencyFunction: (arguments) => arguments[1].IntConstantIn),
+        CreateUncallableFunction(CoreNativeLibrary.AddLatencyFloat, queryLatencyFunction: (arguments) => [arguments[1].IntConstantIn]),
+        CreateUncallableFunction(CoreNativeLibrary.AddLatencyDouble, queryLatencyFunction: (arguments) => [arguments[1].IntConstantIn]),
+        CreateUncallableFunction(CoreNativeLibrary.AddLatencyInt, queryLatencyFunction: (arguments) => [arguments[1].IntConstantIn]),
+        CreateUncallableFunction(CoreNativeLibrary.AddLatencyBool, queryLatencyFunction: (arguments) => [arguments[1].IntConstantIn]),
       ],
 
       OptimizationRules = [],
@@ -244,7 +244,7 @@ internal sealed class TestNativeLibraryRegistry : INativeLibraryRegistry, INativ
     bool compileTimeOnly = false,
     bool hasSideEffects = false,
     bool alwaysRuntime = false,
-    Func<IReadOnlyList<NativeModuleArgument>, int>? queryLatencyFunction = null)
+    Func<IReadOnlyList<NativeModuleArgument>, IReadOnlyList<int>>? queryLatencyFunction = null)
   {
     // Just construct some unique deterministic GUID, its contents don't matter
     var idBytes = new byte[16];
@@ -255,9 +255,10 @@ internal sealed class TestNativeLibraryRegistry : INativeLibraryRegistry, INativ
     writer.Write(_nextNativeModuleId);
     _nextNativeModuleId++;
 
-    bool Prepare(NativeModuleContext context, IReadOnlyList<NativeModuleArgument> arguments, out int latency)
+    bool Prepare(NativeModuleContext context, IReadOnlyList<NativeModuleArgument> arguments, out IReadOnlyList<int> outArgumentlatencies)
     {
-      latency = queryLatencyFunction?.Invoke(arguments) ?? 0;
+      outArgumentlatencies = queryLatencyFunction?.Invoke(arguments)
+        ?? nativeModuleSignature.Parameters.Where((v) => v.Direction == ModuleParameterDirection.Out).Select((_) => 0).ToArray();
       return true;
     }
 
@@ -319,7 +320,7 @@ internal sealed class TestNativeLibraryRegistry : INativeLibraryRegistry, INativ
     NativeModuleSignature nativeModuleSignature,
     bool hasSideEffects = false,
     bool alwaysRuntime = false,
-    Func<IReadOnlyList<NativeModuleArgument>, int>? queryLatencyFunction = null)
+    Func<IReadOnlyList<NativeModuleArgument>, IReadOnlyList<int>>? queryLatencyFunction = null)
     => CreateSimpleFunction(
       nativeModuleSignature,
       (arguments) => throw new InvalidOperationException("This should not be called at compile time"),

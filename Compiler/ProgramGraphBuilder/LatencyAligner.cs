@@ -151,7 +151,7 @@ internal class LatencyAligner(ProgramGraphBuilderContext context)
       [node, latencyNode.Output],
       sourceLocation,
       [sourceLocation, sourceLocation],
-      [sourceLocation, sourceLocation],
+      [sourceLocation],
       nativeModuleCallsWithSideEffects);
     Debug.Assert(delayedNode != null);
     Debug.Assert(delayOutputNodes.IsEmpty());
@@ -174,7 +174,7 @@ internal class LatencyAligner(ProgramGraphBuilderContext context)
       [delayedNode, latencyNode.Output],
       sourceLocation,
       [sourceLocation, sourceLocation],
-      [sourceLocation, sourceLocation],
+      [sourceLocation],
       nativeModuleCallsWithSideEffects);
     Debug.Assert(delayedNodeWithLatency != null);
     Debug.Assert(addLatencyOutputNodes.IsEmpty());

@@ -30,7 +30,7 @@ public class ModuleCallGraphBuilderTests
       [inputNode.Output],
       _sourceLocation,
       [_sourceLocation],
-      [],
+      [_sourceLocation],
       []);
 
     Assert.NotNull(returnValue);
@@ -54,7 +54,7 @@ public class ModuleCallGraphBuilderTests
       [inputNode.Output],
       _sourceLocation,
       [_sourceLocation],
-      [],
+      [_sourceLocation],
       []);
 
     Assert.NotNull(returnValue);
@@ -79,7 +79,7 @@ public class ModuleCallGraphBuilderTests
       [inputNodeA.Output, inputNodeB.Output],
       _sourceLocation,
       [_sourceLocation, _sourceLocation],
-      [],
+      [_sourceLocation],
       []);
 
     Assert.NotNull(returnValue);
@@ -104,10 +104,33 @@ public class ModuleCallGraphBuilderTests
         [inputNode.Output],
         _sourceLocation,
         [_sourceLocation],
-        [],
+        [_sourceLocation],
         []));
 
     Assert.Equal(["MaxUpsampleFactorExceeded"], reporting.ErrorIdentifiers);
+  }
+
+  [Fact]
+  public void NegativeLatency()
+  {
+    var context = ProgramGraphBuilderTestUtilities.CreateContext(out var reporting);
+    var inputNode = new TestProcessorProgramGraphNode(1, 0);
+    var latencyNode = new ConstantProgramGraphNode(-1);
+
+    var moduleCallGraphBuilder = new ModuleCallGraphBuilder(context);
+    Assert.Throws<BuildProgramException>(
+      () => moduleCallGraphBuilder.BuildNativeModuleCall(
+        _programVariantProperties,
+        RuntimeMutability.Variable,
+        1,
+        context.CoreNativeModules[CoreNativeLibrary.AddLatencyFloat],
+        [inputNode.Output, latencyNode.Output],
+        _sourceLocation,
+        [_sourceLocation, _sourceLocation],
+        [_sourceLocation],
+        []));
+
+    Assert.Equal(["NegativeLatency"], reporting.ErrorIdentifiers);
   }
 
   [Fact]

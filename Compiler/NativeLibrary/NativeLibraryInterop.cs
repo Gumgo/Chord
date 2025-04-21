@@ -52,6 +52,13 @@ file static class ReportingExtensions
     reporting.Error("OutputStringNotWritten", sourceLocation, message);
   }
 
+  public static void NonZeroLatencyForConstantArgumentError(this IReporting reporting, SourceLocation sourceLocation, string nativeModuleName, string parameterName)
+  {
+    var message = $"Non-zero latency was reported for '{RuntimeMutability.Constant.ToLanguageString()}' "
+      + $"native module '{nativeModuleName}' '{ModuleParameterDirection.Out.ToLanguageString()}' parameter '{parameterName}'";
+    reporting.Error("NonZeroLatencyForConstantArgument", sourceLocation, message);
+  }
+
   public static void NullOptimizationRuleNameError(this IReporting reporting, SourceLocation sourceLocation)
     => reporting.Error("NullOptimizationRuleName", sourceLocation, "Optimization rule name is null");
 
@@ -792,14 +799,29 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
     var invokeCompileTime = nativeModuleNative->InvokeCompileTime;
     var invoke = nativeModuleNative->Invoke;
 
-    bool PrepareWrapper(NativeModuleContext context, IReadOnlyList<NativeModuleArgument> arguments, out int latency)
+    bool PrepareWrapper(NativeModuleContext context, IReadOnlyList<NativeModuleArgument> arguments, out IReadOnlyList<int> outArgumentLatencies)
     {
       using var disposeContextAuto = NativeModuleContextToNative(context, out var contextNative);
       using var disposeArgumentsAuto = NativeModuleArgumentsToNative(arguments, out var argumentsNative);
 
-      int latencyInner = 0;
-      var result = prepare == null || prepare(&contextNative, &argumentsNative, &latencyInner).ToBool();
-      latency = latencyInner;
+      // Note: this will all be default-initialized to 0. Is that what we want? We could set them to -1 by default to catch cases where the user forgets to set
+      // values, though maybe we want them to be 0 by default since that's the most common case.
+      var outParametersAndArguments = parameters.ZipSafe(arguments).Where((entry) => entry.First.Direction == ModuleParameterDirection.Out).ToArray();
+      var outArgumentLatenciesInner = new int[outParametersAndArguments.Length];
+      var outArgumentLatenciesHandle = GCHandle.Alloc(outArgumentLatenciesInner, GCHandleType.Pinned);
+      using var disposeOutArgumentLatencies = new DisposableCallback(outArgumentLatenciesHandle.Free);
+
+      var result = prepare == null || prepare(&contextNative, &argumentsNative, (int*)outArgumentLatenciesHandle.AddrOfPinnedObject()).ToBool();
+      outArgumentLatencies = outArgumentLatenciesInner;
+
+      foreach (var ((parameter, _), latency) in outParametersAndArguments.ZipSafe(outArgumentLatenciesInner))
+      {
+        if (parameter.DataType.RuntimeMutability == RuntimeMutability.Constant && latency != 0)
+        {
+          context.Reporting.NonZeroLatencyForConstantArgumentError(sourceLocation, nativeModuleName, parameter.Name);
+        }
+      }
+
       return result;
     }
 

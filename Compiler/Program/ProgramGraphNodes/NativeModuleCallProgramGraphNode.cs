@@ -72,8 +72,7 @@ internal class NativeModuleCallProgramGraphNode : IProcessorProgramGraphNode
 
     inputLatency ??= 0;
 
-    // !!! do we want to actually have a separate latency for each output argument in terms of its upsample factor?
-    var outputLatency = inputLatency.Value + PrepareNativeModule(
+    var outArgumentLatencies = PrepareNativeModule(
       nativeLibraryRegistry,
       reporting,
       programVariantProperties,
@@ -84,9 +83,11 @@ internal class NativeModuleCallProgramGraphNode : IProcessorProgramGraphNode
 
     Inputs = inputArguments.Select((v) => new InputProgramGraphNode(this) { Connection = v }).ToArray();
     Outputs = outputParameters
+      .ZipSafe(outArgumentLatencies)
       .Select(
-        (parameter) =>
+        (entry) =>
         {
+          var (parameter, latency) = entry;
           Debug.Assert(parameter.DataType.PrimitiveType != null);
           Debug.Assert(!parameter.DataType.IsArray);
           int? parameterUpsampleFactor = null;
@@ -95,7 +96,7 @@ internal class NativeModuleCallProgramGraphNode : IProcessorProgramGraphNode
             || (parameter.DataType.RuntimeMutability == RuntimeMutability.DependentConstant && !allDependentConstantInputsConstant))
           {
             parameterUpsampleFactor = parameter.DataType.UpsampleFactor * upsampleFactor;
-            parameterOutputLatency = outputLatency * parameter.DataType.UpsampleFactor;
+            parameterOutputLatency = (inputLatency.Value * parameter.DataType.UpsampleFactor) + latency;
           }
 
           return new OutputProgramGraphNode(this, new(parameter.DataType.PrimitiveType.Value, parameterUpsampleFactor, false), parameterOutputLatency);
@@ -126,7 +127,7 @@ internal class NativeModuleCallProgramGraphNode : IProcessorProgramGraphNode
       : argumentDataType.IsConstant || argumentDataType.UpsampleFactor == parameterDataType.UpsampleFactor * upsampleFactor;
   }
 
-  private static int PrepareNativeModule(
+  private static IReadOnlyList<int> PrepareNativeModule(
     INativeLibraryRegistryAccess nativeLibraryRegistry,
     IReporting reporting,
     ProgramVariantProperties programVariantProperties,
@@ -165,12 +166,12 @@ internal class NativeModuleCallProgramGraphNode : IProcessorProgramGraphNode
       Reporting = nativeModuleReporting,
     };
 
-    nativeModule.Prepare(nativeModuleContext, nativeModuleArguments, out var latency);
+    nativeModule.Prepare(nativeModuleContext, nativeModuleArguments, out var outArgumentLatencies);
     if (nativeModuleReporting.ErrorCount > 0)
     {
       throw new BuildProgramException();
     }
 
-    return latency;
+    return outArgumentLatencies;
   }
 }
