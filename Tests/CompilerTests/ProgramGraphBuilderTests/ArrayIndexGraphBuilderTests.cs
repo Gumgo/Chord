@@ -1,6 +1,6 @@
 ﻿using Compiler;
 using Compiler.Program.ProgramGraphNodes;
-using Compiler.ProgramGraphBuilder;
+using Compiler.ProgramGraphBuilding;
 using Compiler.Types;
 
 namespace Tests.CompilerTests.ProgramGraphBuilderTests;

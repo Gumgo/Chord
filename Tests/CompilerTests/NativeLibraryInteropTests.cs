@@ -1,13 +1,13 @@
 ﻿using Compiler;
 using Compiler.Ast;
-using Compiler.NativeLibrary;
+using Compiler.Native;
 using Compiler.Types;
 using Compiler.Utilities;
 using System.Buffers;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
-using NativeTypes = Compiler.NativeLibrary.NativeTypes;
+using NativeTypes = Compiler.Native.NativeTypes;
 
 namespace Tests.CompilerTests;
 
@@ -998,7 +998,7 @@ public unsafe class NativeLibraryInteropTests
     Assert.Equal(["InvalidOptimizationRuleComponentType"], reporting.ErrorIdentifiers);
   }
 
-  private static Compiler.NativeLibrary.NativeLibrary? RunNativeLibraryFromNative(NativeTypes.NativeLibrary* nativeLibraryNative, out Reporting reporting)
+  private static Compiler.Native.NativeLibrary? RunNativeLibraryFromNative(NativeTypes.NativeLibrary* nativeLibraryNative, out Reporting reporting)
   {
     reporting = new Reporting();
     var context = new NativeLibraryInteropContext() { Reporting = reporting };

@@ -1,5 +1,5 @@
 ﻿using Compiler;
-using Compiler.NativeLibrary;
+using Compiler.Native;
 using Compiler.Types;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;

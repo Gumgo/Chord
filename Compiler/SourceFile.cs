@@ -1,6 +1,6 @@
 ﻿using Compiler.Ast;
-using Compiler.Lexer;
-using Compiler.Parser.Nodes;
+using Compiler.ParseTree;
+using Compiler.Tokenization;
 using System.Text;
 
 namespace Compiler;

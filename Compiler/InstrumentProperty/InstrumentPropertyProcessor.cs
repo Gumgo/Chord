@@ -1,5 +1,5 @@
-﻿using Compiler.Lexer;
-using Compiler.Parser.Nodes;
+﻿using Compiler.ParseTree;
+using Compiler.Tokenization;
 using Compiler.Types;
 using Compiler.Utilities;
 using System.Diagnostics;

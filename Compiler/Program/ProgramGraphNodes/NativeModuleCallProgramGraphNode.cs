@@ -1,6 +1,6 @@
 ﻿using Compiler.Ast;
-using Compiler.NativeLibrary;
-using Compiler.ProgramGraphBuilder;
+using Compiler.Native;
+using Compiler.ProgramGraphBuilding;
 using Compiler.Types;
 using Compiler.Utilities;
 using System.Diagnostics;

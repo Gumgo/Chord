@@ -1,7 +1,7 @@
 ﻿using Compiler;
 using Compiler.InstrumentProperty;
-using Compiler.Lexer;
-using Compiler.Parser;
+using Compiler.Lexing;
+using Compiler.Parsing;
 
 namespace Tests.CompilerTests;
 

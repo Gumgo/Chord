@@ -1,8 +1,8 @@
 ﻿using Compiler;
 using Compiler.Ast;
-using Compiler.NativeLibrary;
+using Compiler.Native;
 using Compiler.Program.ProgramGraphNodes;
-using Compiler.ProgramGraphBuilder;
+using Compiler.ProgramGraphBuilding;
 using Compiler.Types;
 using CompilerNamespace = Compiler;
 

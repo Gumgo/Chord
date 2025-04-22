@@ -1,10 +1,10 @@
 ﻿using Compiler.Ast;
 using Compiler.EntryPoint;
-using Compiler.NativeLibrary;
+using Compiler.Native;
 using Compiler.Program;
 using Compiler.Program.ProgramGraphNodes;
-using Compiler.ProgramGraphBuilder;
-using Compiler.ProgramGraphOptimizer;
+using Compiler.ProgramGraphBuilding;
+using Compiler.ProgramGraphOptimization;
 using Compiler.Types;
 using Compiler.Utilities;
 using System.Diagnostics;
@@ -150,7 +150,7 @@ public class ProgramBuilder(ProgramBuilderContext context)
       };
 
       var programGraphOptimizerContext = new ProgramGraphOptimizerContext() { Reporting = context.Reporting, NativeLibraryRegistry = nativeLibraryRegistry };
-      var programGraphOptimizer = new ProgramGraphOptimizer.ProgramGraphOptimizer(
+      var programGraphOptimizer = new ProgramGraphOptimizer(
         programGraphOptimizerContext,
         programGraphBuilderContext,
         optimizationRules);

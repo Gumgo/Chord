@@ -1,8 +1,8 @@
 ﻿using Compiler;
-using Compiler.Importer;
-using Compiler.Lexer;
-using Compiler.NativeLibrary;
-using Compiler.Parser;
+using Compiler.Importing;
+using Compiler.Lexing;
+using Compiler.Native;
+using Compiler.Parsing;
 using System.Diagnostics;
 using System.Text;
 

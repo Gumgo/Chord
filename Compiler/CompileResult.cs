@@ -1,6 +1,6 @@
 ﻿using Compiler.Ast;
 using Compiler.EntryPoint;
-using Compiler.NativeLibrary;
+using Compiler.Native;
 
 namespace Compiler;
 

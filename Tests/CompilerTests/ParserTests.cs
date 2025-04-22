@@ -1,6 +1,7 @@
-﻿using Compiler.Lexer;
-using Compiler.Parser;
-using Compiler.Parser.Nodes;
+﻿using Compiler.Lexing;
+using Compiler.ParseTree;
+using Compiler.Parsing;
+using Compiler.Tokenization;
 using Compiler.Types;
 
 namespace Tests.CompilerTests;

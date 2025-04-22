@@ -1,11 +1,11 @@
-﻿using Compiler.AstBuilder;
+﻿using Compiler.AstBuilding;
 using Compiler.EntryPoint;
-using Compiler.GlobalValueInitializationOrderResolver;
-using Compiler.Importer;
+using Compiler.GlobalValueInitializationOrderResolution;
+using Compiler.Importing;
 using Compiler.InstrumentProperty;
-using Compiler.Lexer;
-using Compiler.NativeLibrary;
-using Compiler.Parser;
+using Compiler.Lexing;
+using Compiler.Native;
+using Compiler.Parsing;
 using System.Buffers;
 using System.Diagnostics;
 using System.Text;
@@ -57,10 +57,10 @@ public class Compiler(CompilerContext context)
     sourceFileProcessingQueue.Enqueue(rootSourceFile);
 
     var lexerContext = new LexerContext() { Reporting = reporting };
-    var lexer = new Lexer.Lexer(lexerContext);
+    var lexer = new Lexer(lexerContext);
 
     var parserContext = new ParserContext() { Reporting = reporting };
-    var parser = new Parser.Parser(parserContext);
+    var parser = new Parser(parserContext);
 
     var instrumentPropertyProcessorContext = new InstrumentPropertyProcessorContext() { Reporting = reporting };
     var instrumentPropertyProcessor = new InstrumentPropertyProcessor(instrumentPropertyProcessorContext);
@@ -72,7 +72,7 @@ public class Compiler(CompilerContext context)
       FileOperations = context.FileOperations,
       RootSourceFileDirectory = rootSourceFileDirectory,
     };
-    var importer = new Importer.Importer(importerContext);
+    var importer = new Importer(importerContext);
 
     while (sourceFileProcessingQueue.TryDequeue(out var sourceFile))
     {
@@ -142,12 +142,12 @@ public class Compiler(CompilerContext context)
       NativeLibraryRegistry = (INativeLibraryRegistryAccess)context.NativeLibraryRegistry,
     };
 
-    var astBuilder = new AstBuilder.AstBuilder(astBuilderContext);
+    var astBuilder = new AstBuilder(astBuilderContext);
     var buildNativeLibraryAstsResult = astBuilder.BuildNativeLibraryAsts(orderedValidSourceFiles);
     astBuilder.BuildAsts(orderedValidSourceFiles, buildNativeLibraryAstsResult.NativeLibraryAsts);
 
     var globalValueInitializationOrderResolverContext = new GlobalValueInitializationOrderResolverContext() { Reporting = reporting };
-    var globalValueInitializationOrderResolver = new GlobalValueInitializationOrderResolver.GlobalValueInitializationOrderResolver(
+    var globalValueInitializationOrderResolver = new GlobalValueInitializationOrderResolver(
       globalValueInitializationOrderResolverContext);
     var globalValueInitializationOrder = globalValueInitializationOrderResolver.ResolveGlobalValueInitializationOrder(orderedValidSourceFiles);
 
@@ -242,7 +242,6 @@ public class Compiler(CompilerContext context)
   }
 }
 
-// !!! move all these file scope reporting extension classes to the end of each file for consistency
 file static class ReportingExtensions
 {
   public static void ResolveSourceFilePathError(this IReporting reporting, string sourceFilePath)

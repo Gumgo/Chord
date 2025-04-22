@@ -1,8 +1,8 @@
-﻿using Compiler.NativeLibrary;
+﻿using Compiler.Native;
 
 namespace Compiler.Ast;
 
-internal class NativeModuleDefinitionAstNode(NativeLibrary.NativeLibrary nativeLibrary, NativeModule nativeModule, ScopeAstNode containingScope)
+internal class NativeModuleDefinitionAstNode(NativeLibrary nativeLibrary, NativeModule nativeModule, ScopeAstNode containingScope)
   : ModuleDefinitionAstNode(SourceLocation.FromNativeLibrary(nativeLibrary.Name), containingScope, nativeModule.Signature.Name)
 {
   public override string NodeName => "native module definition";

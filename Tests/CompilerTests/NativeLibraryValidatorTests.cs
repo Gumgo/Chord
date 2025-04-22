@@ -1,6 +1,6 @@
 ﻿using Compiler;
 using Compiler.Ast;
-using Compiler.NativeLibrary;
+using Compiler.Native;
 using Compiler.Types;
 
 namespace Tests.CompilerTests;
@@ -81,7 +81,6 @@ public class NativeLibraryValidatorTests
     ],
     id: _nativeModuleConstFloatInConstFloatOutId,
     name: "ConstFloatInConstFloatOut");
-
 
   private static readonly Guid _nativeModuleFloatOutSideEffectsId = new("80000000-0000-0000-0000-000000000000");
   private static readonly NativeModule _nativeModuleFloatOutSideEffects = new()
@@ -999,7 +998,6 @@ public class NativeLibraryValidatorTests
     Assert.False(result);
     Assert.Equal(["NativeModuleCallOptimizationRuleComponentWithSideEffectsDisallowed"], reporting.ErrorIdentifiers);
   }
-
 
   [Theory]
   [InlineData(-1)]

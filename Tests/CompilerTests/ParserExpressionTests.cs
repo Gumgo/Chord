@@ -1,7 +1,7 @@
 ﻿using Compiler;
-using Compiler.Lexer;
-using Compiler.Parser.Nodes;
-using Compiler.Parser.Nodes.Expression;
+using Compiler.ParseTree;
+using Compiler.ParseTree.Expression;
+using Compiler.Tokenization;
 using Compiler.Types;
 using Compiler.Utilities;
 

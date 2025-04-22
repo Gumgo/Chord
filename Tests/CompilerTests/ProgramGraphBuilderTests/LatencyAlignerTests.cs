@@ -1,5 +1,5 @@
 ﻿using Compiler;
-using Compiler.ProgramGraphBuilder;
+using Compiler.ProgramGraphBuilding;
 
 namespace Tests.CompilerTests.ProgramGraphBuilderTests;
 
