@@ -1,6 +1,6 @@
 ﻿using Compiler;
 using Compiler.Ast;
-using CompilerNamespace = Compiler;
+using Compiler.Compilation;
 
 namespace Tests.CompilerTests.AstBuilderTests;
 
@@ -20,7 +20,7 @@ internal static class AstBuilderTestUtilities
       FileOperations = fileOperations,
     };
 
-    var compiler = new CompilerNamespace.Compiler(compilerContext);
+    var compiler = new Compiler.Compilation.Compiler(compilerContext);
     var result = (CompileResult?)compiler.Compile(rootSourceFilePath, new() { AllowNoEntryPoints = true });
 
     rootSourceFileAst = result?.SourceFileAsts[rootSourceFilePath];

@@ -10,21 +10,29 @@ using System.Buffers;
 using System.Diagnostics;
 using System.Text;
 
-namespace Compiler;
+namespace Compiler.Compilation;
 
-public class CompilerContext
+file static class ReportingExtensions
 {
-  public required IReporting Reporting { get; init; }
-  public required INativeLibraryRegistry NativeLibraryRegistry { get; init; }
-  public required IFileOperations FileOperations { get; init; }
+  public static void ResolveSourceFilePathError(this IReporting reporting, string sourceFilePath)
+    => reporting.Error("ResolveSourceFilePath", $"Failed to resolve source file path '{sourceFilePath}'");
+
+  public static void GetSourceFileDirectoryError(this IReporting reporting, string sourceFilePath)
+    => reporting.Error("GetSourceFileDirectory", $"Failed to get directory for source file path '{sourceFilePath}'");
+
+  public static void LoadSourceFileError(this IReporting reporting, string sourceFilePath)
+    => reporting.Error("LoadSourceFile", $"Failed to load source file '{sourceFilePath}'");
+
+  public static void InvalidCharactersError(this IReporting reporting, string sourceFilePath)
+    => reporting.Error("InvalidCharacters", $"The source file '{sourceFilePath}' contains one or more invalid characters");
 }
 
-public class Compiler(CompilerContext context)
+internal class Compiler(CompilerContext context) : ICompiler
 {
   public ICompileResult? Compile(string rootSourceFilePath)
     => Compile(rootSourceFilePath, new());
 
-  protected internal ICompileResult? Compile(string rootSourceFilePath, DevelopmentOptions developmentOptions)
+  public ICompileResult? Compile(string rootSourceFilePath, DevelopmentOptions developmentOptions)
   {
     var reporting = new ReportingWrapper(context.Reporting);
 
@@ -231,7 +239,7 @@ public class Compiler(CompilerContext context)
       return null;
     }
 
-    return [..runes];
+    return [.. runes];
   }
 
   // These options are used in unit tests and aren't exposed to the public API
@@ -240,21 +248,6 @@ public class Compiler(CompilerContext context)
     // This prevents the "no entry point" error when we're just testing simple things which don't require a complete program definition
     public bool AllowNoEntryPoints { get; init; }
   }
-}
-
-file static class ReportingExtensions
-{
-  public static void ResolveSourceFilePathError(this IReporting reporting, string sourceFilePath)
-    => reporting.Error("ResolveSourceFilePath", $"Failed to resolve source file path '{sourceFilePath}'");
-
-  public static void GetSourceFileDirectoryError(this IReporting reporting, string sourceFilePath)
-    => reporting.Error("GetSourceFileDirectory", $"Failed to get directory for source file path '{sourceFilePath}'");
-
-  public static void LoadSourceFileError(this IReporting reporting, string sourceFilePath)
-    => reporting.Error("LoadSourceFile", $"Failed to load source file '{sourceFilePath}'");
-
-  public static void InvalidCharactersError(this IReporting reporting, string sourceFilePath)
-    => reporting.Error("InvalidCharacters", $"The source file '{sourceFilePath}' contains one or more invalid characters");
 }
 
 file class ReportingWrapper(IReporting reporting) : IReporting

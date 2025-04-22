@@ -1,9 +1,8 @@
 ﻿using Compiler;
 using Compiler.Program.ProgramGraphNodes;
+using Compiler.ProgramBuilding;
 using Compiler.Types;
 using Compiler.Utilities;
-using System.Diagnostics;
-using CompilerNamespace = Compiler;
 
 namespace Tests.CompilerTests;
 
@@ -510,7 +509,7 @@ public class ProgramBuilderTests
       FileOperations = fileOperations,
     };
 
-    var compiler = new CompilerNamespace.Compiler(compilerContext);
+    var compiler = new Compiler.Compilation.Compiler(compilerContext);
     var compileResult = compiler.Compile("/test/main.chd");
     if (!reporting.ErrorIdentifiers.IsEmpty())
     {

@@ -1,5 +1,6 @@
 ﻿using Compiler.Ast;
 using Compiler.Ast.Expression;
+using Compiler.Compilation;
 using Compiler.ParseTree;
 using Compiler.Types;
 using Compiler.Utilities;

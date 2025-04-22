@@ -2,7 +2,7 @@
 using Compiler.EntryPoint;
 using Compiler.Native;
 
-namespace Compiler;
+namespace Compiler.Compilation;
 
 internal class CompileResult : ICompileResult
 {

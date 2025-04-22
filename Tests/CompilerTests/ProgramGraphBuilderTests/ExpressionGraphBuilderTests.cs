@@ -1,10 +1,10 @@
 ﻿using Compiler;
 using Compiler.Ast;
 using Compiler.Ast.Expression;
+using Compiler.Compilation;
 using Compiler.Program.ProgramGraphNodes;
 using Compiler.ProgramGraphBuilding;
 using Compiler.Types;
-using CompilerNamespace = Compiler;
 
 namespace Tests.CompilerTests.ProgramGraphBuilderTests;
 
@@ -344,7 +344,7 @@ public class ExpressionGraphBuilderTests
       FileOperations = fileOperations,
     };
 
-    var compiler = new CompilerNamespace.Compiler(compilerContext);
+    var compiler = new Compiler.Compilation.Compiler(compilerContext);
     var compileResult = (CompileResult?)compiler.Compile("/test/main.chd", new() { AllowNoEntryPoints = true });
 
     Assert.NotNull(compileResult);

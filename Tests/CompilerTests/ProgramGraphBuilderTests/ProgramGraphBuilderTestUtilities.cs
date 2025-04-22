@@ -1,6 +1,6 @@
 ﻿using Compiler;
+using Compiler.Compilation;
 using Compiler.ProgramGraphBuilding;
-using CompilerNamespace = Compiler;
 
 namespace Tests.CompilerTests.ProgramGraphBuilderTests;
 
@@ -20,7 +20,7 @@ internal static class ProgramGraphBuilderTestUtilities
       FileOperations = fileOperations,
     };
 
-    var compiler = new CompilerNamespace.Compiler(compilerContext);
+    var compiler = new Compiler.Compilation.Compiler(compilerContext);
     var result = (CompileResult?)compiler.Compile("/src/main.chd", new() { AllowNoEntryPoints = true });
     Assert.NotNull(result);
 

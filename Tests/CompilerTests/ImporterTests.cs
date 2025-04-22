@@ -1,7 +1,6 @@
-﻿using Compiler;
+﻿using Compiler.Compilation;
 using Compiler.Importing;
 using Compiler.Lexing;
-using Compiler.Native;
 using Compiler.Parsing;
 using System.Diagnostics;
 using System.Text;

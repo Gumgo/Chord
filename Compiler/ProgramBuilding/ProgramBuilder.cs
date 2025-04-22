@@ -1,4 +1,5 @@
 ﻿using Compiler.Ast;
+using Compiler.Compilation;
 using Compiler.EntryPoint;
 using Compiler.Native;
 using Compiler.Program;
@@ -9,15 +10,18 @@ using Compiler.Types;
 using Compiler.Utilities;
 using System.Diagnostics;
 
-namespace Compiler;
+namespace Compiler.ProgramBuilding;
 
-public class ProgramBuilderContext
+file static class ReportingExtensions
 {
-  public required IReporting Reporting { get; init; }
-  public required INativeLibraryRegistry NativeLibraryRegistry { get; init; }
+  public static void IncorrectOutputChannelCountError(this IReporting reporting, SourceLocation sourceLocation, int expected, int actual)
+    => reporting.Error(
+      "IncorrectOutputChannelCount",
+      sourceLocation,
+      $"Incorrect output channel count produced; expected {expected}, got {actual}");
 }
 
-public class ProgramBuilder(ProgramBuilderContext context)
+internal class ProgramBuilder(ProgramBuilderContext context) : IProgramBuilder
 {
   private enum GraphNodeType
   {
@@ -543,13 +547,4 @@ public class ProgramBuilder(ProgramBuilderContext context)
     public required GraphNodeType Type { get; init; }
     public required int Index { get; init; }
   }
-}
-
-file static class ReportingExtensions
-{
-  public static void IncorrectOutputChannelCountError(this IReporting reporting, SourceLocation sourceLocation, int expected, int actual)
-    => reporting.Error(
-      "IncorrectOutputChannelCount",
-      sourceLocation,
-      $"Incorrect output channel count produced; expected {expected}, got {actual}");
 }

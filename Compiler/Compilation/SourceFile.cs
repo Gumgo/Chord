@@ -3,7 +3,7 @@ using Compiler.ParseTree;
 using Compiler.Tokenization;
 using System.Text;
 
-namespace Compiler;
+namespace Compiler.Compilation;
 
 internal class SourceFileImport
 {

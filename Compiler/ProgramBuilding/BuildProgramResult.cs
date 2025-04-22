@@ -1,6 +1,6 @@
 ﻿using Compiler.Program;
 
-namespace Compiler;
+namespace Compiler.ProgramBuilding;
 
 internal class BuildProgramResult : IBuildProgramResult
 {

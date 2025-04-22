@@ -1,4 +1,5 @@
-﻿using Compiler.Native;
+﻿using Compiler.Compilation;
+using Compiler.Native;
 using Compiler.ParseTree;
 using System.Diagnostics;
 using System.Text;

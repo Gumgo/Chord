@@ -1,4 +1,5 @@
 ﻿using Compiler.Ast;
+using Compiler.Compilation;
 using Compiler.Native;
 using Compiler.ParseTree;
 

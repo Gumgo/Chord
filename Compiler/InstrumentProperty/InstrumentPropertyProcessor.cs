@@ -1,4 +1,5 @@
-﻿using Compiler.ParseTree;
+﻿using Compiler.Compilation;
+using Compiler.ParseTree;
 using Compiler.Tokenization;
 using Compiler.Types;
 using Compiler.Utilities;

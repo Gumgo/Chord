@@ -1,6 +1,7 @@
 ﻿using Compiler.Ast;
 using Compiler.Ast.Expression;
 using Compiler.AstBuilding;
+using Compiler.Compilation;
 using Compiler.Utilities;
 using System.Diagnostics;
 
