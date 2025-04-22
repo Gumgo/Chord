@@ -13,8 +13,7 @@ internal class OptimizationRuleApplicatorContext
   public required INativeLibraryRegistryAccess NativeLibraryRegistry { get; init; }
 }
 
-// We need program graph builder context for invoking native module calls
-internal class OptimizationRuleApplicator(OptimizationRuleApplicatorContext context, ProgramGraphBuilderContext programGraphBuilderContext)
+internal class OptimizationRuleApplicator(OptimizationRuleApplicatorContext context)
 {
   public ApplyOptimizationRuleResult ApplyOptimizationRule(
     ProgramVariantProperties programVariantProperties,
@@ -222,7 +221,13 @@ internal class OptimizationRuleApplicator(OptimizationRuleApplicatorContext cont
             sourceLocation);
 
           // Try to call the native module
-          var moduleCallBuilder = new ModuleCallGraphBuilder(programGraphBuilderContext);
+          var nativeModuleCallerContext = new NativeModuleCallerContext()
+          {
+            Reporting = context.Reporting,
+            NativeLibraryRegistry = context.NativeLibraryRegistry,
+          };
+
+          var moduleCallBuilder = new NativeModuleCaller(nativeModuleCallerContext);
           var callOutputArguments = moduleCallBuilder.TryCallNativeModule(
             programVariantProperties,
             sourceLocation,

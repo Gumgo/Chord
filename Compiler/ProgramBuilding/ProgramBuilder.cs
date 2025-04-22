@@ -154,10 +154,7 @@ internal class ProgramBuilder(ProgramBuilderContext context) : IProgramBuilder
       };
 
       var programGraphOptimizerContext = new ProgramGraphOptimizerContext() { Reporting = context.Reporting, NativeLibraryRegistry = nativeLibraryRegistry };
-      var programGraphOptimizer = new ProgramGraphOptimizer(
-        programGraphOptimizerContext,
-        programGraphBuilderContext,
-        optimizationRules);
+      var programGraphOptimizer = new ProgramGraphOptimizer(programGraphOptimizerContext, optimizationRules);
 
       if (voiceGraphOutputNodes != null)
       {

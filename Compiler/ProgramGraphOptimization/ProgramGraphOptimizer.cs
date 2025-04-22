@@ -20,12 +20,7 @@ internal class ProgramGraphOptimizer
   private readonly OptimizationRuleApplicator _optimizationRuleApplicator;
   private readonly OptimizationRuleComponentDepthTracker _optimizationRuleComponentDepthTracker;
 
-  // !!! I don't like the dependency on ProgramGraphBuilderContext. We can fix this if we split off TryCallNativeModule from ModuleCallGraphBuilder into its own
-  // class with its own smaller context which we can just construct internally.
-  public ProgramGraphOptimizer(
-    ProgramGraphOptimizerContext context,
-    ProgramGraphBuilderContext programGraphBuilderContext,
-    IReadOnlyList<OptimizationRule> optimizationRules)
+  public ProgramGraphOptimizer(ProgramGraphOptimizerContext context, IReadOnlyList<OptimizationRule> optimizationRules)
   {
     _context = context;
 
@@ -38,7 +33,7 @@ internal class ProgramGraphOptimizer
       NativeLibraryRegistry = context.NativeLibraryRegistry,
     };
 
-    _optimizationRuleApplicator = new(optimizationRuleApplicatorContext, programGraphBuilderContext);
+    _optimizationRuleApplicator = new(optimizationRuleApplicatorContext);
 
     _optimizationRuleComponentDepthTracker = new(context.NativeLibraryRegistry, optimizationRules);
   }
