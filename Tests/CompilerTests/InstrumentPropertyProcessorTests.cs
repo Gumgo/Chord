@@ -1,4 +1,4 @@
-﻿using Compiler;
+﻿using Compiler.Compilation;
 using Compiler.InstrumentProperty;
 using Compiler.Lexing;
 using Compiler.Parsing;

@@ -1,11 +1,7 @@
 ﻿using Compiler;
 using Compiler.Ast;
 using Compiler.Ast.Expression;
-using Compiler.Lexing;
-using Compiler.Parsing;
-using Compiler.Parsing.Nodes;
 using Compiler.Types;
-using System.Diagnostics;
 
 namespace Tests.CompilerTests.AstBuilderTests;
 

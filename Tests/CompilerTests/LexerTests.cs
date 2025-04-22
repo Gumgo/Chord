@@ -1,6 +1,5 @@
 ﻿using Compiler.Lexing;
 using Compiler.Tokenization;
-using System.Diagnostics;
 using System.Reflection;
 
 namespace Tests.CompilerTests;

@@ -1,5 +1,4 @@
 ﻿using Compiler.Ast;
-using System.Diagnostics;
 
 namespace Tests.CompilerTests.AstBuilderTests;
 
