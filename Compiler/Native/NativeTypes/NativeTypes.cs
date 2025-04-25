@@ -330,7 +330,6 @@ internal unsafe struct ArrayOptimizationRuleComponentData
 internal unsafe struct InputOptimizationRuleComponentData
 {
   public NativeBool MustBeConstant;
-  public NativeBool HasConstraint;
 }
 
 [StructLayout(LayoutKind.Sequential)]

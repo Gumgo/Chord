@@ -2,6 +2,12 @@
 
 namespace Compiler.Native;
 
+// $TODO there are a few possible improvements that could be made to optimization rules:
+// - When loading optimization rules from a native library, directly store native module references rather than storing IDs. We have to look them up at load
+//   time anyway for validation so this isn't really adding any extra steps (we might need an intermediate UnresolvedNativeModuleCallOptimizationRuleComponent)
+// - Store optimization rules in a resolved tree structure rather than a linear list. This might simplify usage logic.
+// !!! do these now, I think?
+
 internal class OptimizationRuleComponent
 {
 }
@@ -66,10 +72,9 @@ internal class ArrayOptimizationRuleComponent(int elementCount) : OptimizationRu
   public int ElementCount => elementCount;
 }
 
-internal class InputOptimizationRuleComponent(bool mustBeConstant, bool hasConstraint) : OptimizationRuleComponent
+internal class InputOptimizationRuleComponent(bool mustBeConstant) : OptimizationRuleComponent
 {
   public bool MustBeConstant => mustBeConstant;
-  public bool HasConstraint => hasConstraint;
 }
 
 internal class OutputOptimizationRuleComponent : OptimizationRuleComponent

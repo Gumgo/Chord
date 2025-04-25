@@ -77,12 +77,7 @@ internal class OptimizationRuleComponentDepthTracker
 
         break;
 
-      case InputOptimizationRuleComponent inputComponent:
-        if (inputComponent.HasConstraint)
-        {
-          TrackComponentDepth(nativeLibraryRegistry, components, ref index, depth);
-        }
-
+      case InputOptimizationRuleComponent:
         break;
 
       case OutputOptimizationRuleComponent:

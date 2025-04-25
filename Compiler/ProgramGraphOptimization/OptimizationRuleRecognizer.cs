@@ -149,7 +149,7 @@ internal class OptimizationRuleRecognizer
     private readonly Dictionary<NativeModuleCallKey, OptimizationRuleTreeNode> _nativeModuleCallChildNodes = [];
     private readonly Dictionary<object, OptimizationRuleTreeNode> _constantChildNodes = [];
     private readonly Dictionary<int, OptimizationRuleTreeNode> _arrayChildNodes = [];
-    private readonly Dictionary<InputKey, OptimizationRuleTreeNode> _inputChildNodes = [];
+    private readonly Dictionary<bool, OptimizationRuleTreeNode> _inputChildNodes = [];
 
     public IReadOnlyList<OptimizationRule> OptimizationRules => _optimizationRules;
 
@@ -197,11 +197,10 @@ internal class OptimizationRuleRecognizer
 
         case InputOptimizationRuleComponent inputComponent:
           {
-            var key = new InputKey(inputComponent.MustBeConstant, inputComponent.HasConstraint);
-            if (!_inputChildNodes.TryGetValue(key, out var node))
+            if (!_inputChildNodes.TryGetValue(inputComponent.MustBeConstant, out var node))
             {
               node = new();
-              _inputChildNodes.Add(key, node);
+              _inputChildNodes.Add(inputComponent.MustBeConstant, node);
             }
 
             return node;
@@ -222,7 +221,6 @@ internal class OptimizationRuleRecognizer
     public void AddOptimizationRule(OptimizationRule rule)
       => _optimizationRules.Add(rule);
 
-    // !!! this would be simpler to rewrite as a recursive function, could just perform the clone/branch inline and be done with it
     // This method is called to advance down all possible optimization rule branches simultaneously. If multiple optimization rule branches may be matched,
     // additional states will be cloned into branchedStates. After calling this method, state.TreeNode will have been updated.
     public void Advance(int upsampleFactorMultiplier, OptimizationRuleTreeState state, Stack<OptimizationRuleTreeState> branchedStates)
@@ -302,10 +300,10 @@ internal class OptimizationRuleRecognizer
         }
       }
 
-      // Check for input nodes with possible constraints
-      foreach (var (inputKey, inputChildNode) in _inputChildNodes)
+      // Check for input nodes
+      foreach (var (mustBeConstant, inputChildNode) in _inputChildNodes)
       {
-        if (inputKey.MustBeConstant)
+        if (mustBeConstant)
         {
           var isConstant = nextNode is ConstantProgramGraphNode
             || (nextNode is ArrayProgramGraphNode arrayNode && arrayNode.Elements.All((v) => v.Connection?.Processor is ConstantProgramGraphNode));
@@ -316,17 +314,11 @@ internal class OptimizationRuleRecognizer
           }
         }
 
-        var updatedState = UpdateOrBranch(inputChildNode);
-        if (inputKey.HasConstraint)
-        {
-          // We're going to revisit this input to evaluate the constraint so decrement the next input index to force the revisit
-          updatedState.Stack.Add(new(updatedState.Stack[^1].GraphNode, updatedState.Stack[^1].NextInputIndex - 1));
-        }
+        UpdateOrBranch(inputChildNode);
       }
     }
 
     private record NativeModuleCallKey(Guid NativeLibraryId, Guid NativeModuleId, int UpsampleFactor, int OutputIndex);
-    private record InputKey(bool MustBeConstant, bool HasConstraint);
   }
 
   // The root tree node is separate because it needs to match any possible upsample factor. Upsample factors in nodes from that point on need to match relative

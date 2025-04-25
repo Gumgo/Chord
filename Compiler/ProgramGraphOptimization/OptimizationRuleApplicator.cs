@@ -130,16 +130,9 @@ internal class OptimizationRuleApplicator(OptimizationRuleApplicatorContext cont
           break;
         }
 
-      case InputOptimizationRuleComponent inputComponent:
-        {
-          state.InputNodes.Add(state.NextComponentIndex, outputNode);
-          if (inputComponent.HasConstraint)
-          {
-            ProcessInputPattern(state, outputNode);
-          }
-
-          break;
-        }
+      case InputOptimizationRuleComponent:
+        state.InputNodes.Add(state.NextComponentIndex, outputNode);
+        break;
 
       case OutputOptimizationRuleComponent:
         throw new InvalidOperationException("Output components should be handled within the native module call case");

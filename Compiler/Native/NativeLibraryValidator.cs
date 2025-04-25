@@ -310,15 +310,6 @@ file static class ReportingExtensions
       sourceLocation,
       $"Optimization rule '{optimizationRule.Name}' {PatternName(outputPatternIndex)} contains an input component which is only allowed in input patterns");
 
-  public static void InvalidInputOptimizationRuleComponentDirectionError(
-    this IReporting reporting,
-    SourceLocation sourceLocation,
-    OptimizationRule optimizationRule)
-    => reporting.Error(
-      "InvalidInputOptimizationRuleComponentDirection",
-      sourceLocation,
-      $"Optimization rule '{optimizationRule.Name}' input pattern input component constraint is not an input");
-
   public static void InputReferenceOptimizationRuleComponentOnlyAllowedInOutputPatternError(
     this IReporting reporting,
     SourceLocation sourceLocation,
@@ -882,25 +873,7 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
       return null;
     }
 
-    AstDataType? dataType = null;
-    if (component.HasConstraint)
-    {
-      var constraintResult = ValidateNextOptimizationRuleComponent(validateContext);
-      if (constraintResult == null)
-      {
-        return null;
-      }
-
-      if (constraintResult.Direction != ModuleParameterDirection.In)
-      {
-        context.Reporting.InvalidInputOptimizationRuleComponentDirectionError(validateContext.SourceLocation, validateContext.OptimizationRule);
-        return null;
-      }
-
-      dataType = constraintResult.DataType;
-    }
-
-    return new(component, ModuleParameterDirection.In, dataType, mustBeConstant: component.MustBeConstant);
+    return new(component, ModuleParameterDirection.In, null, mustBeConstant: component.MustBeConstant);
   }
 
   private ValidateOptimizationRuleComponentResult? ValidateInputReferenceOptimizationRuleComponent(
@@ -920,7 +893,7 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
     var inputComponentResult = component.Index >= 0 && component.Index < validateContext.InputPatternComponentResults.Count
       ? validateContext.InputPatternComponentResults[component.Index]
       : null;
-    if (inputComponentResult == null || inputComponentResult.Component is not InputOptimizationRuleComponent)
+    if (inputComponentResult == null || inputComponentResult.Direction != ModuleParameterDirection.In)
     {
       context.Reporting.InvalidInputReferenceOptimizationRuleComponentIndexError(
         validateContext.SourceLocation,
@@ -929,7 +902,7 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
       return null;
     }
 
-    // All inputs within the input pattern should be passed into a module call so their data types should be known
+    // All inputs within the input pattern are either module calls or should be passed into a module call so their data types should be known
     Debug.Assert(inputComponentResult.DataType != null);
 
     return new(component, ModuleParameterDirection.In, inputComponentResult.DataType);

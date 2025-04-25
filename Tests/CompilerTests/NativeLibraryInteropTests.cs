@@ -331,11 +331,7 @@ public unsafe class NativeLibraryInteropTests
         Type = NativeTypes.OptimizationRuleComponentType.Input,
         Data = new()
         {
-          InputData = new()
-          {
-            HasConstraint = NativeTypes.NativeBool.True,
-            MustBeConstant = NativeTypes.NativeBool.True,
-          },
+          InputData = new() { MustBeConstant = NativeTypes.NativeBool.True },
         },
       },
       new()
@@ -464,7 +460,6 @@ public unsafe class NativeLibraryInteropTests
 
     var inputComponent7 = Assert.IsType<InputOptimizationRuleComponent>(optimizationRule.InputPattern[7]);
     Assert.True(inputComponent7.MustBeConstant);
-    Assert.True(inputComponent7.HasConstraint);
 
     Assert.IsType<OutputOptimizationRuleComponent>(optimizationRule.InputPattern[8]);
 

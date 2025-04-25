@@ -374,9 +374,6 @@ typedef struct
 typedef struct
 {
   bool m_mustBeConstant;
-
-  // If true, a component providing further constraints (e.g. ConstantOptimizationRuleComponentData, ArrayOptimizationRuleComponentData) must follow
-  bool m_hasConstraint;
 } InputOptimizationRuleComponentData;
 
 typedef struct

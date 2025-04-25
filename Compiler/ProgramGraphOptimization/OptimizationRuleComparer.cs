@@ -83,18 +83,7 @@ internal class OptimizationRuleComparer(OptimizationRuleComparerContext context)
         }
 
       case InputOptimizationRuleComponent inputComponent:
-        if (inputComponent.HasConstraint)
-        {
-          var constraintComplexity = CalculateComplexity(state);
-          return new(
-            constraintComplexity.MaxDepth,
-            constraintComplexity.ExactMatchCount,
-            constraintComplexity.ConstConstraintCount + (inputComponent.MustBeConstant ? 1 : 0));
-        }
-        else
-        {
-          return new(1, 0, inputComponent.MustBeConstant ? 1 : 0);
-        }
+        return new(1, 0, inputComponent.MustBeConstant ? 1 : 0);
 
       case OutputOptimizationRuleComponent outputComponentX:
         throw new InvalidOperationException("Output component should be skipped when calculating input parameter complexity");

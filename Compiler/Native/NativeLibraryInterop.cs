@@ -1035,7 +1035,7 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
       case NativeTypes.OptimizationRuleComponentType.Input:
         {
           var inputData = &optimizationRuleComponentNative->Data.InputData;
-          return new InputOptimizationRuleComponent(inputData->MustBeConstant.ToBool(), inputData->HasConstraint.ToBool());
+          return new InputOptimizationRuleComponent(inputData->MustBeConstant.ToBool());
         }
 
       case NativeTypes.OptimizationRuleComponentType.Output:

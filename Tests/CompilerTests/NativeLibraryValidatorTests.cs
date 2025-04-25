@@ -280,7 +280,7 @@ public class NativeLibraryValidatorTests
         InputPattern =
         [
           new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatInFloatOutId, 1, 1),
-          new InputOptimizationRuleComponent(false, false),
+          new InputOptimizationRuleComponent(false),
           new OutputOptimizationRuleComponent(),
         ],
         OutputPatterns = [[new InputReferenceOptimizationRuleComponent(1)]],
@@ -302,7 +302,6 @@ public class NativeLibraryValidatorTests
         InputPattern =
         [
           new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatInFloatOutId, 1, 1),
-          new InputOptimizationRuleComponent(false, true),
           new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatOutId, 1, 0),
           new OutputOptimizationRuleComponent(),
           new OutputOptimizationRuleComponent(),
@@ -350,7 +349,7 @@ public class NativeLibraryValidatorTests
           new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatArrayInFloatOutId, 1, 1),
           new ArrayOptimizationRuleComponent(3),
           new ConstantOptimizationRuleComponent(2.0f),
-          new InputOptimizationRuleComponent(false, false),
+          new InputOptimizationRuleComponent(false),
           new ConstantOptimizationRuleComponent(1.0f),
           new OutputOptimizationRuleComponent(),
         ],
@@ -384,7 +383,7 @@ public class NativeLibraryValidatorTests
         InputPattern =
         [
           new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatInFloatOutId, 1, 1),
-          new InputOptimizationRuleComponent(true, false),
+          new InputOptimizationRuleComponent(true),
           new OutputOptimizationRuleComponent(),
         ],
         OutputPatterns =
@@ -1011,7 +1010,7 @@ public class NativeLibraryValidatorTests
       InputPattern =
       [
         new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatInFloatOutId, 1, outputIndex),
-        new InputOptimizationRuleComponent(false, false),
+        new InputOptimizationRuleComponent(false),
         new OutputOptimizationRuleComponent(),
       ],
       OutputPatterns = [[new ConstantOptimizationRuleComponent(1.0f)]],
@@ -1052,8 +1051,8 @@ public class NativeLibraryValidatorTests
         InputPattern =
         [
           new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatInFloatOutId, 1, 1),
-          new InputOptimizationRuleComponent(false, false),
-          new InputOptimizationRuleComponent(false, false),
+          new InputOptimizationRuleComponent(false),
+          new InputOptimizationRuleComponent(false),
         ],
         OutputPatterns = [[new ConstantOptimizationRuleComponent(1.0f)]],
       };
@@ -1117,7 +1116,7 @@ public class NativeLibraryValidatorTests
       InputPattern =
       [
         new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatArrayInFloatOutId, 1, 1),
-        new InputOptimizationRuleComponent(false, false),
+        new InputOptimizationRuleComponent(false),
         new OutputOptimizationRuleComponent(),
       ],
       OutputPatterns =
@@ -1147,7 +1146,7 @@ public class NativeLibraryValidatorTests
         InputPattern =
         [
           new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatArrayInFloatOutId, 1, 1),
-          new InputOptimizationRuleComponent(false, false),
+          new InputOptimizationRuleComponent(false),
           new OutputOptimizationRuleComponent(),
         ],
         OutputPatterns =
@@ -1177,7 +1176,7 @@ public class NativeLibraryValidatorTests
           new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatInFloatOutId, 1, 1),
           new ArrayOptimizationRuleComponent(1),
           new ArrayOptimizationRuleComponent(1),
-          new InputOptimizationRuleComponent(false, false),
+          new InputOptimizationRuleComponent(false),
           new OutputOptimizationRuleComponent(),
         ],
         OutputPatterns = [[new ConstantOptimizationRuleComponent(1.0f)]],
@@ -1199,7 +1198,7 @@ public class NativeLibraryValidatorTests
       InputPattern =
       [
         new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatArrayInFloatOutId, 1, 1),
-        new InputOptimizationRuleComponent(false, false),
+        new InputOptimizationRuleComponent(false),
         new OutputOptimizationRuleComponent(),
       ],
       OutputPatterns =
@@ -1235,7 +1234,7 @@ public class NativeLibraryValidatorTests
       [
         [
           new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatInFloatOutId, 1, 1),
-          new InputOptimizationRuleComponent(false, false),
+          new InputOptimizationRuleComponent(false),
           new OutputOptimizationRuleComponent(),
         ],
       ],
@@ -1245,29 +1244,6 @@ public class NativeLibraryValidatorTests
 
     Assert.False(result);
     Assert.Equal(["InputOptimizationRuleComponentOnlyAllowedInInputPattern"], reporting.ErrorIdentifiers);
-  }
-
-  [Fact]
-  public void InvalidInputOptimizationRuleComponentDirection()
-  {
-    var optimizationRule = new OptimizationRule()
-    {
-      Name = "Rule",
-      InputPattern =
-      [
-        new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatInFloatOutId, 1, 1),
-        new InputOptimizationRuleComponent(false, true),
-        new OutputOptimizationRuleComponent(),
-        new OutputOptimizationRuleComponent(),
-      ],
-      OutputPatterns =
-      [[new ConstantOptimizationRuleComponent(1.0f)]],
-    };
-
-    var result = ValidateOptimizationRule(_optimizationRuleNativeModules, optimizationRule, out var reporting);
-
-    Assert.False(result);
-    Assert.Equal(["InvalidInputOptimizationRuleComponentDirection"], reporting.ErrorIdentifiers);
   }
 
   [Fact]
@@ -1293,7 +1269,6 @@ public class NativeLibraryValidatorTests
 
   [Theory]
   [InlineData(-1)]
-  [InlineData(0)]
   [InlineData(2)]
   [InlineData(3)]
   public void InvalidInputReferenceOptimizationRuleComponentIndex(int index)
@@ -1304,7 +1279,7 @@ public class NativeLibraryValidatorTests
       InputPattern =
       [
         new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatInFloatOutId, 1, 1),
-        new InputOptimizationRuleComponent(false, false),
+        new InputOptimizationRuleComponent(false),
         new OutputOptimizationRuleComponent(),
       ],
       OutputPatterns =
