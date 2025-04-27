@@ -1,4 +1,5 @@
 ﻿using Compiler.Utilities;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -239,6 +240,7 @@ internal class NativeLibraryRegistry : INativeLibraryRegistry, INativeLibraryReg
       return;
     }
 
+    var unvalidatedOptimizationRulesLookup = new Dictionary<NativeLibrary, IReadOnlyList<UnvalidatedOptimizationRule>>();
     foreach (var nativeLibraryDllPath in nativeLibraryDllPaths)
     {
       nint? dllHandle;
@@ -292,6 +294,7 @@ internal class NativeLibraryRegistry : INativeLibraryRegistry, INativeLibraryReg
           NativeLibraryInterop = nativeLibraryInterop,
           NativeLibraryValidator = nativeLibraryValidator,
           NativeLibraries = _nativeLibraries,
+          UnvalidatedOptimizationRules = unvalidatedOptimizationRulesLookup,
         };
 
         [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
@@ -302,11 +305,16 @@ internal class NativeLibraryRegistry : INativeLibraryRegistry, INativeLibraryReg
           var context = (ListNativeLibrariesContext*)contextUntyped;
 #pragma warning restore CS8500 // This takes the address of, gets the size of, or declares a pointer to a managed type
 
-          var nativeLibrary = context->NativeLibraryInterop.NativeLibraryFromNative(nativeLibraryNative);
-          if (nativeLibrary == null)
+          var nativeLibraryResult = context->NativeLibraryInterop.NativeLibraryFromNative(nativeLibraryNative);
+          if (nativeLibraryResult == null)
           {
             return;
           }
+
+          var (nativeLibrary, unvalidatedOptimizationRules) = nativeLibraryResult.Value;
+
+          // We don't expect to get back any validated optimization rules, they're unvalidated and returned via unvalidatedOptimizationRules
+          Debug.Assert(nativeLibrary.OptimizationRules.IsEmpty());
 
           var sourceLocation = SourceLocation.FromNativeLibrary(nativeLibrary.Name);
 
@@ -363,10 +371,11 @@ internal class NativeLibraryRegistry : INativeLibraryRegistry, INativeLibraryReg
             InitializeVoice = nativeLibrary.InitializeVoice,
             DeinitializeVoice = nativeLibrary.DeinitializeVoice,
             Modules = validNativeModules,
-            OptimizationRules = nativeLibrary.OptimizationRules, // We validate optimization rules after all native libraries are loaded
+            OptimizationRules = [], // We validate optimization rules after all native libraries are loaded
           };
 
           context->NativeLibraries.Add(validatedNativeLibrary);
+          context->UnvalidatedOptimizationRules.Add(validatedNativeLibrary, unvalidatedOptimizationRules);
         }
 
         // This warning is safe to suppress because listNativeLibrariesContext is a struct and lives on the stack
@@ -380,25 +389,27 @@ internal class NativeLibraryRegistry : INativeLibraryRegistry, INativeLibraryReg
     for (var i = 0; i < _nativeLibraries.Count; i++)
     {
       var nativeLibrary = _nativeLibraries[i];
+      var unvalidatedOptimizationRules = unvalidatedOptimizationRulesLookup[nativeLibrary];
       var sourceLocation = SourceLocation.FromNativeLibrary(nativeLibrary.Name);
 
-      var validOptimizationRules = new List<OptimizationRule>();
-      foreach (var optimizationRule in nativeLibrary.OptimizationRules)
+      var validatedOptimizationRules = new List<OptimizationRule>();
+      foreach (var unvalidatedOptimizationRule in unvalidatedOptimizationRules)
       {
-        if (!nativeLibraryValidator.ValidateOptimizationRule(_nativeLibraries, nativeLibrary, optimizationRule))
+        var validatedOptimizationRule = nativeLibraryValidator.ValidateOptimizationRule(_nativeLibraries, nativeLibrary, unvalidatedOptimizationRule);
+        if (validatedOptimizationRule == null)
         {
-          _context.Reporting.OptimizationRuleNotLoadedWarning(sourceLocation, nativeLibrary.Name, optimizationRule.Name);
+          _context.Reporting.OptimizationRuleNotLoadedWarning(sourceLocation, nativeLibrary.Name, unvalidatedOptimizationRule.Name);
           continue;
         }
 
-        var conflictingOptimizationRule = validOptimizationRules.FirstOrDefault((v) => v.Name == optimizationRule.Name);
+        var conflictingOptimizationRule = validatedOptimizationRules.FirstOrDefault((v) => v.Name == unvalidatedOptimizationRule.Name);
         if (conflictingOptimizationRule != null)
         {
-          _context.Reporting.OptimizationRuleNameConflictError(sourceLocation, nativeLibrary.Name, optimizationRule.Name);
+          _context.Reporting.OptimizationRuleNameConflictError(sourceLocation, nativeLibrary.Name, unvalidatedOptimizationRule.Name);
           continue;
         }
 
-        validOptimizationRules.Add(optimizationRule);
+        validatedOptimizationRules.Add(validatedOptimizationRule);
       }
 
       _nativeLibraries[i] = new NativeLibrary()
@@ -411,7 +422,7 @@ internal class NativeLibraryRegistry : INativeLibraryRegistry, INativeLibraryReg
         InitializeVoice = nativeLibrary.InitializeVoice,
         DeinitializeVoice = nativeLibrary.DeinitializeVoice,
         Modules = nativeLibrary.Modules,
-        OptimizationRules = validOptimizationRules,
+        OptimizationRules = validatedOptimizationRules,
       };
     }
   }
@@ -445,5 +456,6 @@ internal class NativeLibraryRegistry : INativeLibraryRegistry, INativeLibraryReg
     public required NativeLibraryInterop NativeLibraryInterop { get; init; }
     public required NativeLibraryValidator NativeLibraryValidator { get; init; }
     public required List<NativeLibrary> NativeLibraries { get; init; }
+    public required Dictionary<NativeLibrary, IReadOnlyList<UnvalidatedOptimizationRule>> UnvalidatedOptimizationRules { get; init; }
   }
 }

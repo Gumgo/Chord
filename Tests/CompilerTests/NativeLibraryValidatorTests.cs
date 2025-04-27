@@ -258,15 +258,28 @@ public class NativeLibraryValidatorTests
         Name = "Rule",
         InputPattern =
         [
-          new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatOutId, 1, 0),
-          new OutputOptimizationRuleComponent(),
+          new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatOutId, 1, 0),
+          new UnvalidatedOutputOptimizationRuleComponent(),
         ],
-        OutputPatterns = [[new ConstantOptimizationRuleComponent(1.0f)]],
+        OutputPatterns = [[new UnvalidatedConstantOptimizationRuleComponent(1.0f)]],
       },
       out var reporting);
 
-    Assert.True(result);
+    Assert.NotNull(result);
     Assert.Empty(reporting.ErrorIdentifiers);
+
+    var input0 = Assert.IsType<NativeModuleCallOptimizationRuleComponent>(result.InputPattern);
+    Assert.Equal(_nativeLibraryId, input0.NativeModule.NativeLibraryId);
+    Assert.Equal(_nativeModuleFloatOutId, input0.NativeModule.Id);
+    Assert.Equal(1, input0.UpsampleFactor);
+    Assert.Equal(0, input0.OutputIndex);
+
+    Assert.IsType<OutputOptimizationRuleComponent>(Assert.Single(input0.Parameters));
+
+    var output0 = Assert.Single(result.OutputPatterns);
+
+    var output00 = Assert.IsType<ConstantOptimizationRuleComponent>(output0);
+    Assert.Equal(1.0f, output00.Value);
   }
 
   [Fact]
@@ -279,16 +292,33 @@ public class NativeLibraryValidatorTests
         Name = "Rule",
         InputPattern =
         [
-          new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatInFloatOutId, 1, 1),
-          new InputOptimizationRuleComponent(false),
-          new OutputOptimizationRuleComponent(),
+          new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatInFloatOutId, 1, 1),
+          new UnvalidatedInputOptimizationRuleComponent(false),
+          new UnvalidatedOutputOptimizationRuleComponent(),
         ],
-        OutputPatterns = [[new InputReferenceOptimizationRuleComponent(1)]],
+        OutputPatterns = [[new UnvalidatedInputReferenceOptimizationRuleComponent(1)]],
       },
       out var reporting);
 
-    Assert.True(result);
+    Assert.NotNull(result);
     Assert.Empty(reporting.ErrorIdentifiers);
+
+    var input0 = Assert.IsType<NativeModuleCallOptimizationRuleComponent>(result.InputPattern);
+    Assert.Equal(_nativeLibraryId, input0.NativeModule.NativeLibraryId);
+    Assert.Equal(_nativeModuleFloatInFloatOutId, input0.NativeModule.Id);
+    Assert.Equal(1, input0.UpsampleFactor);
+    Assert.Equal(1, input0.OutputIndex);
+    Assert.Equal(2, input0.Parameters.Count);
+
+    var input1 = Assert.IsType<InputOptimizationRuleComponent>(input0.Parameters[0]);
+    Assert.False(input1.MustBeConstant);
+
+    Assert.IsType<OutputOptimizationRuleComponent>(input0.Parameters[1]);
+
+    var output0 = Assert.Single(result.OutputPatterns);
+
+    var output00 = Assert.IsType<InputReferenceOptimizationRuleComponent>(output0);
+    Assert.Equal(input1, output00.ReferencedComponent);
   }
 
   [Fact]
@@ -301,17 +331,39 @@ public class NativeLibraryValidatorTests
         Name = "Rule",
         InputPattern =
         [
-          new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatInFloatOutId, 1, 1),
-          new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatOutId, 1, 0),
-          new OutputOptimizationRuleComponent(),
-          new OutputOptimizationRuleComponent(),
+          new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatInFloatOutId, 1, 1),
+          new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatOutId, 1, 0),
+          new UnvalidatedOutputOptimizationRuleComponent(),
+          new UnvalidatedOutputOptimizationRuleComponent(),
         ],
-        OutputPatterns = [[new InputReferenceOptimizationRuleComponent(1)]],
+        OutputPatterns = [[new UnvalidatedInputReferenceOptimizationRuleComponent(1)]],
       },
       out var reporting);
 
-    Assert.True(result);
+    Assert.NotNull(result);
     Assert.Empty(reporting.ErrorIdentifiers);
+
+    var input0 = Assert.IsType<NativeModuleCallOptimizationRuleComponent>(result.InputPattern);
+    Assert.Equal(_nativeLibraryId, input0.NativeModule.NativeLibraryId);
+    Assert.Equal(_nativeModuleFloatInFloatOutId, input0.NativeModule.Id);
+    Assert.Equal(1, input0.UpsampleFactor);
+    Assert.Equal(1, input0.OutputIndex);
+    Assert.Equal(2, input0.Parameters.Count);
+
+    var input1 = Assert.IsType<NativeModuleCallOptimizationRuleComponent>(input0.Parameters[0]);
+    Assert.Equal(_nativeLibraryId, input1.NativeModule.NativeLibraryId);
+    Assert.Equal(_nativeModuleFloatOutId, input1.NativeModule.Id);
+    Assert.Equal(1, input1.UpsampleFactor);
+    Assert.Equal(0, input1.OutputIndex);
+
+    Assert.IsType<OutputOptimizationRuleComponent>(Assert.Single(input1.Parameters));
+
+    Assert.IsType<OutputOptimizationRuleComponent>(input0.Parameters[1]);
+
+    var output0 = Assert.Single(result.OutputPatterns);
+
+    var output00 = Assert.IsType<InputReferenceOptimizationRuleComponent>(output0);
+    Assert.Equal(input1, output00.ReferencedComponent);
   }
 
   [Fact]
@@ -324,16 +376,34 @@ public class NativeLibraryValidatorTests
         Name = "Rule",
         InputPattern =
         [
-          new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatOutFloatOutId, 1, 1),
-          new OutputOptimizationRuleComponent(),
-          new OutputOptimizationRuleComponent(),
+          new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatOutFloatOutId, 1, 1),
+          new UnvalidatedOutputOptimizationRuleComponent(),
+          new UnvalidatedOutputOptimizationRuleComponent(),
         ],
-        OutputPatterns = [[new ConstantOptimizationRuleComponent(1.0f)], [new ConstantOptimizationRuleComponent(2.0f)]],
+        OutputPatterns = [[new UnvalidatedConstantOptimizationRuleComponent(1.0f)], [new UnvalidatedConstantOptimizationRuleComponent(2.0f)]],
       },
       out var reporting);
 
-    Assert.True(result);
+    Assert.NotNull(result);
     Assert.Empty(reporting.ErrorIdentifiers);
+
+    var input0 = Assert.IsType<NativeModuleCallOptimizationRuleComponent>(result.InputPattern);
+    Assert.Equal(_nativeLibraryId, input0.NativeModule.NativeLibraryId);
+    Assert.Equal(_nativeModuleFloatOutFloatOutId, input0.NativeModule.Id);
+    Assert.Equal(1, input0.UpsampleFactor);
+    Assert.Equal(1, input0.OutputIndex);
+    Assert.Equal(2, input0.Parameters.Count);
+
+    Assert.IsType<OutputOptimizationRuleComponent>(input0.Parameters[0]);
+    Assert.IsType<OutputOptimizationRuleComponent>(input0.Parameters[1]);
+
+    Assert.Equal(2, result.OutputPatterns.Count);
+
+    var output00 = Assert.IsType<ConstantOptimizationRuleComponent>(result.OutputPatterns[0]);
+    Assert.Equal(1.0f, output00.Value);
+
+    var output01 = Assert.IsType<ConstantOptimizationRuleComponent>(result.OutputPatterns[1]);
+    Assert.Equal(2.0f, output01.Value);
   }
 
   [Fact]
@@ -346,30 +416,77 @@ public class NativeLibraryValidatorTests
         Name = "Rule",
         InputPattern =
         [
-          new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatArrayInFloatOutId, 1, 1),
-          new ArrayOptimizationRuleComponent(3),
-          new ConstantOptimizationRuleComponent(2.0f),
-          new InputOptimizationRuleComponent(false),
-          new ConstantOptimizationRuleComponent(1.0f),
-          new OutputOptimizationRuleComponent(),
+          new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatArrayInFloatOutId, 1, 1),
+          new UnvalidatedArrayOptimizationRuleComponent(3),
+          new UnvalidatedConstantOptimizationRuleComponent(2.0f),
+          new UnvalidatedInputOptimizationRuleComponent(false),
+          new UnvalidatedConstantOptimizationRuleComponent(1.0f),
+          new UnvalidatedOutputOptimizationRuleComponent(),
         ],
         OutputPatterns =
         [
           [
-            new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatArrayInFloatOutId, 1, 1),
-            new ArrayOptimizationRuleComponent(4),
-            new ConstantOptimizationRuleComponent(5.0f),
-            new InputReferenceOptimizationRuleComponent(3),
-            new ConstantOptimizationRuleComponent(6.0f),
-            new InputReferenceOptimizationRuleComponent(3),
-            new OutputOptimizationRuleComponent(),
+            new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatArrayInFloatOutId, 1, 1),
+            new UnvalidatedArrayOptimizationRuleComponent(4),
+            new UnvalidatedConstantOptimizationRuleComponent(5.0f),
+            new UnvalidatedInputReferenceOptimizationRuleComponent(3),
+            new UnvalidatedConstantOptimizationRuleComponent(6.0f),
+            new UnvalidatedInputReferenceOptimizationRuleComponent(3),
+            new UnvalidatedOutputOptimizationRuleComponent(),
           ],
         ],
       },
       out var reporting);
 
-    Assert.True(result);
+    Assert.NotNull(result);
     Assert.Empty(reporting.ErrorIdentifiers);
+
+    var input0 = Assert.IsType<NativeModuleCallOptimizationRuleComponent>(result.InputPattern);
+    Assert.Equal(_nativeLibraryId, input0.NativeModule.NativeLibraryId);
+    Assert.Equal(_nativeModuleFloatArrayInFloatOutId, input0.NativeModule.Id);
+    Assert.Equal(1, input0.UpsampleFactor);
+    Assert.Equal(1, input0.OutputIndex);
+    Assert.Equal(2, input0.Parameters.Count);
+
+    var input1 = Assert.IsType<ArrayOptimizationRuleComponent>(input0.Parameters[0]);
+    Assert.Equal(3, input1.Elements.Count);
+
+    var input2 = Assert.IsType<ConstantOptimizationRuleComponent>(input1.Elements[0]);
+    Assert.Equal(2.0f, input2.Value);
+
+    var input3 = Assert.IsType<InputOptimizationRuleComponent>(input1.Elements[1]);
+    Assert.False(input3.MustBeConstant);
+
+    var input4 = Assert.IsType<ConstantOptimizationRuleComponent>(input1.Elements[2]);
+    Assert.Equal(1.0f, input4.FloatValue);
+
+    Assert.IsType<OutputOptimizationRuleComponent>(input0.Parameters[1]);
+
+    var output0 = Assert.Single(result.OutputPatterns);
+
+    var output00 = Assert.IsType<NativeModuleCallOptimizationRuleComponent>(output0);
+    Assert.Equal(_nativeLibraryId, output00.NativeModule.NativeLibraryId);
+    Assert.Equal(_nativeModuleFloatArrayInFloatOutId, output00.NativeModule.Id);
+    Assert.Equal(1, output00.UpsampleFactor);
+    Assert.Equal(1, output00.OutputIndex);
+    Assert.Equal(2, output00.Parameters.Count);
+
+    var output01 = Assert.IsType<ArrayOptimizationRuleComponent>(output00.Parameters[0]);
+    Assert.Equal(4, output01.Elements.Count);
+
+    var output02 = Assert.IsType<ConstantOptimizationRuleComponent>(output01.Elements[0]);
+    Assert.Equal(5.0f, output02.Value);
+
+    var output03 = Assert.IsType<InputReferenceOptimizationRuleComponent>(output01.Elements[1]);
+    Assert.Equal(input3, output03.ReferencedComponent);
+
+    var output04 = Assert.IsType<ConstantOptimizationRuleComponent>(output01.Elements[2]);
+    Assert.Equal(6.0f, output04.Value);
+
+    var output05 = Assert.IsType<InputReferenceOptimizationRuleComponent>(output01.Elements[3]);
+    Assert.Equal(input3, output05.ReferencedComponent);
+
+    Assert.IsType<OutputOptimizationRuleComponent>(output00.Parameters[1]);
   }
 
   [Fact]
@@ -382,23 +499,51 @@ public class NativeLibraryValidatorTests
         Name = "Rule",
         InputPattern =
         [
-          new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatInFloatOutId, 1, 1),
-          new InputOptimizationRuleComponent(true),
-          new OutputOptimizationRuleComponent(),
+          new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatInFloatOutId, 1, 1),
+          new UnvalidatedInputOptimizationRuleComponent(true),
+          new UnvalidatedOutputOptimizationRuleComponent(),
         ],
         OutputPatterns =
         [
           [
-            new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleConstFloatInConstFloatOutId, 1, 1),
-            new InputReferenceOptimizationRuleComponent(1),
-            new OutputOptimizationRuleComponent(),
+            new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleConstFloatInConstFloatOutId, 1, 1),
+            new UnvalidatedInputReferenceOptimizationRuleComponent(1),
+            new UnvalidatedOutputOptimizationRuleComponent(),
           ],
         ],
       },
       out var reporting);
 
-    Assert.True(result);
+    Assert.NotNull(result);
     Assert.Empty(reporting.ErrorIdentifiers);
+
+    var input0 = Assert.IsType<NativeModuleCallOptimizationRuleComponent>(result.InputPattern);
+    Assert.Equal(_nativeLibraryId, input0.NativeModule.NativeLibraryId);
+    Assert.Equal(_nativeModuleFloatInFloatOutId, input0.NativeModule.Id);
+    Assert.Equal(1, input0.UpsampleFactor);
+    Assert.Equal(1, input0.OutputIndex);
+    Assert.Equal(2, input0.Parameters.Count);
+
+    var input1 = Assert.IsType<InputOptimizationRuleComponent>(input0.Parameters[0]);
+    Assert.True(input1.MustBeConstant);
+
+    Assert.IsType<OutputOptimizationRuleComponent>(input0.Parameters[1]);
+
+    Assert.IsType<OutputOptimizationRuleComponent>(input0.Parameters[1]);
+
+    var output0 = Assert.Single(result.OutputPatterns);
+
+    var output00 = Assert.IsType<NativeModuleCallOptimizationRuleComponent>(output0);
+    Assert.Equal(_nativeLibraryId, output00.NativeModule.NativeLibraryId);
+    Assert.Equal(_nativeModuleConstFloatInConstFloatOutId, output00.NativeModule.Id);
+    Assert.Equal(1, output00.UpsampleFactor);
+    Assert.Equal(1, output00.OutputIndex);
+    Assert.Equal(2, output00.Parameters.Count);
+
+    var output01 = Assert.IsType<InputReferenceOptimizationRuleComponent>(output00.Parameters[0]);
+    Assert.Equal(input1, output01.ReferencedComponent);
+
+    Assert.IsType<OutputOptimizationRuleComponent>(output00.Parameters[1]);
   }
 
   [Theory]
@@ -737,52 +882,52 @@ public class NativeLibraryValidatorTests
   [InlineData("invalid.identifier")]
   public void InvalidOptimizationRuleName(string name)
   {
-    var optimizationRule = new OptimizationRule()
+    var optimizationRule = new UnvalidatedOptimizationRule()
     {
       Name = name,
       InputPattern =
       [
-        new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatOutId, 1, 0),
-        new OutputOptimizationRuleComponent(),
+        new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatOutId, 1, 0),
+        new UnvalidatedOutputOptimizationRuleComponent(),
       ],
-      OutputPatterns = [[new ConstantOptimizationRuleComponent(1.0f)]],
+      OutputPatterns = [[new UnvalidatedConstantOptimizationRuleComponent(1.0f)]],
     };
 
     var result = ValidateOptimizationRule(_optimizationRuleNativeModules, optimizationRule, out var reporting);
 
-    Assert.False(result);
+    Assert.Null(result);
     Assert.Equal(["InvalidOptimizationRuleName"], reporting.ErrorIdentifiers);
   }
 
   [Fact]
   public void EmptyOptimizationRuleInputPattern()
   {
-    var optimizationRule = new OptimizationRule()
+    var optimizationRule = new UnvalidatedOptimizationRule()
     {
       Name = "Rule",
       InputPattern = [],
-      OutputPatterns = [[new ConstantOptimizationRuleComponent(1.0f)]],
+      OutputPatterns = [[new UnvalidatedConstantOptimizationRuleComponent(1.0f)]],
     };
 
     var result = ValidateOptimizationRule(_optimizationRuleNativeModules, optimizationRule, out var reporting);
 
-    Assert.False(result);
+    Assert.Null(result);
     Assert.Equal(["EmptyOptimizationRuleInputPattern"], reporting.ErrorIdentifiers);
   }
 
   [Fact]
   public void OptimizationRuleInputPatternDoesNotStartWithNativeModuleCallComponent()
   {
-    var optimizationRule = new OptimizationRule()
+    var optimizationRule = new UnvalidatedOptimizationRule()
     {
       Name = "Rule",
-      InputPattern = [new ConstantOptimizationRuleComponent(1.0f)],
-      OutputPatterns = [[new ConstantOptimizationRuleComponent(1.0f)]],
+      InputPattern = [new UnvalidatedConstantOptimizationRuleComponent(1.0f)],
+      OutputPatterns = [[new UnvalidatedConstantOptimizationRuleComponent(1.0f)]],
     };
 
     var result = ValidateOptimizationRule(_optimizationRuleNativeModules, optimizationRule, out var reporting);
 
-    Assert.False(result);
+    Assert.Null(result);
     Assert.Equal(["OptimizationRuleInputPatternDoesNotStartWithNativeModuleCallComponent"], reporting.ErrorIdentifiers);
   }
 
@@ -790,45 +935,45 @@ public class NativeLibraryValidatorTests
   public void OptimizationRuleOutputPatternCountMismatch()
   {
     {
-      var optimizationRule = new OptimizationRule()
+      var optimizationRule = new UnvalidatedOptimizationRule()
       {
         Name = "Rule",
         InputPattern =
         [
-          new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatOutFloatOutId, 1, 0),
-          new OutputOptimizationRuleComponent(),
-          new OutputOptimizationRuleComponent(),
+          new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatOutFloatOutId, 1, 0),
+          new UnvalidatedOutputOptimizationRuleComponent(),
+          new UnvalidatedOutputOptimizationRuleComponent(),
         ],
-        OutputPatterns = [[new ConstantOptimizationRuleComponent(1.0f)]],
+        OutputPatterns = [[new UnvalidatedConstantOptimizationRuleComponent(1.0f)]],
       };
 
       var result = ValidateOptimizationRule(_optimizationRuleNativeModules, optimizationRule, out var reporting);
 
-      Assert.False(result);
+      Assert.Null(result);
       Assert.Equal(["OptimizationRuleOutputPatternCountMismatch"], reporting.ErrorIdentifiers);
     }
 
     {
-      var optimizationRule = new OptimizationRule()
+      var optimizationRule = new UnvalidatedOptimizationRule()
       {
         Name = "Rule",
         InputPattern =
         [
-          new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatOutFloatOutId, 1, 0),
-          new OutputOptimizationRuleComponent(),
-          new OutputOptimizationRuleComponent(),
+          new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatOutFloatOutId, 1, 0),
+          new UnvalidatedOutputOptimizationRuleComponent(),
+          new UnvalidatedOutputOptimizationRuleComponent(),
         ],
         OutputPatterns =
         [
-          [new ConstantOptimizationRuleComponent(1.0f)],
-          [new ConstantOptimizationRuleComponent(1.0f)],
-          [new ConstantOptimizationRuleComponent(1.0f)],
+          [new UnvalidatedConstantOptimizationRuleComponent(1.0f)],
+          [new UnvalidatedConstantOptimizationRuleComponent(1.0f)],
+          [new UnvalidatedConstantOptimizationRuleComponent(1.0f)],
         ],
       };
 
       var result = ValidateOptimizationRule(_optimizationRuleNativeModules, optimizationRule, out var reporting);
 
-      Assert.False(result);
+      Assert.Null(result);
       Assert.Equal(["OptimizationRuleOutputPatternCountMismatch"], reporting.ErrorIdentifiers);
     }
   }
@@ -836,123 +981,123 @@ public class NativeLibraryValidatorTests
   [Fact]
   public void EmptyOptimizationRuleOutputPattern()
   {
-    var optimizationRule = new OptimizationRule()
+    var optimizationRule = new UnvalidatedOptimizationRule()
     {
       Name = "Rule",
       InputPattern =
       [
-        new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatOutId, 1, 0),
-        new OutputOptimizationRuleComponent(),
+        new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatOutId, 1, 0),
+        new UnvalidatedOutputOptimizationRuleComponent(),
       ],
       OutputPatterns = [[]],
     };
 
     var result = ValidateOptimizationRule(_optimizationRuleNativeModules, optimizationRule, out var reporting);
 
-    Assert.False(result);
+    Assert.Null(result);
     Assert.Equal(["EmptyOptimizationRuleOutputPattern"], reporting.ErrorIdentifiers);
   }
 
   [Fact]
   public void IncompatibleOptimizationRuleOutputPatternResultType()
   {
-    var optimizationRule = new OptimizationRule()
+    var optimizationRule = new UnvalidatedOptimizationRule()
     {
       Name = "Rule",
       InputPattern =
       [
-        new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleConstFloatOutId, 1, 0),
-        new OutputOptimizationRuleComponent(),
+        new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleConstFloatOutId, 1, 0),
+        new UnvalidatedOutputOptimizationRuleComponent(),
       ],
       OutputPatterns =
       [
         [
-          new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatOutId, 1, 0),
-          new OutputOptimizationRuleComponent(),
+          new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatOutId, 1, 0),
+          new UnvalidatedOutputOptimizationRuleComponent(),
         ],
       ],
     };
 
     var result = ValidateOptimizationRule(_optimizationRuleNativeModules, optimizationRule, out var reporting);
 
-    Assert.False(result);
+    Assert.Null(result);
     Assert.Equal(["IncompatibleOptimizationRuleOutputPatternResultType"], reporting.ErrorIdentifiers);
   }
 
   [Fact]
   public void TooManyOptimizationRuleComponents()
   {
-    var optimizationRule = new OptimizationRule()
+    var optimizationRule = new UnvalidatedOptimizationRule()
     {
       Name = "Rule",
       InputPattern =
       [
-        new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatOutId, 1, 0),
-        new OutputOptimizationRuleComponent(),
-        new ConstantOptimizationRuleComponent(1.0f),
+        new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatOutId, 1, 0),
+        new UnvalidatedOutputOptimizationRuleComponent(),
+        new UnvalidatedConstantOptimizationRuleComponent(1.0f),
       ],
-      OutputPatterns = [[new ConstantOptimizationRuleComponent(1.0f)]],
+      OutputPatterns = [[new UnvalidatedConstantOptimizationRuleComponent(1.0f)]],
     };
 
     var result = ValidateOptimizationRule(_optimizationRuleNativeModules, optimizationRule, out var reporting);
 
-    Assert.False(result);
+    Assert.Null(result);
     Assert.Equal(["TooManyOptimizationRuleComponents"], reporting.ErrorIdentifiers);
   }
 
   [Fact]
   public void TooFewOptimizationRuleComponents()
   {
-    var optimizationRule = new OptimizationRule()
+    var optimizationRule = new UnvalidatedOptimizationRule()
     {
       Name = "Rule",
-      InputPattern = [new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatOutId, 1, 0)],
-      OutputPatterns = [[new ConstantOptimizationRuleComponent(1.0f)]],
+      InputPattern = [new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatOutId, 1, 0)],
+      OutputPatterns = [[new UnvalidatedConstantOptimizationRuleComponent(1.0f)]],
     };
 
     var result = ValidateOptimizationRule(_optimizationRuleNativeModules, optimizationRule, out var reporting);
 
-    Assert.False(result);
+    Assert.Null(result);
     Assert.Equal(["TooFewOptimizationRuleComponents"], reporting.ErrorIdentifiers);
   }
 
   [Fact]
   public void InvalidNativeModuleCallOptimizationRuleComponentNativeLibraryId()
   {
-    var optimizationRule = new OptimizationRule()
+    var optimizationRule = new UnvalidatedOptimizationRule()
     {
       Name = "Rule",
       InputPattern =
       [
-        new NativeModuleCallOptimizationRuleComponent(Guid.Empty, _nativeModuleFloatOutId, 1, 0),
-        new OutputOptimizationRuleComponent(),
+        new UnvalidatedNativeModuleCallOptimizationRuleComponent(Guid.Empty, _nativeModuleFloatOutId, 1, 0),
+        new UnvalidatedOutputOptimizationRuleComponent(),
       ],
-      OutputPatterns = [[new ConstantOptimizationRuleComponent(1.0f)]],
+      OutputPatterns = [[new UnvalidatedConstantOptimizationRuleComponent(1.0f)]],
     };
 
     var result = ValidateOptimizationRule(_optimizationRuleNativeModules, optimizationRule, out var reporting);
 
-    Assert.False(result);
+    Assert.Null(result);
     Assert.Equal(["InvalidNativeModuleCallOptimizationRuleComponentNativeLibraryId"], reporting.ErrorIdentifiers);
   }
 
   [Fact]
   public void InvalidNativeModuleCallOptimizationRuleComponentNativeModuleId()
   {
-    var optimizationRule = new OptimizationRule()
+    var optimizationRule = new UnvalidatedOptimizationRule()
     {
       Name = "Rule",
       InputPattern =
       [
-        new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, Guid.Empty, 1, 0),
-        new OutputOptimizationRuleComponent(),
+        new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, Guid.Empty, 1, 0),
+        new UnvalidatedOutputOptimizationRuleComponent(),
       ],
-      OutputPatterns = [[new ConstantOptimizationRuleComponent(1.0f)]],
+      OutputPatterns = [[new UnvalidatedConstantOptimizationRuleComponent(1.0f)]],
     };
 
     var result = ValidateOptimizationRule(_optimizationRuleNativeModules, optimizationRule, out var reporting);
 
-    Assert.False(result);
+    Assert.Null(result);
     Assert.Equal(["InvalidNativeModuleCallOptimizationRuleComponentNativeModuleId"], reporting.ErrorIdentifiers);
   }
 
@@ -961,40 +1106,40 @@ public class NativeLibraryValidatorTests
   [InlineData(-1)]
   public void InvalidNativeModuleCallOptimizationRuleComponentUpsampleFactor(int upsampleFactor)
   {
-    var optimizationRule = new OptimizationRule()
+    var optimizationRule = new UnvalidatedOptimizationRule()
     {
       Name = "Rule",
       InputPattern =
       [
-        new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatOutId, upsampleFactor, 0),
-        new OutputOptimizationRuleComponent(),
+        new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatOutId, upsampleFactor, 0),
+        new UnvalidatedOutputOptimizationRuleComponent(),
       ],
-      OutputPatterns = [[new ConstantOptimizationRuleComponent(1.0f)]],
+      OutputPatterns = [[new UnvalidatedConstantOptimizationRuleComponent(1.0f)]],
     };
 
     var result = ValidateOptimizationRule(_optimizationRuleNativeModules, optimizationRule, out var reporting);
 
-    Assert.False(result);
+    Assert.Null(result);
     Assert.Equal(["InvalidNativeModuleCallOptimizationRuleComponentUpsampleFactor"], reporting.ErrorIdentifiers);
   }
 
   [Fact]
   public void NativeModuleCallOptimizationRuleComponentWithSideEffectsDisallowed()
   {
-    var optimizationRule = new OptimizationRule()
+    var optimizationRule = new UnvalidatedOptimizationRule()
     {
       Name = "Rule",
       InputPattern =
       [
-        new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatOutSideEffectsId, 1, 0),
-        new OutputOptimizationRuleComponent(),
+        new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatOutSideEffectsId, 1, 0),
+        new UnvalidatedOutputOptimizationRuleComponent(),
       ],
-      OutputPatterns = [[new ConstantOptimizationRuleComponent(1.0f)]],
+      OutputPatterns = [[new UnvalidatedConstantOptimizationRuleComponent(1.0f)]],
     };
 
     var result = ValidateOptimizationRule(_optimizationRuleNativeModules, optimizationRule, out var reporting);
 
-    Assert.False(result);
+    Assert.Null(result);
     Assert.Equal(["NativeModuleCallOptimizationRuleComponentWithSideEffectsDisallowed"], reporting.ErrorIdentifiers);
   }
 
@@ -1004,21 +1149,21 @@ public class NativeLibraryValidatorTests
   [InlineData(2)]
   public void InvalidNativeModuleCallOptimizationRuleComponentOutputIndex(int outputIndex)
   {
-    var optimizationRule = new OptimizationRule()
+    var optimizationRule = new UnvalidatedOptimizationRule()
     {
       Name = "Rule",
       InputPattern =
       [
-        new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatInFloatOutId, 1, outputIndex),
-        new InputOptimizationRuleComponent(false),
-        new OutputOptimizationRuleComponent(),
+        new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatInFloatOutId, 1, outputIndex),
+        new UnvalidatedInputOptimizationRuleComponent(false),
+        new UnvalidatedOutputOptimizationRuleComponent(),
       ],
-      OutputPatterns = [[new ConstantOptimizationRuleComponent(1.0f)]],
+      OutputPatterns = [[new UnvalidatedConstantOptimizationRuleComponent(1.0f)]],
     };
 
     var result = ValidateOptimizationRule(_optimizationRuleNativeModules, optimizationRule, out var reporting);
 
-    Assert.False(result);
+    Assert.Null(result);
     Assert.Equal(["InvalidNativeModuleCallOptimizationRuleComponentOutputIndex"], reporting.ErrorIdentifiers);
   }
 
@@ -1026,40 +1171,40 @@ public class NativeLibraryValidatorTests
   public void NativeModuleCallOptimizationRuleComponentParameterDirectionMismatch()
   {
     {
-      var optimizationRule = new OptimizationRule()
+      var optimizationRule = new UnvalidatedOptimizationRule()
       {
         Name = "Rule",
         InputPattern =
         [
-          new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatInFloatOutId, 1, 1),
-          new OutputOptimizationRuleComponent(),
-          new OutputOptimizationRuleComponent(),
+          new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatInFloatOutId, 1, 1),
+          new UnvalidatedOutputOptimizationRuleComponent(),
+          new UnvalidatedOutputOptimizationRuleComponent(),
         ],
-        OutputPatterns = [[new ConstantOptimizationRuleComponent(1.0f)]],
+        OutputPatterns = [[new UnvalidatedConstantOptimizationRuleComponent(1.0f)]],
       };
 
       var result = ValidateOptimizationRule(_optimizationRuleNativeModules, optimizationRule, out var reporting);
 
-      Assert.False(result);
+      Assert.Null(result);
       Assert.Equal(["NativeModuleCallOptimizationRuleComponentParameterDirectionMismatch"], reporting.ErrorIdentifiers);
     }
 
     {
-      var optimizationRule = new OptimizationRule()
+      var optimizationRule = new UnvalidatedOptimizationRule()
       {
         Name = "Rule",
         InputPattern =
         [
-          new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatInFloatOutId, 1, 1),
-          new InputOptimizationRuleComponent(false),
-          new InputOptimizationRuleComponent(false),
+          new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatInFloatOutId, 1, 1),
+          new UnvalidatedInputOptimizationRuleComponent(false),
+          new UnvalidatedInputOptimizationRuleComponent(false),
         ],
-        OutputPatterns = [[new ConstantOptimizationRuleComponent(1.0f)]],
+        OutputPatterns = [[new UnvalidatedConstantOptimizationRuleComponent(1.0f)]],
       };
 
       var result = ValidateOptimizationRule(_optimizationRuleNativeModules, optimizationRule, out var reporting);
 
-      Assert.False(result);
+      Assert.Null(result);
       Assert.Equal(["NativeModuleCallOptimizationRuleComponentParameterDirectionMismatch"], reporting.ErrorIdentifiers);
     }
   }
@@ -1068,41 +1213,41 @@ public class NativeLibraryValidatorTests
   public void IllegalNativeModuleCallOptimizationRuleComponentArgumentType()
   {
     {
-      var optimizationRule = new OptimizationRule()
+      var optimizationRule = new UnvalidatedOptimizationRule()
       {
         Name = "Rule",
         InputPattern =
         [
-          new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatInFloatOutId, 1, 1),
-          new ConstantOptimizationRuleComponent("str"),
-          new OutputOptimizationRuleComponent(),
+          new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatInFloatOutId, 1, 1),
+          new UnvalidatedConstantOptimizationRuleComponent("str"),
+          new UnvalidatedOutputOptimizationRuleComponent(),
         ],
-        OutputPatterns = [[new ConstantOptimizationRuleComponent(1.0f)]],
+        OutputPatterns = [[new UnvalidatedConstantOptimizationRuleComponent(1.0f)]],
       };
 
       var result = ValidateOptimizationRule(_optimizationRuleNativeModules, optimizationRule, out var reporting);
 
-      Assert.False(result);
+      Assert.Null(result);
       Assert.Equal(["IllegalNativeModuleCallOptimizationRuleComponentArgumentType"], reporting.ErrorIdentifiers);
     }
 
     {
-      var optimizationRule = new OptimizationRule()
+      var optimizationRule = new UnvalidatedOptimizationRule()
       {
         Name = "Rule",
         InputPattern =
         [
-          new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleConstFloatInFloatOutId, 1, 1),
-          new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatOutId, 1, 0),
-          new OutputOptimizationRuleComponent(),
-          new OutputOptimizationRuleComponent(),
+          new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleConstFloatInFloatOutId, 1, 1),
+          new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatOutId, 1, 0),
+          new UnvalidatedOutputOptimizationRuleComponent(),
+          new UnvalidatedOutputOptimizationRuleComponent(),
         ],
-        OutputPatterns = [[new ConstantOptimizationRuleComponent(1.0f)]],
+        OutputPatterns = [[new UnvalidatedConstantOptimizationRuleComponent(1.0f)]],
       };
 
       var result = ValidateOptimizationRule(_optimizationRuleNativeModules, optimizationRule, out var reporting);
 
-      Assert.False(result);
+      Assert.Null(result);
       Assert.Equal(["IllegalNativeModuleCallOptimizationRuleComponentArgumentType"], reporting.ErrorIdentifiers);
     }
   }
@@ -1110,29 +1255,29 @@ public class NativeLibraryValidatorTests
   [Fact]
   public void InvalidArrayOptimizationRuleComponentElementDirection()
   {
-    var optimizationRule = new OptimizationRule()
+    var optimizationRule = new UnvalidatedOptimizationRule()
     {
       Name = "Rule",
       InputPattern =
       [
-        new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatArrayInFloatOutId, 1, 1),
-        new InputOptimizationRuleComponent(false),
-        new OutputOptimizationRuleComponent(),
+        new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatArrayInFloatOutId, 1, 1),
+        new UnvalidatedInputOptimizationRuleComponent(false),
+        new UnvalidatedOutputOptimizationRuleComponent(),
       ],
       OutputPatterns =
       [
         [
-          new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatArrayInFloatOutId, 1, 1),
-          new ArrayOptimizationRuleComponent(1),
-          new OutputOptimizationRuleComponent(),
-          new OutputOptimizationRuleComponent(),
+          new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatArrayInFloatOutId, 1, 1),
+          new UnvalidatedArrayOptimizationRuleComponent(1),
+          new UnvalidatedOutputOptimizationRuleComponent(),
+          new UnvalidatedOutputOptimizationRuleComponent(),
         ],
       ],
     };
 
     var result = ValidateOptimizationRule(_optimizationRuleNativeModules, optimizationRule, out var reporting);
 
-    Assert.False(result);
+    Assert.Null(result);
     Assert.Equal(["InvalidArrayOptimizationRuleComponentElementDirection"], reporting.ErrorIdentifiers);
   }
 
@@ -1140,51 +1285,51 @@ public class NativeLibraryValidatorTests
   public void InvalidArrayOptimizationRuleComponentElementDataType()
   {
     {
-      var optimizationRule = new OptimizationRule()
+      var optimizationRule = new UnvalidatedOptimizationRule()
       {
         Name = "Rule",
         InputPattern =
         [
-          new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatArrayInFloatOutId, 1, 1),
-          new InputOptimizationRuleComponent(false),
-          new OutputOptimizationRuleComponent(),
+          new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatArrayInFloatOutId, 1, 1),
+          new UnvalidatedInputOptimizationRuleComponent(false),
+          new UnvalidatedOutputOptimizationRuleComponent(),
         ],
         OutputPatterns =
         [
           [
-            new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatArrayInFloatOutId, 1, 1),
-            new ArrayOptimizationRuleComponent(1),
-            new ArrayOptimizationRuleComponent(1),
-            new ConstantOptimizationRuleComponent(1.0f),
-            new OutputOptimizationRuleComponent(),
+            new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatArrayInFloatOutId, 1, 1),
+            new UnvalidatedArrayOptimizationRuleComponent(1),
+            new UnvalidatedArrayOptimizationRuleComponent(1),
+            new UnvalidatedConstantOptimizationRuleComponent(1.0f),
+            new UnvalidatedOutputOptimizationRuleComponent(),
           ]
         ],
       };
 
       var result = ValidateOptimizationRule(_optimizationRuleNativeModules, optimizationRule, out var reporting);
 
-      Assert.False(result);
+      Assert.Null(result);
       Assert.Equal(["InvalidArrayOptimizationRuleComponentElementDataType"], reporting.ErrorIdentifiers);
     }
 
     {
-      var optimizationRule = new OptimizationRule()
+      var optimizationRule = new UnvalidatedOptimizationRule()
       {
         Name = "Rule",
         InputPattern =
         [
-          new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatInFloatOutId, 1, 1),
-          new ArrayOptimizationRuleComponent(1),
-          new ArrayOptimizationRuleComponent(1),
-          new InputOptimizationRuleComponent(false),
-          new OutputOptimizationRuleComponent(),
+          new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatInFloatOutId, 1, 1),
+          new UnvalidatedArrayOptimizationRuleComponent(1),
+          new UnvalidatedArrayOptimizationRuleComponent(1),
+          new UnvalidatedInputOptimizationRuleComponent(false),
+          new UnvalidatedOutputOptimizationRuleComponent(),
         ],
-        OutputPatterns = [[new ConstantOptimizationRuleComponent(1.0f)]],
+        OutputPatterns = [[new UnvalidatedConstantOptimizationRuleComponent(1.0f)]],
       };
 
       var result = ValidateOptimizationRule(_optimizationRuleNativeModules, optimizationRule, out var reporting);
 
-      Assert.False(result);
+      Assert.Null(result);
       Assert.Equal(["InvalidArrayOptimizationRuleComponentElementDataType"], reporting.ErrorIdentifiers);
     }
   }
@@ -1192,78 +1337,78 @@ public class NativeLibraryValidatorTests
   [Fact]
   public void InconsistentArrayOptimizationRuleComponentElementDataTypes()
   {
-    var optimizationRule = new OptimizationRule()
+    var optimizationRule = new UnvalidatedOptimizationRule()
     {
       Name = "Rule",
       InputPattern =
       [
-        new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatArrayInFloatOutId, 1, 1),
-        new InputOptimizationRuleComponent(false),
-        new OutputOptimizationRuleComponent(),
+        new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatArrayInFloatOutId, 1, 1),
+        new UnvalidatedInputOptimizationRuleComponent(false),
+        new UnvalidatedOutputOptimizationRuleComponent(),
       ],
       OutputPatterns =
       [
         [
-          new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatArrayInFloatOutId, 1, 1),
-          new ArrayOptimizationRuleComponent(2),
-          new ConstantOptimizationRuleComponent(1),
-          new ConstantOptimizationRuleComponent(1.0f),
-          new OutputOptimizationRuleComponent(),
+          new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatArrayInFloatOutId, 1, 1),
+          new UnvalidatedArrayOptimizationRuleComponent(2),
+          new UnvalidatedConstantOptimizationRuleComponent(1),
+          new UnvalidatedConstantOptimizationRuleComponent(1.0f),
+          new UnvalidatedOutputOptimizationRuleComponent(),
         ],
       ],
     };
 
     var result = ValidateOptimizationRule(_optimizationRuleNativeModules, optimizationRule, out var reporting);
 
-    Assert.False(result);
+    Assert.Null(result);
     Assert.Equal(["InconsistentArrayOptimizationRuleComponentElementDataTypes"], reporting.ErrorIdentifiers);
   }
 
   [Fact]
   public void InputOptimizationRuleComponentOnlyAllowedInInputPattern()
   {
-    var optimizationRule = new OptimizationRule()
+    var optimizationRule = new UnvalidatedOptimizationRule()
     {
       Name = "Rule",
       InputPattern =
       [
-        new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatOutId, 1, 0),
-        new OutputOptimizationRuleComponent(),
+        new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatOutId, 1, 0),
+        new UnvalidatedOutputOptimizationRuleComponent(),
       ],
       OutputPatterns =
       [
         [
-          new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatInFloatOutId, 1, 1),
-          new InputOptimizationRuleComponent(false),
-          new OutputOptimizationRuleComponent(),
+          new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatInFloatOutId, 1, 1),
+          new UnvalidatedInputOptimizationRuleComponent(false),
+          new UnvalidatedOutputOptimizationRuleComponent(),
         ],
       ],
     };
 
     var result = ValidateOptimizationRule(_optimizationRuleNativeModules, optimizationRule, out var reporting);
 
-    Assert.False(result);
+    Assert.Null(result);
     Assert.Equal(["InputOptimizationRuleComponentOnlyAllowedInInputPattern"], reporting.ErrorIdentifiers);
   }
 
   [Fact]
   public void InputReferenceOptimizationRuleComponentOnlyAllowedInOutputPattern()
   {
-    var optimizationRule = new OptimizationRule()
+    var optimizationRule = new UnvalidatedOptimizationRule()
     {
       Name = "Rule",
       InputPattern =
       [
-        new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatOutId, 1, 0),
-        new InputReferenceOptimizationRuleComponent(0),
+        new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatOutId, 1, 0),
+        new UnvalidatedInputReferenceOptimizationRuleComponent(0),
       ],
       OutputPatterns =
-      [[new ConstantOptimizationRuleComponent(1.0f)]],
+      [[new UnvalidatedConstantOptimizationRuleComponent(1.0f)]],
     };
 
     var result = ValidateOptimizationRule(_optimizationRuleNativeModules, optimizationRule, out var reporting);
 
-    Assert.False(result);
+    Assert.Null(result);
     Assert.Equal(["InputReferenceOptimizationRuleComponentOnlyAllowedInOutputPattern"], reporting.ErrorIdentifiers);
   }
 
@@ -1273,22 +1418,22 @@ public class NativeLibraryValidatorTests
   [InlineData(3)]
   public void InvalidInputReferenceOptimizationRuleComponentIndex(int index)
   {
-    var optimizationRule = new OptimizationRule()
+    var optimizationRule = new UnvalidatedOptimizationRule()
     {
       Name = "Rule",
       InputPattern =
       [
-        new NativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatInFloatOutId, 1, 1),
-        new InputOptimizationRuleComponent(false),
-        new OutputOptimizationRuleComponent(),
+        new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatInFloatOutId, 1, 1),
+        new UnvalidatedInputOptimizationRuleComponent(false),
+        new UnvalidatedOutputOptimizationRuleComponent(),
       ],
       OutputPatterns =
-      [[new InputReferenceOptimizationRuleComponent(index)]],
+      [[new UnvalidatedInputReferenceOptimizationRuleComponent(index)]],
     };
 
     var result = ValidateOptimizationRule(_optimizationRuleNativeModules, optimizationRule, out var reporting);
 
-    Assert.False(result);
+    Assert.Null(result);
     Assert.Equal(["InvalidInputReferenceOptimizationRuleComponentIndex"], reporting.ErrorIdentifiers);
   }
 
@@ -1321,10 +1466,10 @@ public class NativeLibraryValidatorTests
     return nativeLibraryValidator.ValidateNativeModule(nativeLibrary, nativeModule, false);
   }
 
-  private static bool ValidateOptimizationRule(
+  private static OptimizationRule? ValidateOptimizationRule(
     IReadOnlyList<NativeLibrary> nativeLibraries,
     NativeLibrary nativeLibrary,
-    OptimizationRule optimizationRule,
+    UnvalidatedOptimizationRule optimizationRule,
     out Reporting reporting)
   {
     reporting = new();
@@ -1333,9 +1478,9 @@ public class NativeLibraryValidatorTests
     return nativeLibraryValidator.ValidateOptimizationRule(nativeLibraries, nativeLibrary, optimizationRule);
   }
 
-  private static bool ValidateOptimizationRule(
+  private static OptimizationRule? ValidateOptimizationRule(
     IReadOnlyList<NativeModule> nativeModules,
-    OptimizationRule optimizationRule,
+    UnvalidatedOptimizationRule optimizationRule,
     out Reporting reporting)
   {
     var nativeLibrary = new NativeLibrary()
@@ -1348,7 +1493,7 @@ public class NativeLibraryValidatorTests
       InitializeVoice = (context) => new(0),
       DeinitializeVoice = (context, voiceContext) => { },
       Modules = nativeModules,
-      OptimizationRules = [optimizationRule],
+      OptimizationRules = [],
     };
 
     return ValidateOptimizationRule([nativeLibrary], nativeLibrary, optimizationRule, out reporting);

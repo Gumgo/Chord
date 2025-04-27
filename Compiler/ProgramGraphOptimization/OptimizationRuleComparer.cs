@@ -5,15 +5,10 @@ using System.Diagnostics;
 
 namespace Compiler.ProgramGraphOptimization;
 
-internal class OptimizationRuleComparerContext
-{
-  public required INativeLibraryRegistryAccess NativeLibraryRegistry { get; init; }
-}
-
 // When multiple optimization rules match a single pattern, this class chooses the best one. Generally, the more complex optimization rule wins. The current
 // implementation uses a simple "complexity score" which guarantees transitive ordering to make it easy to resolve cases where more than two optimization rules
 // match but it may not handle more complex ambiguities very well.
-internal class OptimizationRuleComparer(OptimizationRuleComparerContext context) : IComparer<OptimizationRule>
+internal class OptimizationRuleComparer : IComparer<OptimizationRule>
 {
   public int Compare(OptimizationRule? x, OptimizationRule? y)
   {
@@ -22,8 +17,8 @@ internal class OptimizationRuleComparer(OptimizationRuleComparerContext context)
       throw new ArgumentException("One or both optimization rules are null");
     }
 
-    var complexityA = CalculateComplexity(new() { Components = x.InputPattern });
-    var complexityB = CalculateComplexity(new() { Components = y.InputPattern });
+    var complexityA = CalculateComplexity(x.InputPattern);
+    var complexityB = CalculateComplexity(y.InputPattern);
     var result = complexityA.CompareTo(complexityB);
     if (result != 0)
     {
@@ -35,25 +30,21 @@ internal class OptimizationRuleComparer(OptimizationRuleComparerContext context)
     return string.Compare(x.Name, y.Name, StringComparison.Ordinal);
   }
 
-  private Complexity CalculateComplexity(CalculateComplexityState state)
+  private Complexity CalculateComplexity(OptimizationRuleComponent component)
   {
-    var component = state.Components[state.NextComponentIndex];
-    state.NextComponentIndex++;
-
     switch (component)
     {
       case NativeModuleCallOptimizationRuleComponent nativeModuleCallComponent:
         {
-          var nativeModule = context.NativeLibraryRegistry.GetNativeModule(nativeModuleCallComponent.NativeLibraryId, nativeModuleCallComponent.NativeModuleId);
-
           var maxDepth = 1;
           var exactMatchCount = 0;
           var constConstraintCount = 0;
-          foreach (var parameter in nativeModule.Signature.Parameters)
+          var parametersAndComponents = nativeModuleCallComponent.NativeModule.Signature.Parameters.ZipSafe(nativeModuleCallComponent.Parameters);
+          foreach (var (parameter, parameterComponent) in parametersAndComponents)
           {
             if (parameter.Direction == ModuleParameterDirection.In)
             {
-              var parameterComplexity = CalculateComplexity(state);
+              var parameterComplexity = CalculateComplexity(parameterComponent);
               maxDepth = Math.Max(maxDepth, parameterComplexity.MaxDepth + 1);
               exactMatchCount += parameterComplexity.ExactMatchCount;
               constConstraintCount += parameterComplexity.ConstConstraintCount;
@@ -61,8 +52,7 @@ internal class OptimizationRuleComparer(OptimizationRuleComparerContext context)
             else
             {
               Debug.Assert(parameter.Direction == ModuleParameterDirection.Out);
-              Debug.Assert(state.Components[state.NextComponentIndex] is OutputOptimizationRuleComponent);
-              state.NextComponentIndex++;
+              Debug.Assert(parameterComponent is OutputOptimizationRuleComponent);
             }
           }
 
@@ -75,7 +65,7 @@ internal class OptimizationRuleComparer(OptimizationRuleComparerContext context)
       case ArrayOptimizationRuleComponent arrayComponent:
         {
           // The array node itself doesn't count toward depth but the child elements do
-          var arrayElementComplexities = Enumerable.Range(0, arrayComponent.ElementCount).Select((_) => CalculateComplexity(state)).ToArray();
+          var arrayElementComplexities = arrayComponent.Elements.Select(CalculateComplexity).ToArray();
           return new(
             arrayElementComplexities.IsEmpty() ? 1 : arrayElementComplexities.Select((v) => v.MaxDepth).Max(),
             arrayElementComplexities.Sum((v) => v.ExactMatchCount),
@@ -85,21 +75,15 @@ internal class OptimizationRuleComparer(OptimizationRuleComparerContext context)
       case InputOptimizationRuleComponent inputComponent:
         return new(1, 0, inputComponent.MustBeConstant ? 1 : 0);
 
-      case OutputOptimizationRuleComponent outputComponentX:
+      case OutputOptimizationRuleComponent:
         throw new InvalidOperationException("Output component should be skipped when calculating input parameter complexity");
 
-      case InputReferenceOptimizationRuleComponent inputReferenceComponentX:
+      case InputReferenceOptimizationRuleComponent:
         throw new InvalidOperationException("Input reference component should not occur in optimization rule input pattern");
 
       default:
         throw UnhandledSubclassException.Create(component);
     }
-  }
-
-  private class CalculateComplexityState
-  {
-    public required IReadOnlyList<OptimizationRuleComponent> Components { get; init; }
-    public int NextComponentIndex { get; set; }
   }
 
   // This is a simple complexity score which prioritizes max depth, exact (constant) match count, and const constraint count in that order

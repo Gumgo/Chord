@@ -2,27 +2,22 @@
 
 namespace Compiler.Native;
 
-// $TODO there are a few possible improvements that could be made to optimization rules:
-// - When loading optimization rules from a native library, directly store native module references rather than storing IDs. We have to look them up at load
-//   time anyway for validation so this isn't really adding any extra steps (we might need an intermediate UnresolvedNativeModuleCallOptimizationRuleComponent)
-// - Store optimization rules in a resolved tree structure rather than a linear list. This might simplify usage logic.
-// !!! do these now, I think?
-
 internal class OptimizationRuleComponent
 {
 }
 
 internal class NativeModuleCallOptimizationRuleComponent(
-  Guid nativeLibraryId,
-  Guid nativeModuleId,
+  NativeModule nativeModule,
   int upsampleFactor,
-  int outputIndex)
+  int outputIndex,
+  IReadOnlyList<OptimizationRuleComponent> parameters)
   : OptimizationRuleComponent
 {
-  public Guid NativeLibraryId => nativeLibraryId;
-  public Guid NativeModuleId => nativeModuleId;
+  public NativeModule NativeModule => nativeModule;
   public int UpsampleFactor => upsampleFactor;
   public int OutputIndex => outputIndex;
+
+  public IReadOnlyList<OptimizationRuleComponent> Parameters => parameters;
 }
 
 internal class ConstantOptimizationRuleComponent : OptimizationRuleComponent
@@ -67,9 +62,9 @@ internal class ConstantOptimizationRuleComponent : OptimizationRuleComponent
   public string StringValue => (string)Value;
 }
 
-internal class ArrayOptimizationRuleComponent(int elementCount) : OptimizationRuleComponent
+internal class ArrayOptimizationRuleComponent(IReadOnlyList<OptimizationRuleComponent> elements) : OptimizationRuleComponent
 {
-  public int ElementCount => elementCount;
+  public IReadOnlyList<OptimizationRuleComponent> Elements => elements;
 }
 
 internal class InputOptimizationRuleComponent(bool mustBeConstant) : OptimizationRuleComponent
@@ -81,14 +76,14 @@ internal class OutputOptimizationRuleComponent : OptimizationRuleComponent
 {
 }
 
-internal class InputReferenceOptimizationRuleComponent(int index) : OptimizationRuleComponent
+internal class InputReferenceOptimizationRuleComponent(OptimizationRuleComponent referencedComponent) : OptimizationRuleComponent
 {
-  public int Index => index;
+  public OptimizationRuleComponent ReferencedComponent => referencedComponent;
 }
 
 internal class OptimizationRule
 {
   public required string Name { get; init; }
-  public required IReadOnlyList<OptimizationRuleComponent> InputPattern { get; init; }
-  public required IReadOnlyList<IReadOnlyList<OptimizationRuleComponent>> OutputPatterns { get; init; }
+  public required OptimizationRuleComponent InputPattern { get; init; }
+  public required IReadOnlyList<OptimizationRuleComponent> OutputPatterns { get; init; }
 }

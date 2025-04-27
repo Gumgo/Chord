@@ -32,22 +32,15 @@ file static class ProcessorProgramGraphNodeExtensions
     };
 }
 
-internal class OptimizationRuleRecognizerContext
-{
-  public required INativeLibraryRegistryAccess NativeLibraryRegistry { get; init; }
-}
-
 // $TODO we may want to deal with this case:
 // Suppose we detect the following optimization rule: Foo(Bar(out x){x}). 'x' is being passed into Foo() but it may ALSO get passed somewhere else in the graph.
 // If so, that connection will still stick around. Do we want to apply the optimization rule in that case? I'm not sure.
 internal class OptimizationRuleRecognizer
 {
-  private readonly OptimizationRuleRecognizerContext _context;
   private readonly Dictionary<RootNativeModuleCallKey, RootOptimizationRuleTreeNode> _rootNodes = [];
 
-  public OptimizationRuleRecognizer(OptimizationRuleRecognizerContext context, IReadOnlyList<OptimizationRule> optimizationRules)
+  public OptimizationRuleRecognizer(IReadOnlyList<OptimizationRule> optimizationRules)
   {
-    _context = context;
     foreach (var optimizationRule in optimizationRules)
     {
       AddOptimizationRule(optimizationRule);
@@ -105,9 +98,7 @@ internal class OptimizationRuleRecognizer
       return null;
     }
 
-    var optimizationRuleComparerContext = new OptimizationRuleComparerContext() { NativeLibraryRegistry = _context.NativeLibraryRegistry };
-    var optimizationRuleComparer = new OptimizationRuleComparer(optimizationRuleComparerContext);
-    var bestOptimizationRule = matchedOptimizationRules.Min(optimizationRuleComparer);
+    var bestOptimizationRule = matchedOptimizationRules.Min(new OptimizationRuleComparer());
     Debug.Assert(bestOptimizationRule != null);
 
     return new() { OptimizationRule = bestOptimizationRule, UpsampleFactorMultiplier = upsampleFactorMultiplier };
@@ -115,8 +106,8 @@ internal class OptimizationRuleRecognizer
 
   private void AddOptimizationRule(OptimizationRule optimizationRule)
   {
-    var rootNativeModuleCallComponent = (NativeModuleCallOptimizationRuleComponent)optimizationRule.InputPattern[0];
-    var rootNodeKey = new RootNativeModuleCallKey(rootNativeModuleCallComponent.NativeLibraryId, rootNativeModuleCallComponent.NativeModuleId);
+    var rootNativeModuleCallComponent = (NativeModuleCallOptimizationRuleComponent)optimizationRule.InputPattern;
+    var rootNodeKey = new RootNativeModuleCallKey(rootNativeModuleCallComponent.NativeModule.NativeLibraryId, rootNativeModuleCallComponent.NativeModule.Id);
     if (!_rootNodes.TryGetValue(rootNodeKey, out var rootNode))
     {
       rootNode = new RootOptimizationRuleTreeNode(rootNativeModuleCallComponent.UpsampleFactor);
@@ -124,9 +115,9 @@ internal class OptimizationRuleRecognizer
     }
 
     OptimizationRuleTreeNode currentNode = rootNode;
-    foreach (var component in optimizationRule.InputPattern.Skip(1))
+    foreach (var parameterComponent in rootNativeModuleCallComponent.Parameters)
     {
-      currentNode = currentNode.AddComponent(component);
+      currentNode = currentNode.EnsureChildNode(parameterComponent);
     }
 
     currentNode.AddOptimizationRule(optimizationRule);
@@ -153,24 +144,31 @@ internal class OptimizationRuleRecognizer
 
     public IReadOnlyList<OptimizationRule> OptimizationRules => _optimizationRules;
 
-    public OptimizationRuleTreeNode AddComponent(OptimizationRuleComponent component)
+    public OptimizationRuleTreeNode EnsureChildNode(OptimizationRuleComponent component)
     {
+      var currentNode = this;
       switch (component)
       {
         case NativeModuleCallOptimizationRuleComponent nativeModuleCallComponent:
           {
             var key = new NativeModuleCallKey(
-              nativeModuleCallComponent.NativeLibraryId,
-              nativeModuleCallComponent.NativeModuleId,
+              nativeModuleCallComponent.NativeModule.NativeLibraryId,
+              nativeModuleCallComponent.NativeModule.Id,
               nativeModuleCallComponent.UpsampleFactor,
               nativeModuleCallComponent.OutputIndex);
-            if (!_nativeModuleCallChildNodes.TryGetValue(key, out var node))
+            if (!currentNode._nativeModuleCallChildNodes.TryGetValue(key, out var node))
             {
               node = new();
-              _nativeModuleCallChildNodes.Add(key, node);
+              currentNode._nativeModuleCallChildNodes.Add(key, node);
             }
 
-            return node;
+            currentNode = node;
+            foreach (var parameterComponent in nativeModuleCallComponent.Parameters)
+            {
+              currentNode = currentNode.EnsureChildNode(parameterComponent);
+            }
+
+            return currentNode;
           }
 
         case ConstantOptimizationRuleComponent constantComponent:
@@ -186,10 +184,16 @@ internal class OptimizationRuleRecognizer
 
         case ArrayOptimizationRuleComponent arrayComponent:
           {
-            if (!_arrayChildNodes.TryGetValue(arrayComponent.ElementCount, out var node))
+            if (!_arrayChildNodes.TryGetValue(arrayComponent.Elements.Count, out var node))
             {
               node = new();
-              _arrayChildNodes.Add(arrayComponent.ElementCount, node);
+              _arrayChildNodes.Add(arrayComponent.Elements.Count, node);
+            }
+
+            currentNode = node;
+            foreach (var element in arrayComponent.Elements)
+            {
+              currentNode = currentNode.EnsureChildNode(element);
             }
 
             return node;

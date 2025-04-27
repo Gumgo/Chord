@@ -125,7 +125,8 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
   // Native modules may use AVX2 so we need to assume 32-byte pointer and size alignment on all buffers
   private const int BufferAlignmentByteCount = 32;
 
-  public unsafe NativeLibrary? NativeLibraryFromNative(NativeTypes.NativeLibrary* nativeLibraryNative)
+  public unsafe (NativeLibrary NativeLibrary, IReadOnlyList<UnvalidatedOptimizationRule> OptimizationRules)? NativeLibraryFromNative(
+    NativeTypes.NativeLibrary* nativeLibraryNative)
   {
     var nativeLibraryId = new Guid(new Span<byte>(nativeLibraryNative->Id, sizeof(Guid)), true);
     var nativeLibraryName = Marshal.PtrToStringUTF8((nint)nativeLibraryNative->Name);
@@ -147,7 +148,7 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
       }
     }
 
-    var optimizationRules = new List<OptimizationRule>();
+    var optimizationRules = new List<UnvalidatedOptimizationRule>();
     for (var optimizationRuleIndex = (nuint)0; optimizationRuleIndex < nativeLibraryNative->OptimizationRuleCount; optimizationRuleIndex++)
     {
       var optimizationRule = OptimizationRuleFromNative(sourceLocation, nativeLibraryNative->OptimizationRules[optimizationRuleIndex]);
@@ -184,7 +185,7 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
       }
     }
 
-    return new()
+    var nativeLibrary = new NativeLibrary()
     {
       Id = nativeLibraryId,
       Version = new() { Major = nativeLibraryNative->Version.Major, Minor = nativeLibraryNative->Version.Minor, Patch = nativeLibraryNative->Version.Patch },
@@ -194,8 +195,10 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
       InitializeVoice = InitializeVoiceWrapper,
       DeinitializeVoice = DeinitializeVoiceWrapper,
       Modules = nativeModules,
-      OptimizationRules = optimizationRules,
+      OptimizationRules = [],
     };
+
+    return (nativeLibrary, optimizationRules);
   }
 
   private static unsafe DisposableCallback NativeModuleContextToNative(
@@ -903,7 +906,7 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
     };
   }
 
-  private unsafe OptimizationRule? OptimizationRuleFromNative(SourceLocation sourceLocation, NativeTypes.OptimizationRule* optimizationRuleNative)
+  private unsafe UnvalidatedOptimizationRule? OptimizationRuleFromNative(SourceLocation sourceLocation, NativeTypes.OptimizationRule* optimizationRuleNative)
   {
     var name = Marshal.PtrToStringUTF8((nint)optimizationRuleNative->Name);
     if (name == null)
@@ -914,7 +917,7 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
     var nameOrUnnamed = name ?? "<unnamed>";
 
     var inputPattern = OptimizationRulePatternFromNative(sourceLocation, nameOrUnnamed, optimizationRuleNative->InputPattern);
-    var outputPatterns = new List<IReadOnlyList<OptimizationRuleComponent>>();
+    var outputPatterns = new List<IReadOnlyList<UnvalidatedOptimizationRuleComponent>>();
 
     var currentOutputPatternPointer = optimizationRuleNative->OutputPatterns;
     var anyOutputPatternError = false;
@@ -946,12 +949,12 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
     return new() { Name = name, InputPattern = inputPattern, OutputPatterns = outputPatterns };
   }
 
-  private unsafe List<OptimizationRuleComponent>? OptimizationRulePatternFromNative(
+  private unsafe List<UnvalidatedOptimizationRuleComponent>? OptimizationRulePatternFromNative(
     SourceLocation sourceLocation,
     string optimizationRuleName,
     NativeTypes.OptimizationRuleComponent* optimizationRulePatternNative)
   {
-    var pattern = new List<OptimizationRuleComponent>();
+    var pattern = new List<UnvalidatedOptimizationRuleComponent>();
     var currentComponent = optimizationRulePatternNative;
     while (true)
     {
@@ -972,7 +975,7 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
     }
   }
 
-  private unsafe OptimizationRuleComponent? OptimizationRuleComponentFromNative(
+  private unsafe UnvalidatedOptimizationRuleComponent? OptimizationRuleComponentFromNative(
     SourceLocation sourceLocation,
     string optimizationRuleName,
     NativeTypes.OptimizationRuleComponent* optimizationRuleComponentNative,
@@ -984,7 +987,7 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
       case NativeTypes.OptimizationRuleComponentType.NativeModuleCall:
         {
           var nativeModuleCallData = &optimizationRuleComponentNative->Data.NativeModuleCallData;
-          return new NativeModuleCallOptimizationRuleComponent(
+          return new UnvalidatedNativeModuleCallOptimizationRuleComponent(
             new Guid(new Span<byte>(nativeModuleCallData->NativeLibraryId, sizeof(Guid)), true),
             new Guid(new Span<byte>(nativeModuleCallData->NativeModuleId, sizeof(Guid)), true),
             nativeModuleCallData->UpsampleFactor,
@@ -997,16 +1000,16 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
           switch (optimizationRuleComponentNative->Data.ConstantData.PrimitiveType)
           {
             case NativeTypes.PrimitiveType.Float:
-              return new ConstantOptimizationRuleComponent(constantData->Value.FloatValue);
+              return new UnvalidatedConstantOptimizationRuleComponent(constantData->Value.FloatValue);
 
             case NativeTypes.PrimitiveType.Double:
-              return new ConstantOptimizationRuleComponent(constantData->Value.DoubleValue);
+              return new UnvalidatedConstantOptimizationRuleComponent(constantData->Value.DoubleValue);
 
             case NativeTypes.PrimitiveType.Int:
-              return new ConstantOptimizationRuleComponent(constantData->Value.IntValue);
+              return new UnvalidatedConstantOptimizationRuleComponent(constantData->Value.IntValue);
 
             case NativeTypes.PrimitiveType.Bool:
-              return new ConstantOptimizationRuleComponent(constantData->Value.BoolValue.ToBool());
+              return new UnvalidatedConstantOptimizationRuleComponent(constantData->Value.BoolValue.ToBool());
 
             case NativeTypes.PrimitiveType.String:
               {
@@ -1017,7 +1020,7 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
                   return null;
                 }
 
-                return new ConstantOptimizationRuleComponent(stringValue);
+                return new UnvalidatedConstantOptimizationRuleComponent(stringValue);
               }
 
             default:
@@ -1029,22 +1032,22 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
       case NativeTypes.OptimizationRuleComponentType.Array:
         {
           var arrayData = &optimizationRuleComponentNative->Data.ArrayData;
-          return new ArrayOptimizationRuleComponent(arrayData->ElementCount);
+          return new UnvalidatedArrayOptimizationRuleComponent(arrayData->ElementCount);
         }
 
       case NativeTypes.OptimizationRuleComponentType.Input:
         {
           var inputData = &optimizationRuleComponentNative->Data.InputData;
-          return new InputOptimizationRuleComponent(inputData->MustBeConstant.ToBool());
+          return new UnvalidatedInputOptimizationRuleComponent(inputData->MustBeConstant.ToBool());
         }
 
       case NativeTypes.OptimizationRuleComponentType.Output:
-        return new OutputOptimizationRuleComponent();
+        return new UnvalidatedOutputOptimizationRuleComponent();
 
       case NativeTypes.OptimizationRuleComponentType.InputReference:
         {
           var inputReferenceData = &optimizationRuleComponentNative->Data.InputReferenceData;
-          return new InputReferenceOptimizationRuleComponent(inputReferenceData->Index);
+          return new UnvalidatedInputReferenceOptimizationRuleComponent(inputReferenceData->Index);
         }
 
       case NativeTypes.OptimizationRuleComponentType.EndOfList:

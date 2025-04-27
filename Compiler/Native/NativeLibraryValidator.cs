@@ -132,16 +132,19 @@ file static class ReportingExtensions
       sourceLocation,
       $"InvokeCompileTime was provided for native module '{nativeModule.Name}' but the native module cannot be invoked at compile time");
 
-  public static void InvalidOptimizationRuleNameError(this IReporting reporting, SourceLocation sourceLocation, OptimizationRule optimizationRule)
+  public static void InvalidOptimizationRuleNameError(this IReporting reporting, SourceLocation sourceLocation, UnvalidatedOptimizationRule optimizationRule)
     => reporting.Error("InvalidOptimizationRuleName", sourceLocation, $"Optimization rule '{optimizationRule.Name}' name is not a valid identifier");
 
-  public static void EmptyOptimizationRuleInputPatternError(this IReporting reporting, SourceLocation sourceLocation, OptimizationRule optimizationRule)
+  public static void EmptyOptimizationRuleInputPatternError(
+    this IReporting reporting,
+    SourceLocation sourceLocation,
+    UnvalidatedOptimizationRule optimizationRule)
     => reporting.Error("EmptyOptimizationRuleInputPattern", sourceLocation, $"Optimization rule '{optimizationRule.Name}' input pattern is empty");
 
   public static void OptimizationRuleInputPatternDoesNotStartWithNativeModuleCallComponentError(
     this IReporting reporting,
     SourceLocation sourceLocation,
-    OptimizationRule optimizationRule)
+    UnvalidatedOptimizationRule optimizationRule)
     => reporting.Error(
       "OptimizationRuleInputPatternDoesNotStartWithNativeModuleCallComponent",
       sourceLocation,
@@ -150,7 +153,7 @@ file static class ReportingExtensions
   public static void OptimizationRuleOutputPatternCountMismatchError(
     this IReporting reporting,
     SourceLocation sourceLocation,
-    OptimizationRule optimizationRule)
+    UnvalidatedOptimizationRule optimizationRule)
     => reporting.Error(
       "OptimizationRuleOutputPatternCountMismatch",
       sourceLocation,
@@ -159,7 +162,7 @@ file static class ReportingExtensions
   public static void EmptyOptimizationRuleOutputPatternError(
     this IReporting reporting,
     SourceLocation sourceLocation,
-    OptimizationRule optimizationRule,
+    UnvalidatedOptimizationRule optimizationRule,
     int outputPatternIndex)
     => reporting.Error(
       "EmptyOptimizationRuleOutputPattern",
@@ -169,7 +172,7 @@ file static class ReportingExtensions
   public static void IncompatibleOptimizationRuleOutputPatternResultTypeError(
     this IReporting reporting,
     SourceLocation sourceLocation,
-    OptimizationRule optimizationRule,
+    UnvalidatedOptimizationRule optimizationRule,
     int outputPatternIndex)
   {
     var message = $"Optimization rule '{optimizationRule.Name}' output pattern {outputPatternIndex} data type "
@@ -180,7 +183,7 @@ file static class ReportingExtensions
   public static void TooManyOptimizationRuleComponentsError(
     this IReporting reporting,
     SourceLocation sourceLocation,
-    OptimizationRule optimizationRule,
+    UnvalidatedOptimizationRule optimizationRule,
     int? outputPatternIndex)
     => reporting.Error(
       "TooManyOptimizationRuleComponents",
@@ -190,7 +193,7 @@ file static class ReportingExtensions
   public static void TooFewOptimizationRuleComponentsError(
     this IReporting reporting,
     SourceLocation sourceLocation,
-    OptimizationRule optimizationRule,
+    UnvalidatedOptimizationRule optimizationRule,
     int? outputPatternIndex)
     => reporting.Error(
       "TooFewOptimizationRuleComponents",
@@ -200,7 +203,7 @@ file static class ReportingExtensions
   public static void InvalidNativeModuleCallOptimizationRuleComponentNativeLibraryIdError(
     this IReporting reporting,
     SourceLocation sourceLocation,
-    OptimizationRule optimizationRule,
+    UnvalidatedOptimizationRule optimizationRule,
     int? outputPatternIndex)
     => reporting.Error(
       "InvalidNativeModuleCallOptimizationRuleComponentNativeLibraryId",
@@ -210,7 +213,7 @@ file static class ReportingExtensions
   public static void InvalidNativeModuleCallOptimizationRuleComponentNativeModuleIdError(
     this IReporting reporting,
     SourceLocation sourceLocation,
-    OptimizationRule optimizationRule,
+    UnvalidatedOptimizationRule optimizationRule,
     int? outputPatternIndex)
     => reporting.Error(
       "InvalidNativeModuleCallOptimizationRuleComponentNativeModuleId",
@@ -220,7 +223,7 @@ file static class ReportingExtensions
   public static void InvalidNativeModuleCallOptimizationRuleComponentUpsampleFactorError(
     this IReporting reporting,
     SourceLocation sourceLocation,
-    OptimizationRule optimizationRule,
+    UnvalidatedOptimizationRule optimizationRule,
     int? outputPatternIndex)
     => reporting.Error(
       "InvalidNativeModuleCallOptimizationRuleComponentUpsampleFactor",
@@ -230,7 +233,7 @@ file static class ReportingExtensions
   public static void NativeModuleCallOptimizationRuleComponentWithSideEffectsDisallowedError(
     this IReporting reporting,
     SourceLocation sourceLocation,
-    OptimizationRule optimizationRule,
+    UnvalidatedOptimizationRule optimizationRule,
     int? outputPatternIndex)
   {
     var message = $"Optimization rule '{optimizationRule.Name}' {PatternName(outputPatternIndex)} native module call component "
@@ -241,7 +244,7 @@ file static class ReportingExtensions
   public static void InvalidNativeModuleCallOptimizationRuleComponentOutputIndexError(
     this IReporting reporting,
     SourceLocation sourceLocation,
-    OptimizationRule optimizationRule,
+    UnvalidatedOptimizationRule optimizationRule,
     int? outputPatternIndex)
     => reporting.Error(
       "InvalidNativeModuleCallOptimizationRuleComponentOutputIndex",
@@ -251,7 +254,7 @@ file static class ReportingExtensions
   public static void NativeModuleCallOptimizationRuleComponentParameterDirectionMismatchError(
     this IReporting reporting,
     SourceLocation sourceLocation,
-    OptimizationRule optimizationRule,
+    UnvalidatedOptimizationRule optimizationRule,
     int? outputPatternIndex)
   {
     var message = $"Optimization rule '{optimizationRule.Name}' {PatternName(outputPatternIndex)} native module call component parameter direction "
@@ -262,7 +265,7 @@ file static class ReportingExtensions
   public static void IllegalNativeModuleCallOptimizationRuleComponentArgumentTypeError(
     this IReporting reporting,
     SourceLocation sourceLocation,
-    OptimizationRule optimizationRule,
+    UnvalidatedOptimizationRule optimizationRule,
     int? outputPatternIndex)
   {
     var message = $"Optimization rule '{optimizationRule.Name}' {PatternName(outputPatternIndex)} native module call component parameter data type "
@@ -273,7 +276,7 @@ file static class ReportingExtensions
   public static void InvalidArrayOptimizationRuleComponentElementDirectionError(
     this IReporting reporting,
     SourceLocation sourceLocation,
-    OptimizationRule optimizationRule,
+    UnvalidatedOptimizationRule optimizationRule,
     int? outputPatternIndex)
     => reporting.Error(
       "InvalidArrayOptimizationRuleComponentElementDirection",
@@ -283,7 +286,7 @@ file static class ReportingExtensions
   public static void InvalidArrayOptimizationRuleComponentElementDataTypeError(
     this IReporting reporting,
     SourceLocation sourceLocation,
-    OptimizationRule optimizationRule,
+    UnvalidatedOptimizationRule optimizationRule,
     int? outputPatternIndex)
     => reporting.Error(
       "InvalidArrayOptimizationRuleComponentElementDataType",
@@ -293,7 +296,7 @@ file static class ReportingExtensions
   public static void InconsistentArrayOptimizationRuleComponentElementDataTypesError(
     this IReporting reporting,
     SourceLocation sourceLocation,
-    OptimizationRule optimizationRule,
+    UnvalidatedOptimizationRule optimizationRule,
     int? outputPatternIndex)
     => reporting.Error(
       "InconsistentArrayOptimizationRuleComponentElementDataTypes",
@@ -303,7 +306,7 @@ file static class ReportingExtensions
   public static void InputOptimizationRuleComponentOnlyAllowedInInputPatternError(
     this IReporting reporting,
     SourceLocation sourceLocation,
-    OptimizationRule optimizationRule,
+    UnvalidatedOptimizationRule optimizationRule,
     int? outputPatternIndex)
     => reporting.Error(
       "InputOptimizationRuleComponentOnlyAllowedInInputPattern",
@@ -313,7 +316,7 @@ file static class ReportingExtensions
   public static void InputReferenceOptimizationRuleComponentOnlyAllowedInOutputPatternError(
     this IReporting reporting,
     SourceLocation sourceLocation,
-    OptimizationRule optimizationRule)
+    UnvalidatedOptimizationRule optimizationRule)
     => reporting.Error(
       "InputReferenceOptimizationRuleComponentOnlyAllowedInOutputPattern",
       sourceLocation,
@@ -322,7 +325,7 @@ file static class ReportingExtensions
   public static void InvalidInputReferenceOptimizationRuleComponentIndexError(
     this IReporting reporting,
     SourceLocation sourceLocation,
-    OptimizationRule optimizationRule,
+    UnvalidatedOptimizationRule optimizationRule,
     int? outputPatternIndex)
     => reporting.Error(
       "InvalidInputReferenceOptimizationRuleComponentIndex",
@@ -510,27 +513,30 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
     return valid;
   }
 
-  public bool ValidateOptimizationRule(IReadOnlyList<NativeLibrary> nativeLibraries, NativeLibrary nativeLibrary, OptimizationRule optimizationRule)
+  public OptimizationRule? ValidateOptimizationRule(
+    IReadOnlyList<NativeLibrary> nativeLibraries,
+    NativeLibrary nativeLibrary,
+    UnvalidatedOptimizationRule unvalidatedOptimizationRule)
   {
     // Note: for simplicity, at least for now, each optimization pattern only gets the first error reported
     var sourceLocation = SourceLocation.FromNativeLibrary(nativeLibrary.Name);
 
-    if (!Lexer.IsValidIdentifier(optimizationRule.Name))
+    if (!Lexer.IsValidIdentifier(unvalidatedOptimizationRule.Name))
     {
-      context.Reporting.InvalidOptimizationRuleNameError(sourceLocation, optimizationRule);
-      return false;
+      context.Reporting.InvalidOptimizationRuleNameError(sourceLocation, unvalidatedOptimizationRule);
+      return null;
     }
 
-    if (optimizationRule.InputPattern.Count == 0)
+    if (unvalidatedOptimizationRule.InputPattern.Count == 0)
     {
-      context.Reporting.EmptyOptimizationRuleInputPatternError(sourceLocation, optimizationRule);
-      return false;
+      context.Reporting.EmptyOptimizationRuleInputPatternError(sourceLocation, unvalidatedOptimizationRule);
+      return null;
     }
 
-    if (optimizationRule.InputPattern[0] is not NativeModuleCallOptimizationRuleComponent firstInputComponent)
+    if (unvalidatedOptimizationRule.InputPattern[0] is not UnvalidatedNativeModuleCallOptimizationRuleComponent firstInputComponent)
     {
-      context.Reporting.OptimizationRuleInputPatternDoesNotStartWithNativeModuleCallComponentError(sourceLocation, optimizationRule);
-      return false;
+      context.Reporting.OptimizationRuleInputPatternDoesNotStartWithNativeModuleCallComponentError(sourceLocation, unvalidatedOptimizationRule);
+      return null;
     }
 
     // First, validate the input pattern
@@ -538,41 +544,45 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
     {
       NativeLibraries = nativeLibraries,
       SourceLocation = sourceLocation,
-      OptimizationRule = optimizationRule,
+      OptimizationRule = unvalidatedOptimizationRule,
       OutputPatternIndex = null,
-      Components = optimizationRule.InputPattern,
+      Components = unvalidatedOptimizationRule.InputPattern,
     };
 
-    if (ValidateOptimizationRulePattern(inputPatternValidateContext) == null)
+    var inputPatternResult = ValidateOptimizationRulePattern(inputPatternValidateContext);
+    if (inputPatternResult == null)
     {
-      return false;
+      return null;
     }
+
+    var validatedInputPattern = inputPatternResult.Component;
 
     // Next, validate each output pattern
-    var unconsumedOutputs = optimizationRule.InputPattern
-      .OfType<OutputOptimizationRuleComponent>()
+    var unconsumedOutputs = unvalidatedOptimizationRule.InputPattern
+      .OfType<UnvalidatedOutputOptimizationRuleComponent>()
       .Where((v) => !inputPatternValidateContext.ComponentResults[v].OutputConsumed)
       .ToArray();
-    if (optimizationRule.OutputPatterns.Count != unconsumedOutputs.Length)
+    if (unvalidatedOptimizationRule.OutputPatterns.Count != unconsumedOutputs.Length)
     {
-      context.Reporting.OptimizationRuleOutputPatternCountMismatchError(sourceLocation, optimizationRule);
-      return false;
+      context.Reporting.OptimizationRuleOutputPatternCountMismatchError(sourceLocation, unvalidatedOptimizationRule);
+      return null;
     }
 
-    for (var outputPatternIndex = 0; outputPatternIndex < optimizationRule.OutputPatterns.Count; outputPatternIndex++)
+    var validatedOutputPatterns = new List<OptimizationRuleComponent>();
+    for (var outputPatternIndex = 0; outputPatternIndex < unvalidatedOptimizationRule.OutputPatterns.Count; outputPatternIndex++)
     {
-      var outputPattern = optimizationRule.OutputPatterns[outputPatternIndex];
+      var outputPattern = unvalidatedOptimizationRule.OutputPatterns[outputPatternIndex];
       if (outputPattern.IsEmpty())
       {
-        context.Reporting.EmptyOptimizationRuleOutputPatternError(sourceLocation, optimizationRule, outputPatternIndex);
-        return false;
+        context.Reporting.EmptyOptimizationRuleOutputPatternError(sourceLocation, unvalidatedOptimizationRule, outputPatternIndex);
+        return null;
       }
 
       var outputPatternValidateContext = new ValidateOptimizationRulePatternContext()
       {
         NativeLibraries = nativeLibraries,
         SourceLocation = sourceLocation,
-        OptimizationRule = optimizationRule,
+        OptimizationRule = unvalidatedOptimizationRule,
         OutputPatternIndex = outputPatternIndex,
         Components = outputPattern,
         InputPatternComponentResults = inputPatternValidateContext.Components.Select((v) => inputPatternValidateContext.ComponentResults[v]).ToArray(),
@@ -581,7 +591,7 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
       var result = ValidateOptimizationRulePattern(outputPatternValidateContext);
       if (result == null)
       {
-        return false;
+        return null;
       }
 
       // The result of a valid output optimization rule pattern should always have a data type associated with it. The only time a result without a data type
@@ -595,12 +605,40 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
 
       if (!result.DataType.IsAssignableTo(expectedDataType))
       {
-        context.Reporting.IncompatibleOptimizationRuleOutputPatternResultTypeError(sourceLocation, optimizationRule, outputPatternIndex);
-        return false;
+        context.Reporting.IncompatibleOptimizationRuleOutputPatternResultTypeError(sourceLocation, unvalidatedOptimizationRule, outputPatternIndex);
+        return null;
       }
+
+      validatedOutputPatterns.Add(result.Component);
     }
 
-    return true;
+    return new()
+    {
+      Name = unvalidatedOptimizationRule.Name,
+      InputPattern = validatedInputPattern,
+      OutputPatterns = validatedOutputPatterns,
+    };
+  }
+
+  private static ValidateOptimizationRuleComponentResult ValidateConstantOptimizationRuleComponent(UnvalidatedConstantOptimizationRuleComponent component)
+  {
+    var validatedComponent = component.PrimitiveType switch
+    {
+      PrimitiveType.Float => new ConstantOptimizationRuleComponent(component.FloatValue),
+      PrimitiveType.Double => new ConstantOptimizationRuleComponent(component.DoubleValue),
+      PrimitiveType.Int => new ConstantOptimizationRuleComponent(component.IntValue),
+      PrimitiveType.Bool => new ConstantOptimizationRuleComponent(component.BoolValue),
+      PrimitiveType.String => new ConstantOptimizationRuleComponent(component.StringValue),
+      _ => throw UnhandledEnumValueException.Create(component.PrimitiveType),
+    };
+
+    return new(validatedComponent, ModuleParameterDirection.In, new(RuntimeMutability.Constant, component.PrimitiveType, 1, false));
+  }
+
+  private static ValidateOptimizationRuleComponentResult ValidateOutputOptimizationRuleComponent()
+  {
+    var validatedComponent = new OutputOptimizationRuleComponent();
+    return new(validatedComponent, ModuleParameterDirection.Out, null);
   }
 
   private ValidateOptimizationRuleComponentResult? ValidateOptimizationRulePattern(ValidateOptimizationRulePatternContext validateContext)
@@ -608,7 +646,7 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
     var result = ValidateNextOptimizationRuleComponent(validateContext);
     if (result == null)
     {
-      return result;
+      return null;
     }
 
     if (validateContext.NextComponentIndex != validateContext.Components.Count)
@@ -638,14 +676,13 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
     var component = validateContext.Components[validateContext.NextComponentIndex++];
     var result = component switch
     {
-      NativeModuleCallOptimizationRuleComponent nativeModuleCallComponent
+      UnvalidatedNativeModuleCallOptimizationRuleComponent nativeModuleCallComponent
         => ValidateNativeModuleCallOptimizationRuleComponent(validateContext, nativeModuleCallComponent),
-      ConstantOptimizationRuleComponent constantComponent
-        => new(component, ModuleParameterDirection.In, new(RuntimeMutability.Constant, constantComponent.PrimitiveType, 1, false)),
-      ArrayOptimizationRuleComponent arrayComponent => ValidateArrayOptimizationRuleComponent(validateContext, arrayComponent),
-      InputOptimizationRuleComponent inputComponent => ValidateInputOptimizationRuleComponent(validateContext, inputComponent),
-      OutputOptimizationRuleComponent => new(component, ModuleParameterDirection.Out, null),
-      InputReferenceOptimizationRuleComponent inputReferenceComponent
+      UnvalidatedConstantOptimizationRuleComponent constantComponent => ValidateConstantOptimizationRuleComponent(constantComponent),
+      UnvalidatedArrayOptimizationRuleComponent arrayComponent => ValidateArrayOptimizationRuleComponent(validateContext, arrayComponent),
+      UnvalidatedInputOptimizationRuleComponent inputComponent => ValidateInputOptimizationRuleComponent(validateContext, inputComponent),
+      UnvalidatedOutputOptimizationRuleComponent => ValidateOutputOptimizationRuleComponent(),
+      UnvalidatedInputReferenceOptimizationRuleComponent inputReferenceComponent
         => ValidateInputReferenceOptimizationRuleComponent(validateContext, inputReferenceComponent),
       _ => throw UnhandledSubclassException.Create(component),
     };
@@ -661,7 +698,7 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
 
   private ValidateOptimizationRuleComponentResult? ValidateNativeModuleCallOptimizationRuleComponent(
     ValidateOptimizationRulePatternContext validateContext,
-    NativeModuleCallOptimizationRuleComponent component)
+    UnvalidatedNativeModuleCallOptimizationRuleComponent component)
   {
     var componentNativeLibrary = validateContext.NativeLibraries.FirstOrDefault((v) => v.Id == component.NativeLibraryId);
     if (componentNativeLibrary == null)
@@ -725,6 +762,7 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
     }
 
     // Validate each parameter
+    var parameters = new List<OptimizationRuleComponent>();
     for (var parameterIndex = 0; parameterIndex < componentNativeModule.Signature.Parameters.Count; parameterIndex++)
     {
       var parameter = componentNativeModule.Signature.Parameters[parameterIndex];
@@ -791,18 +829,26 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
       {
         parameterResult.OutputConsumed = true;
       }
+
+      parameters.Add(parameterResult.Component);
     }
+
+    var validatedComponent = new NativeModuleCallOptimizationRuleComponent(
+      componentNativeModule,
+      component.UpsampleFactor,
+      component.OutputIndex,
+      parameters);
 
     // The output data type comes from the selected output parameter (which will generally be the return value parameter)
     return new(
-      component,
+      validatedComponent,
       ModuleParameterDirection.In,
       GetNativeModuleCallDataType(componentNativeModule.Signature.Parameters[component.OutputIndex].DataType));
   }
 
   private ValidateOptimizationRuleComponentResult? ValidateArrayOptimizationRuleComponent(
     ValidateOptimizationRulePatternContext validateContext,
-    ArrayOptimizationRuleComponent component)
+    UnvalidatedArrayOptimizationRuleComponent component)
   {
     AstDataType? dataType = null;
     var elementResults = new List<ValidateOptimizationRuleComponentResult>();
@@ -856,12 +902,13 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
       dataType = AstDataType.EmptyArray();
     }
 
-    return new(component, ModuleParameterDirection.In, dataType, elementResults: elementResults);
+    var validatedComponent = new ArrayOptimizationRuleComponent(elementResults.Select((v) => v.Component).ToArray());
+    return new(validatedComponent, ModuleParameterDirection.In, dataType, elementResults: elementResults);
   }
 
   private ValidateOptimizationRuleComponentResult? ValidateInputOptimizationRuleComponent(
     ValidateOptimizationRulePatternContext validateContext,
-    InputOptimizationRuleComponent component)
+    UnvalidatedInputOptimizationRuleComponent component)
   {
     // This component type is only allowed to appear in input patterns
     if (validateContext.OutputPatternIndex != null)
@@ -873,12 +920,13 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
       return null;
     }
 
-    return new(component, ModuleParameterDirection.In, null, mustBeConstant: component.MustBeConstant);
+    var validatedComponent = new InputOptimizationRuleComponent(component.MustBeConstant);
+    return new(validatedComponent, ModuleParameterDirection.In, null, mustBeConstant: component.MustBeConstant);
   }
 
   private ValidateOptimizationRuleComponentResult? ValidateInputReferenceOptimizationRuleComponent(
     ValidateOptimizationRulePatternContext validateContext,
-    InputReferenceOptimizationRuleComponent component)
+    UnvalidatedInputReferenceOptimizationRuleComponent component)
   {
     // This component type is only allowed to appear in output patterns
     if (validateContext.OutputPatternIndex == null)
@@ -905,18 +953,20 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
     // All inputs within the input pattern are either module calls or should be passed into a module call so their data types should be known
     Debug.Assert(inputComponentResult.DataType != null);
 
-    return new(component, ModuleParameterDirection.In, inputComponentResult.DataType);
+    var referencedComponent = validateContext.InputPatternComponentResults[component.Index].Component;
+    var validatedComponent = new InputReferenceOptimizationRuleComponent(referencedComponent);
+    return new(validatedComponent, ModuleParameterDirection.In, inputComponentResult.DataType);
   }
 
   private class ValidateOptimizationRulePatternContext
   {
     public required IReadOnlyList<NativeLibrary> NativeLibraries { get; init; }
     public required SourceLocation SourceLocation { get; init; }
-    public required OptimizationRule OptimizationRule { get; init; }
+    public required UnvalidatedOptimizationRule OptimizationRule { get; init; }
     public required int? OutputPatternIndex { get; init; }
-    public required IReadOnlyList<OptimizationRuleComponent> Components { get; init; }
-    public Dictionary<OptimizationRuleComponent, ValidateOptimizationRuleComponentResult> ComponentResults { get; } = [];
-    public IReadOnlyList<ValidateOptimizationRuleComponentResult?>? InputPatternComponentResults { get; init; }
+    public required IReadOnlyList<UnvalidatedOptimizationRuleComponent> Components { get; init; }
+    public Dictionary<UnvalidatedOptimizationRuleComponent, ValidateOptimizationRuleComponentResult> ComponentResults { get; } = [];
+    public IReadOnlyList<ValidateOptimizationRuleComponentResult>? InputPatternComponentResults { get; init; }
     public int NextComponentIndex { get; set; }
   }
 

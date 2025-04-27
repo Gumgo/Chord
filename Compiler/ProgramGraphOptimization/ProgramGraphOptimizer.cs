@@ -23,9 +23,7 @@ internal class ProgramGraphOptimizer
   public ProgramGraphOptimizer(ProgramGraphOptimizerContext context, IReadOnlyList<OptimizationRule> optimizationRules)
   {
     _context = context;
-
-    var optimizationRuleRecognizerContext = new OptimizationRuleRecognizerContext() { NativeLibraryRegistry = context.NativeLibraryRegistry };
-    _optimizationRuleRecognizer = new(optimizationRuleRecognizerContext, optimizationRules);
+    _optimizationRuleRecognizer = new(optimizationRules);
 
     var optimizationRuleApplicatorContext = new OptimizationRuleApplicatorContext()
     {

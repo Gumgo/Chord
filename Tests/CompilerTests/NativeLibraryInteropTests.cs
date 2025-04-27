@@ -381,9 +381,11 @@ public unsafe class NativeLibraryInteropTests
     nativeLibraryNative.OptimizationRules = GetPointer(optimizationRulesNative, memoryHandles);
     nativeLibraryNative.OptimizationRuleCount = (nuint)optimizationRulesNative.Length;
 
-    var nativeLibrary = RunNativeLibraryFromNative(&nativeLibraryNative, out var reporting);
+    var result = RunNativeLibraryFromNative(&nativeLibraryNative, out var reporting);
 
-    Assert.NotNull(nativeLibrary);
+    Assert.NotNull(result);
+    var (nativeLibrary, optimizationRules) = result.Value;
+
     Assert.Empty(reporting.ErrorIdentifiers);
     Assert.Equal(nativeLibraryId, nativeLibrary.Id);
     Assert.Equal("test", nativeLibrary.Name);
@@ -424,47 +426,48 @@ public unsafe class NativeLibraryInteropTests
     Assert.False(nativeModule.HasSideEffects);
     Assert.False(nativeModule.AlwaysRuntime);
 
-    var optimizationRule = Assert.Single(nativeLibrary.OptimizationRules);
+    Assert.Empty(nativeLibrary.OptimizationRules);
+    var optimizationRule = Assert.Single(optimizationRules);
 
     Assert.Equivalent("Rule", optimizationRule.Name);
     Assert.Equivalent(9, optimizationRule.InputPattern.Count);
 
-    var inputComponent0 = Assert.IsType<NativeModuleCallOptimizationRuleComponent>(optimizationRule.InputPattern[0]);
+    var inputComponent0 = Assert.IsType<UnvalidatedNativeModuleCallOptimizationRuleComponent>(optimizationRule.InputPattern[0]);
     Assert.Equal(nativeLibraryId, inputComponent0.NativeLibraryId);
     Assert.Equal(nativeModuleId, inputComponent0.NativeModuleId);
     Assert.Equal(1, inputComponent0.UpsampleFactor);
     Assert.Equal(4, inputComponent0.OutputIndex);
 
-    var inputComponent1 = Assert.IsType<ConstantOptimizationRuleComponent>(optimizationRule.InputPattern[1]);
+    var inputComponent1 = Assert.IsType<UnvalidatedConstantOptimizationRuleComponent>(optimizationRule.InputPattern[1]);
     Assert.Equal(PrimitiveType.Float, inputComponent1.PrimitiveType);
     Assert.Equal(1.0f, inputComponent1.FloatValue);
 
-    var inputComponent2 = Assert.IsType<ConstantOptimizationRuleComponent>(optimizationRule.InputPattern[2]);
+    var inputComponent2 = Assert.IsType<UnvalidatedConstantOptimizationRuleComponent>(optimizationRule.InputPattern[2]);
     Assert.Equal(PrimitiveType.Double, inputComponent2.PrimitiveType);
     Assert.Equal(2.0, inputComponent2.DoubleValue);
 
-    var inputComponent3 = Assert.IsType<ConstantOptimizationRuleComponent>(optimizationRule.InputPattern[3]);
+    var inputComponent3 = Assert.IsType<UnvalidatedConstantOptimizationRuleComponent>(optimizationRule.InputPattern[3]);
     Assert.Equal(PrimitiveType.Int, inputComponent3.PrimitiveType);
     Assert.Equal(3, inputComponent3.IntValue);
 
-    var inputComponent4 = Assert.IsType<ConstantOptimizationRuleComponent>(optimizationRule.InputPattern[4]);
+    var inputComponent4 = Assert.IsType<UnvalidatedConstantOptimizationRuleComponent>(optimizationRule.InputPattern[4]);
     Assert.Equal(PrimitiveType.Bool, inputComponent4.PrimitiveType);
     Assert.True(inputComponent4.BoolValue);
 
-    var inputComponent5 = Assert.IsType<ConstantOptimizationRuleComponent>(optimizationRule.InputPattern[5]);
+    var inputComponent5 = Assert.IsType<UnvalidatedConstantOptimizationRuleComponent>(optimizationRule.InputPattern[5]);
     Assert.Equal(PrimitiveType.String, inputComponent5.PrimitiveType);
     Assert.Equal("str", inputComponent5.StringValue);
 
-    var inputComponent6 = Assert.IsType<ArrayOptimizationRuleComponent>(optimizationRule.InputPattern[6]);
+    var inputComponent6 = Assert.IsType<UnvalidatedArrayOptimizationRuleComponent>(optimizationRule.InputPattern[6]);
     Assert.Equal(10, inputComponent6.ElementCount);
 
-    var inputComponent7 = Assert.IsType<InputOptimizationRuleComponent>(optimizationRule.InputPattern[7]);
+    var inputComponent7 = Assert.IsType<UnvalidatedInputOptimizationRuleComponent>(optimizationRule.InputPattern[7]);
     Assert.True(inputComponent7.MustBeConstant);
 
-    Assert.IsType<OutputOptimizationRuleComponent>(optimizationRule.InputPattern[8]);
+    Assert.IsType<UnvalidatedOutputOptimizationRuleComponent>(optimizationRule.InputPattern[8]);
 
     var outputPattern0 = Assert.Single(optimizationRule.OutputPatterns);
-    var outputComponent0 = Assert.IsType<InputReferenceOptimizationRuleComponent>(Assert.Single(outputPattern0));
+    var outputComponent0 = Assert.IsType<UnvalidatedInputReferenceOptimizationRuleComponent>(Assert.Single(outputPattern0));
     Assert.Equal(3, outputComponent0.Index);
 
     // These calls perform assertions internally
@@ -553,9 +556,11 @@ public unsafe class NativeLibraryInteropTests
     };
 
     var nativeLibraryNative = SingleModuleNativeLibrary(nativeModuleNative, memoryHandles);
-    var nativeLibrary = RunNativeLibraryFromNative(&nativeLibraryNative, out var reporting);
+    var result = RunNativeLibraryFromNative(&nativeLibraryNative, out var reporting);
 
-    Assert.NotNull(nativeLibrary);
+    Assert.NotNull(result);
+    var (nativeLibrary, _) = result.Value;
+
     Assert.Empty(nativeLibrary.Modules);
     Assert.Equal(["NullNativeModuleName"], reporting.ErrorIdentifiers);
   }
@@ -575,9 +580,11 @@ public unsafe class NativeLibraryInteropTests
       memoryHandles);
 
     var nativeLibraryNative = SingleModuleNativeLibrary(nativeModuleNative, memoryHandles);
-    var nativeLibrary = RunNativeLibraryFromNative(&nativeLibraryNative, out var reporting);
+    var result = RunNativeLibraryFromNative(&nativeLibraryNative, out var reporting);
 
-    Assert.NotNull(nativeLibrary);
+    Assert.NotNull(result);
+    var (nativeLibrary, _) = result.Value;
+
     Assert.Empty(nativeLibrary.Modules);
     Assert.Equal(["InvalidNativeModuleParameterDirection"], reporting.ErrorIdentifiers);
   }
@@ -597,9 +604,11 @@ public unsafe class NativeLibraryInteropTests
       memoryHandles);
 
     var nativeLibraryNative = SingleModuleNativeLibrary(nativeModuleNative, memoryHandles);
-    var nativeLibrary = RunNativeLibraryFromNative(&nativeLibraryNative, out var reporting);
+    var result = RunNativeLibraryFromNative(&nativeLibraryNative, out var reporting);
 
-    Assert.NotNull(nativeLibrary);
+    Assert.NotNull(result);
+    var (nativeLibrary, _) = result.Value;
+
     Assert.Empty(nativeLibrary.Modules);
     Assert.Equal(["NullNativeModuleParameterName"], reporting.ErrorIdentifiers);
   }
@@ -625,9 +634,11 @@ public unsafe class NativeLibraryInteropTests
       memoryHandles);
 
     var nativeLibraryNative = SingleModuleNativeLibrary(nativeModuleNative, memoryHandles);
-    var nativeLibrary = RunNativeLibraryFromNative(&nativeLibraryNative, out var reporting);
+    var result = RunNativeLibraryFromNative(&nativeLibraryNative, out var reporting);
 
-    Assert.NotNull(nativeLibrary);
+    Assert.NotNull(result);
+    var (nativeLibrary, _) = result.Value;
+
     Assert.Empty(nativeLibrary.Modules);
     Assert.Equal(["InvalidNativeModuleParameterRuntimeMutability"], reporting.ErrorIdentifiers);
   }
@@ -653,9 +664,11 @@ public unsafe class NativeLibraryInteropTests
       memoryHandles);
 
     var nativeLibraryNative = SingleModuleNativeLibrary(nativeModuleNative, memoryHandles);
-    var nativeLibrary = RunNativeLibraryFromNative(&nativeLibraryNative, out var reporting);
+    var result = RunNativeLibraryFromNative(&nativeLibraryNative, out var reporting);
 
-    Assert.NotNull(nativeLibrary);
+    Assert.NotNull(result);
+    var (nativeLibrary, _) = result.Value;
+
     Assert.Empty(nativeLibrary.Modules);
     Assert.Equal(["InvalidNativeModuleParameterPrimitiveType"], reporting.ErrorIdentifiers);
   }
@@ -723,9 +736,11 @@ public unsafe class NativeLibraryInteropTests
     };
 
     var nativeLibraryNative = SingleModuleNativeLibrary(nativeModuleNative, memoryHandles);
-    var nativeLibrary = RunNativeLibraryFromNative(&nativeLibraryNative, out var reporting);
+    var result = RunNativeLibraryFromNative(&nativeLibraryNative, out var reporting);
 
-    Assert.NotNull(nativeLibrary);
+    Assert.NotNull(result);
+    var (nativeLibrary, _) = result.Value;
+
     var nativeModule = Assert.Single(nativeLibrary.Modules);
     Assert.Empty(reporting.ErrorIdentifiers);
 
@@ -773,9 +788,11 @@ public unsafe class NativeLibraryInteropTests
       memoryHandles);
 
     var nativeLibraryNative = SingleModuleNativeLibrary(nativeModuleNative, memoryHandles);
-    var nativeLibrary = RunNativeLibraryFromNative(&nativeLibraryNative, out var reporting);
+    var result = RunNativeLibraryFromNative(&nativeLibraryNative, out var reporting);
 
-    Assert.NotNull(nativeLibrary);
+    Assert.NotNull(result);
+    var (nativeLibrary, _) = result.Value;
+
     var nativeModule = Assert.Single(nativeLibrary.Modules);
     Assert.Empty(reporting.ErrorIdentifiers);
 
@@ -845,9 +862,11 @@ public unsafe class NativeLibraryInteropTests
     };
 
     var nativeLibraryNative = SingleModuleNativeLibrary(nativeModuleNative, memoryHandles);
-    var nativeLibrary = RunNativeLibraryFromNative(&nativeLibraryNative, out var reporting);
+    var result = RunNativeLibraryFromNative(&nativeLibraryNative, out var reporting);
 
-    Assert.NotNull(nativeLibrary);
+    Assert.NotNull(result);
+    var (nativeLibrary, _) = result.Value;
+
     var nativeModule = Assert.Single(nativeLibrary.Modules);
     Assert.Empty(reporting.ErrorIdentifiers);
 
@@ -884,10 +903,12 @@ public unsafe class NativeLibraryInteropTests
     };
 
     var nativeLibraryNative = SingleOptimizationRuleNativeLibrary(optimizationRuleNative, memoryHandles);
-    var nativeLibrary = RunNativeLibraryFromNative(&nativeLibraryNative, out var reporting);
+    var result = RunNativeLibraryFromNative(&nativeLibraryNative, out var reporting);
 
-    Assert.NotNull(nativeLibrary);
-    Assert.Empty(nativeLibrary.OptimizationRules);
+    Assert.NotNull(result);
+    var (_, optimizationRules) = result.Value;
+
+    Assert.Empty(optimizationRules);
     Assert.Equal(["NullOptimizationRuleName"], reporting.ErrorIdentifiers);
   }
 
@@ -924,10 +945,12 @@ public unsafe class NativeLibraryInteropTests
     };
 
     var nativeLibraryNative = SingleOptimizationRuleNativeLibrary(optimizationRuleNative, memoryHandles);
-    var nativeLibrary = RunNativeLibraryFromNative(&nativeLibraryNative, out var reporting);
+    var result = RunNativeLibraryFromNative(&nativeLibraryNative, out var reporting);
 
-    Assert.NotNull(nativeLibrary);
-    Assert.Empty(nativeLibrary.OptimizationRules);
+    Assert.NotNull(result);
+    var (_, optimizationRules) = result.Value;
+
+    Assert.Empty(optimizationRules);
     Assert.Equal(["NullConstantOptimizationRuleComponentStringValue"], reporting.ErrorIdentifiers);
   }
 
@@ -960,10 +983,12 @@ public unsafe class NativeLibraryInteropTests
     };
 
     var nativeLibraryNative = SingleOptimizationRuleNativeLibrary(optimizationRuleNative, memoryHandles);
-    var nativeLibrary = RunNativeLibraryFromNative(&nativeLibraryNative, out var reporting);
+    var result = RunNativeLibraryFromNative(&nativeLibraryNative, out var reporting);
 
-    Assert.NotNull(nativeLibrary);
-    Assert.Empty(nativeLibrary.OptimizationRules);
+    Assert.NotNull(result);
+    var (_, optimizationRules) = result.Value;
+
+    Assert.Empty(optimizationRules);
     Assert.Equal(["InvalidConstantOptimizationRuleComponentPrimitiveType"], reporting.ErrorIdentifiers);
   }
 
@@ -986,14 +1011,18 @@ public unsafe class NativeLibraryInteropTests
     };
 
     var nativeLibraryNative = SingleOptimizationRuleNativeLibrary(optimizationRuleNative, memoryHandles);
-    var nativeLibrary = RunNativeLibraryFromNative(&nativeLibraryNative, out var reporting);
+    var result = RunNativeLibraryFromNative(&nativeLibraryNative, out var reporting);
 
-    Assert.NotNull(nativeLibrary);
-    Assert.Empty(nativeLibrary.OptimizationRules);
+    Assert.NotNull(result);
+    var (_, optimizationRules) = result.Value;
+
+    Assert.Empty(optimizationRules);
     Assert.Equal(["InvalidOptimizationRuleComponentType"], reporting.ErrorIdentifiers);
   }
 
-  private static Compiler.Native.NativeLibrary? RunNativeLibraryFromNative(NativeTypes.NativeLibrary* nativeLibraryNative, out Reporting reporting)
+  private static (Compiler.Native.NativeLibrary, IReadOnlyList<UnvalidatedOptimizationRule>)? RunNativeLibraryFromNative(
+    NativeTypes.NativeLibrary* nativeLibraryNative,
+    out Reporting reporting)
   {
     reporting = new Reporting();
     var context = new NativeLibraryInteropContext() { Reporting = reporting };

@@ -25,40 +25,30 @@ internal class OptimizationRuleComponentDepthTracker
 
   private void TrackComponentDepths(INativeLibraryRegistryAccess nativeLibraryRegistry, OptimizationRule optimizationRule)
   {
-    var index = 0;
-    TrackComponentDepth(nativeLibraryRegistry, optimizationRule.InputPattern, ref index, 0);
-    Debug.Assert(index == optimizationRule.InputPattern.Count);
+    TrackComponentDepth(nativeLibraryRegistry, optimizationRule.InputPattern, 0);
   }
 
-  private void TrackComponentDepth(
-    INativeLibraryRegistryAccess nativeLibraryRegistry,
-    IReadOnlyList<OptimizationRuleComponent> components,
-    ref int index,
-    int depth)
+  private void TrackComponentDepth(INativeLibraryRegistryAccess nativeLibraryRegistry, OptimizationRuleComponent component, int depth)
   {
-    var component = components[index];
-    index++;
-
     switch (component)
     {
       case NativeModuleCallOptimizationRuleComponent nativeModuleCallComponent:
         {
-          var nativeModule = nativeLibraryRegistry.GetNativeModule(nativeModuleCallComponent.NativeLibraryId, nativeModuleCallComponent.NativeModuleId);
+          _nativeModuleMaxComponentDepths[nativeModuleCallComponent.NativeModule] = Math.Max(
+            _nativeModuleMaxComponentDepths.GetValueOrDefault(nativeModuleCallComponent.NativeModule, 0),
+            depth);
 
-          _nativeModuleMaxComponentDepths[nativeModule] = Math.Max(_nativeModuleMaxComponentDepths.GetValueOrDefault(nativeModule, 0), depth);
-
-          for (var parameterIndex = 0; parameterIndex < nativeModule.Signature.Parameters.Count; parameterIndex++)
+          var parametersAndComponents = nativeModuleCallComponent.NativeModule.Signature.Parameters.ZipSafe(nativeModuleCallComponent.Parameters);
+          foreach (var (parameter, parameterComponent) in parametersAndComponents)
           {
-            var parameter = nativeModule.Signature.Parameters[parameterIndex];
             if (parameter.Direction == ModuleParameterDirection.In)
             {
-              TrackComponentDepth(nativeLibraryRegistry, components, ref index, depth + 1);
+              TrackComponentDepth(nativeLibraryRegistry, parameterComponent, depth + 1);
             }
             else
             {
               Debug.Assert(parameter.Direction == ModuleParameterDirection.Out);
-              Debug.Assert(components[index] is OutputOptimizationRuleComponent);
-              index++;
+              Debug.Assert(parameterComponent is OutputOptimizationRuleComponent);
             }
           }
 
@@ -69,10 +59,10 @@ internal class OptimizationRuleComponentDepthTracker
         break;
 
       case ArrayOptimizationRuleComponent arrayComponent:
-        for (var i = 0; i < arrayComponent.ElementCount; i++)
+        foreach (var elementComponent in arrayComponent.Elements)
         {
           // Arrays don't incur a depth increase
-          TrackComponentDepth(nativeLibraryRegistry, components, ref index, depth);
+          TrackComponentDepth(nativeLibraryRegistry, elementComponent, depth);
         }
 
         break;

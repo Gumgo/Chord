@@ -21,26 +21,26 @@ internal class OptimizationRuleApplicator(OptimizationRuleApplicatorContext cont
     IProcessorProgramGraphNode node,
     int upsampleFactorMultiplier)
   {
-    var inputPatternState = new InputPatternState() { Components = optimizationRule.InputPattern };
+    var inputPatternData = new InputPatternData() { RootComponent = optimizationRule.InputPattern };
 
     // The root arrayNode is always a native module call with at least one output so we'll just grab the first output to pass to ProcessInputPattern()
     var rootOutputNode = ((NativeModuleCallProgramGraphNode)node).Outputs[0];
-    ProcessInputPattern(inputPatternState, rootOutputNode);
+    ProcessInputPattern(inputPatternData, optimizationRule.InputPattern, rootOutputNode);
 
-    Debug.Assert(inputPatternState.OutputNodes.Count == optimizationRule.OutputPatterns.Count);
+    Debug.Assert(inputPatternData.OutputNodes.Count == optimizationRule.OutputPatterns.Count);
     var replacedNodes = new List<(IProcessorProgramGraphNode OldNode, IProcessorProgramGraphNode NewNode)>();
     var newNodes = new HashSet<IProcessorProgramGraphNode>();
-    foreach (var (outputPattern, outputNode) in optimizationRule.OutputPatterns.ZipSafe(inputPatternState.OutputNodes))
+    foreach (var (outputPattern, outputNode) in optimizationRule.OutputPatterns.ZipSafe(inputPatternData.OutputNodes))
     {
-      var outputPatternState = new OutputPatternState() { Components = outputPattern, InputNodes = inputPatternState.InputNodes };
+      var outputPatternData = new OutputPatternData() { InputNodes = inputPatternData.InputNodes };
 
       Debug.Assert(outputNode.DataType.PrimitiveType != null);
       var newOutputNode = BuildOutputPattern(
         programVariantProperties,
-        outputPatternState,
+        outputPatternData,
         upsampleFactorMultiplier,
-        outputNode.DataType.PrimitiveType.Value,
-        newNodes);
+        outputPattern,
+        outputNode.DataType.PrimitiveType.Value);
 
       // Transfer all connections from the old output arrayNode to the new one (use ToArray() to make a copy so we avoid modifying while iterating)
       foreach (var inputNode in outputNode.Connections.ToArray())
@@ -49,51 +49,47 @@ internal class OptimizationRuleApplicator(OptimizationRuleApplicatorContext cont
       }
 
       replacedNodes.Add((outputNode.Processor, newOutputNode.Processor));
+      newNodes.UnionWith(outputPatternData.NewNodes);
     }
 
     return new() { ReplacedNodes = replacedNodes, NewNodes = newNodes };
   }
 
-  private static void ProcessInputPattern(InputPatternState state, IOutputProgramGraphNode outputNode)
+  private static void ProcessInputPattern(InputPatternData data, OptimizationRuleComponent component, IOutputProgramGraphNode outputNode)
   {
-    var component = state.Components[state.NextComponentIndex];
-    state.NextComponentIndex++;
-
     switch (component)
     {
       case NativeModuleCallOptimizationRuleComponent nativeModuleCallComponent:
         {
           var nativeModuleCallNode = (NativeModuleCallProgramGraphNode)outputNode.Processor;
-          Debug.Assert(nativeModuleCallNode.NativeModule.NativeLibraryId == nativeModuleCallComponent.NativeLibraryId);
-          Debug.Assert(nativeModuleCallNode.NativeModule.Id == nativeModuleCallComponent.NativeModuleId);
+          Debug.Assert(nativeModuleCallNode.NativeModule == nativeModuleCallComponent.NativeModule);
 
           var inputIndex = 0;
           var outputIndex = 0;
           for (var parameterIndex = 0; parameterIndex < nativeModuleCallNode.NativeModule.Signature.Parameters.Count; parameterIndex++)
           {
             var parameter = nativeModuleCallNode.NativeModule.Signature.Parameters[parameterIndex];
+            var parameterComponent = nativeModuleCallComponent.Parameters[parameterIndex];
             if (parameter.Direction == ModuleParameterDirection.In)
             {
               var inputNode = nativeModuleCallNode.Inputs[inputIndex];
               Debug.Assert(inputNode.Connection != null);
               inputIndex++;
-              ProcessInputPattern(state, inputNode.Connection);
+              ProcessInputPattern(data, parameterComponent, inputNode.Connection);
             }
             else
             {
               Debug.Assert(parameter.Direction == ModuleParameterDirection.Out);
+              Debug.Assert(parameterComponent is OutputOptimizationRuleComponent);
               var parameterOutputNode = nativeModuleCallNode.Outputs[outputIndex];
               outputIndex++;
 
-              Debug.Assert(state.Components[state.NextComponentIndex] is OutputOptimizationRuleComponent);
-              state.NextComponentIndex++;
-
               if (nativeModuleCallComponent.OutputIndex == parameterIndex)
               {
-                if (component == state.Components[0])
+                if (component == data.RootComponent)
                 {
                   // This is the root output and is always associated with the first output pattern
-                  state.OutputNodes.Insert(0, parameterOutputNode);
+                  data.OutputNodes.Insert(0, parameterOutputNode);
                 }
                 else
                 {
@@ -102,7 +98,7 @@ internal class OptimizationRuleApplicator(OptimizationRuleApplicatorContext cont
               }
               else
               {
-                state.OutputNodes.Add(parameterOutputNode);
+                data.OutputNodes.Add(parameterOutputNode);
               }
             }
           }
@@ -111,27 +107,25 @@ internal class OptimizationRuleApplicator(OptimizationRuleApplicatorContext cont
         }
 
       case ConstantOptimizationRuleComponent:
-        {
-          Debug.Assert(outputNode.Processor is ConstantProgramGraphNode);
-          break;
-        }
+        Debug.Assert(outputNode.Processor is ConstantProgramGraphNode);
+        break;
 
       case ArrayOptimizationRuleComponent arrayComponent:
         {
           var arrayNode = (ArrayProgramGraphNode)outputNode.Processor;
-          Debug.Assert(arrayNode.Elements.Count == arrayComponent.ElementCount);
+          Debug.Assert(arrayNode.Elements.Count == arrayComponent.Elements.Count);
 
-          foreach (var element in arrayNode.Elements)
+          foreach (var (element, elementComponent) in arrayNode.Elements.ZipSafe(arrayComponent.Elements))
           {
             Debug.Assert(element.Connection != null);
-            ProcessInputPattern(state, element.Connection);
+            ProcessInputPattern(data, elementComponent, element.Connection);
           }
 
           break;
         }
 
       case InputOptimizationRuleComponent:
-        state.InputNodes.Add(state.NextComponentIndex, outputNode);
+        data.InputNodes.Add(component, outputNode);
         break;
 
       case OutputOptimizationRuleComponent:
@@ -145,45 +139,42 @@ internal class OptimizationRuleApplicator(OptimizationRuleApplicatorContext cont
     }
   }
 
-  // expectedPrimitiveType is the primitive type that we expect this arrayNode to be. It is necessary because array optimization rule components don't explicitly
-  // store their primitive type but we need a primitive type when constructing array program graph nodes.
+  // expectedPrimitiveType is the primitive type that we expect this arrayNode to be. It is necessary because array optimization rule components don't
+  // explicitly store their primitive type but we need a primitive type when constructing array program graph nodes.
   private IOutputProgramGraphNode BuildOutputPattern(
     ProgramVariantProperties programVariantProperties,
-    OutputPatternState state,
+    OutputPatternData data,
     int upsampleFactorMultiplier,
-    PrimitiveType expectedPrimitiveType,
-    HashSet<IProcessorProgramGraphNode> newNodes)
+    OptimizationRuleComponent component,
+    PrimitiveType expectedPrimitiveType)
   {
-    var component = state.Components[state.NextComponentIndex];
-    state.NextComponentIndex++;
-
     switch (component)
     {
       case NativeModuleCallOptimizationRuleComponent nativeModuleCallComponent:
         {
-          var nativeLibrary = context.NativeLibraryRegistry.GetNativeLibrary(nativeModuleCallComponent.NativeLibraryId);
-          var nativeModule = nativeLibrary.Modules.SingleOrDefault((v) => v.Id == nativeModuleCallComponent.NativeModuleId)
-            ?? throw new InvalidOperationException("Invalid native module ID");
+          var nativeLibrary = context.NativeLibraryRegistry.GetNativeLibrary(nativeModuleCallComponent.NativeModule.NativeLibraryId);
 
           var inputArguments = new List<IOutputProgramGraphNode>();
           var returnOutputIndex = -1;
           var outputIndex = 0;
-          for (var parameterIndex = 0; parameterIndex < nativeModule.Signature.Parameters.Count; parameterIndex++)
+          for (var parameterIndex = 0; parameterIndex < nativeModuleCallComponent.NativeModule.Signature.Parameters.Count; parameterIndex++)
           {
-            var parameter = nativeModule.Signature.Parameters[parameterIndex];
+            var parameter = nativeModuleCallComponent.NativeModule.Signature.Parameters[parameterIndex];
+            var parameterComponent = nativeModuleCallComponent.Parameters[parameterIndex];
             if (parameter.Direction == ModuleParameterDirection.In)
             {
               Debug.Assert(parameter.DataType.PrimitiveType != null);
               var inputArgumentNode = BuildOutputPattern(
                 programVariantProperties,
-                state,
+                data,
                 upsampleFactorMultiplier,
-                parameter.DataType.PrimitiveType.Value,
-                newNodes);
+                parameterComponent,
+                parameter.DataType.PrimitiveType.Value);
             }
             else
             {
               Debug.Assert(parameter.Direction == ModuleParameterDirection.Out);
+              Debug.Assert(parameterComponent is OutputOptimizationRuleComponent);
 
               if (nativeModuleCallComponent.OutputIndex == parameterIndex)
               {
@@ -191,9 +182,6 @@ internal class OptimizationRuleApplicator(OptimizationRuleApplicatorContext cont
               }
 
               outputIndex++;
-
-              Debug.Assert(state.Components[state.NextComponentIndex] is OutputOptimizationRuleComponent);
-              state.NextComponentIndex++;
             }
           }
 
@@ -208,7 +196,7 @@ internal class OptimizationRuleApplicator(OptimizationRuleApplicatorContext cont
             context.NativeLibraryRegistry,
             context.Reporting,
             programVariantProperties,
-            nativeModule,
+            nativeModuleCallComponent.NativeModule,
             upsampleFactor,
             inputArguments,
             sourceLocation);
@@ -224,19 +212,19 @@ internal class OptimizationRuleApplicator(OptimizationRuleApplicatorContext cont
           var callOutputArguments = moduleCallBuilder.TryCallNativeModule(
             programVariantProperties,
             sourceLocation,
-            nativeModule,
+            nativeModuleCallComponent.NativeModule,
             upsampleFactor,
             inputArguments);
 
           if (callOutputArguments == null)
           {
-            newNodes.Add(nativeModuleCallNode);
+            data.NewNodes.Add(nativeModuleCallNode);
           }
           else
           {
             foreach (var callOutputArgument in callOutputArguments)
             {
-              newNodes.Add(callOutputArgument.Processor);
+              data.NewNodes.Add(callOutputArgument.Processor);
             }
           }
 
@@ -256,18 +244,23 @@ internal class OptimizationRuleApplicator(OptimizationRuleApplicatorContext cont
             _ => throw UnhandledEnumValueException.Create(constantComponent.PrimitiveType),
           };
 
-          newNodes.Add(constantNode);
+          data.NewNodes.Add(constantNode);
           return constantNode.Output;
         }
 
       case ArrayOptimizationRuleComponent arrayComponent:
         {
-          var elementNodes = Enumerable
-            .Range(0, arrayComponent.ElementCount)
-            .Select((_) => BuildOutputPattern(programVariantProperties, state, upsampleFactorMultiplier, expectedPrimitiveType, newNodes))
+          var elementNodes = arrayComponent.Elements
+            .Select(
+              (elementComponent) => BuildOutputPattern(
+                programVariantProperties,
+                data,
+                upsampleFactorMultiplier,
+                elementComponent,
+                expectedPrimitiveType))
             .ToArray();
           var arrayNode = new ArrayProgramGraphNode(expectedPrimitiveType, elementNodes);
-          newNodes.Add(arrayNode);
+          data.NewNodes.Add(arrayNode);
           return arrayNode.Output;
         }
 
@@ -278,7 +271,7 @@ internal class OptimizationRuleApplicator(OptimizationRuleApplicatorContext cont
         throw new InvalidOperationException("Output components should be handled within the native module call case");
 
       case InputReferenceOptimizationRuleComponent inputReferenceComponent:
-        return state.InputNodes[inputReferenceComponent.Index];
+        return data.InputNodes[inputReferenceComponent];
 
       default:
         throw UnhandledSubclassException.Create(component);
@@ -291,19 +284,16 @@ internal class OptimizationRuleApplicator(OptimizationRuleApplicatorContext cont
     public required IReadOnlySet<IProcessorProgramGraphNode> NewNodes { get; init; }
   }
 
-  private class InputPatternState
+  private class InputPatternData
   {
-    public required IReadOnlyList<OptimizationRuleComponent> Components { get; init; }
-    public int NextComponentIndex { get; set; }
-
-    public Dictionary<int, IOutputProgramGraphNode> InputNodes { get; } = [];
+    public required OptimizationRuleComponent RootComponent { get; init; }
+    public Dictionary<OptimizationRuleComponent, IOutputProgramGraphNode> InputNodes { get; } = [];
     public List<IOutputProgramGraphNode> OutputNodes { get; } = [];
   }
 
-  private class OutputPatternState
+  private class OutputPatternData
   {
-    public required IReadOnlyList<OptimizationRuleComponent> Components { get; init; }
-    public required IReadOnlyDictionary<int, IOutputProgramGraphNode> InputNodes { get; init; }
-    public int NextComponentIndex { get; set; }
+    public required IReadOnlyDictionary<OptimizationRuleComponent, IOutputProgramGraphNode> InputNodes { get; init; }
+    public HashSet<IProcessorProgramGraphNode> NewNodes { get; } = [];
   }
 }
