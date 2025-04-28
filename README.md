@@ -93,7 +93,7 @@ module MultiTapEcho(signal: float, delaySampleCounts: const int[], decay: const 
   for (val delaySampleCount in delaySampleCounts)
   {
     result += Delay(signal, delaySampleCount) * nextDecay;
-	nextDecay *= decay;
+    nextDecay *= decay;
   }
 
   return result;
