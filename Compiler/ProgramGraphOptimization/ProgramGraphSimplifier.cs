@@ -1,5 +1,6 @@
 ﻿using Compiler.Program.ProgramGraphNodes;
 using Compiler.Utilities;
+using System.Diagnostics;
 
 namespace Compiler.ProgramGraphOptimization;
 
@@ -48,6 +49,10 @@ internal class ProgramGraphSimplifier
 
           removedNodes.Add(reachableNode);
         }
+        else
+        {
+          deduplicatedNodes.Add(new(reachableNode));
+        }
       }
 
       if (removedNodes.Count == 0)
@@ -66,7 +71,8 @@ internal class ProgramGraphSimplifier
 
     public override readonly bool Equals(object? obj)
     {
-      if (obj == null || node.GetType() != obj.GetType())
+      var other = obj as NodeDeduplicationWrapper?;
+      if (other == null || node.GetType() != other.Value.Node.GetType())
       {
         return false;
       }
@@ -75,8 +81,8 @@ internal class ProgramGraphSimplifier
       {
         case ArrayProgramGraphNode array:
           {
-            var otherArray = (ArrayProgramGraphNode)obj;
-            if (array.Output.DataType != otherArray.Output.DataType || array.Elements.Count != otherArray.Elements.Count)
+            var otherArray = (ArrayProgramGraphNode)other.Value.Node;
+            if (!array.Output.DataType.Equals(otherArray.Output.DataType) || array.Elements.Count != otherArray.Elements.Count)
             {
               return false;
             }
@@ -86,8 +92,8 @@ internal class ProgramGraphSimplifier
 
         case ConstantProgramGraphNode constant:
           {
-            var otherConstant = (ConstantProgramGraphNode)obj;
-            if (constant.Output.DataType != otherConstant.Output.DataType || constant.Value != otherConstant.Value)
+            var otherConstant = (ConstantProgramGraphNode)other.Value.Node;
+            if (!constant.Output.DataType.Equals(otherConstant.Output.DataType) || !constant.Value.Equals(otherConstant.Value))
             {
               return false;
             }
@@ -96,18 +102,18 @@ internal class ProgramGraphSimplifier
           }
 
         case GraphInputProgramGraphNode graphInput:
-          return ReferenceEquals(node, obj);
+          return ReferenceEquals(node, other.Value.Node);
 
         case GraphOutputProgramGraphNode graphOutput:
-          return ReferenceEquals(node, obj);
+          return ReferenceEquals(node, other.Value.Node);
 
         case NativeModuleCallProgramGraphNode nativeModuleCall:
           {
-            var otherNativeModuleCall = (NativeModuleCallProgramGraphNode)obj;
+            var otherNativeModuleCall = (NativeModuleCallProgramGraphNode)other.Value.Node;
             if (nativeModuleCall.NativeModule.HasSideEffects || otherNativeModuleCall.NativeModule.HasSideEffects)
             {
               // If either native module has side effects, deduplication should not occur so equality comparisons should only return true for the same object
-              return ReferenceEquals(node, obj);
+              return ReferenceEquals(node, other.Value.Node);
             }
 
             if (nativeModuleCall.NativeModule != otherNativeModuleCall.NativeModule || nativeModuleCall.UpsampleFactor != otherNativeModuleCall.UpsampleFactor)
@@ -126,8 +132,7 @@ internal class ProgramGraphSimplifier
       }
 
       // All inputs must be identical
-      return node.EnumerateInputs().Select((input) => input.Connection).SequenceEqual(
-        ((IProcessorProgramGraphNode)obj).EnumerateInputs().Select((input) => input.Connection));
+      return node.EnumerateInputs().Select((input) => input.Connection).SequenceEqual(other.Value.Node.EnumerateInputs().Select((input) => input.Connection));
     }
 
     public override readonly int GetHashCode()
@@ -137,14 +142,22 @@ internal class ProgramGraphSimplifier
       {
         ArrayProgramGraphNode array => HashCode.Combine(array.Output.DataType, array.Elements.Count),
         ConstantProgramGraphNode constant => HashCode.Combine(constant.Output.DataType, constant.Value),
-        GraphInputProgramGraphNode graphInput => 0,
-        GraphOutputProgramGraphNode graphOutput => 0,
+        GraphInputProgramGraphNode => 0,
+        GraphOutputProgramGraphNode => 0,
         NativeModuleCallProgramGraphNode nativeModuleCall => HashCode.Combine(nativeModuleCall.NativeModule, nativeModuleCall.UpsampleFactor),
         StructProgramGraphNode => throw new InvalidOperationException("Struct nodes should not exist in the graph at this point in time"),
         _ => throw UnhandledSubclassException.Create(node),
       };
 
-      return HashCode.Combine(node.GetType().GetHashCode(), node.EnumerateInputs().Select((input) => input.Connection), additionalHashCode);
+      var result = HashCode.Combine(node.GetType(), additionalHashCode);
+      foreach (var input in node.EnumerateInputs())
+      {
+        // This is a hash code of the reference used to check if all inputs have reference equality
+        Debug.Assert(input.Connection != null);
+        result = HashCode.Combine(result, input.Connection);
+      }
+
+      return result;
     }
   }
 }

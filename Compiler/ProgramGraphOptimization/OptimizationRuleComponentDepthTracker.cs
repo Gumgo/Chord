@@ -12,23 +12,21 @@ internal class OptimizationRuleComponentDepthTracker
 {
   private readonly Dictionary<NativeModule, int> _nativeModuleMaxComponentDepths = [];
 
-  public OptimizationRuleComponentDepthTracker(INativeLibraryRegistryAccess nativeLibraryRegistry, IReadOnlyList<OptimizationRule> optimizationRules)
+  public OptimizationRuleComponentDepthTracker(IReadOnlyList<OptimizationRule> optimizationRules)
   {
     foreach (var optimizationRule in optimizationRules)
     {
-      TrackComponentDepths(nativeLibraryRegistry, optimizationRule);
+      TrackComponentDepths(optimizationRule);
     }
   }
 
   public int? TryGetNativeModuleMaxComponentDepth(NativeModule nativeModule)
     => _nativeModuleMaxComponentDepths.TryGetValue(nativeModule, out var maxDepth) ? maxDepth : null;
 
-  private void TrackComponentDepths(INativeLibraryRegistryAccess nativeLibraryRegistry, OptimizationRule optimizationRule)
-  {
-    TrackComponentDepth(nativeLibraryRegistry, optimizationRule.InputPattern, 0);
-  }
+  private void TrackComponentDepths(OptimizationRule optimizationRule)
+    => TrackComponentDepth(optimizationRule.InputPattern, 0);
 
-  private void TrackComponentDepth(INativeLibraryRegistryAccess nativeLibraryRegistry, OptimizationRuleComponent component, int depth)
+  private void TrackComponentDepth(OptimizationRuleComponent component, int depth)
   {
     switch (component)
     {
@@ -43,7 +41,7 @@ internal class OptimizationRuleComponentDepthTracker
           {
             if (parameter.Direction == ModuleParameterDirection.In)
             {
-              TrackComponentDepth(nativeLibraryRegistry, parameterComponent, depth + 1);
+              TrackComponentDepth(parameterComponent, depth + 1);
             }
             else
             {
@@ -62,7 +60,7 @@ internal class OptimizationRuleComponentDepthTracker
         foreach (var elementComponent in arrayComponent.Elements)
         {
           // Arrays don't incur a depth increase
-          TrackComponentDepth(nativeLibraryRegistry, elementComponent, depth);
+          TrackComponentDepth(elementComponent, depth);
         }
 
         break;

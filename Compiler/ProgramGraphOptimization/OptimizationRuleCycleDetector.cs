@@ -1,5 +1,6 @@
 ﻿using Compiler.Native;
 using Compiler.Program.ProgramGraphNodes;
+using Compiler.ProgramGraphBuilding;
 using Compiler.Types;
 using Compiler.Utilities;
 using System.Diagnostics;
@@ -81,21 +82,24 @@ internal class OptimizationRuleCycleDetector(OptimizationRuleCycleDetectorContex
       if (nodeCount > settings.TooManyNodesThreshold)
       {
         context.Reporting.TooManyNodesError(graphType, _optimizationRuleHistory);
-        throw new InvalidProgramException();
+        throw new BuildProgramException();
       }
 
       if (_hashes.Contains(hash))
       {
         context.Reporting.OptimizationRuleCycleError(graphType, _optimizationRuleHistory);
-        throw new InvalidProgramException();
+        throw new BuildProgramException();
       }
 
       if (_hashQueue.Count == _maxHashCount)
       {
-        _hashQueue.Dequeue();
+        var removedHash = _hashQueue.Dequeue();
+        var removed = _hashes.Remove(removedHash);
+        Debug.Assert(removed);
       }
 
       _hashQueue.Enqueue(hash);
+      _hashes.Add(hash);
 
       _currentCycleSize++;
       _currentCycleCount = 0;

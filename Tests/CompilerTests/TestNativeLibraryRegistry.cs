@@ -175,6 +175,41 @@ internal sealed class TestNativeLibraryRegistry : INativeLibraryRegistry, INativ
       Modules =
       [
         CreateUncallableFunction(new("SideEffects", null), hasSideEffects: true, alwaysRuntime: true),
+
+        CreateUncallableFunction(
+          new(
+            "FloatArrayInFloatOut",
+            1,
+            new NativeModuleParameter(ModuleParameterDirection.In, "x", new(RuntimeMutability.Variable, PrimitiveType.Float, 1, true)),
+            new NativeModuleParameter(ModuleParameterDirection.Out, "y", new(RuntimeMutability.Variable, PrimitiveType.Float, 1, false)))),
+
+        CreateUncallableFunction(
+          new(
+            "DoubleArrayInDoubleOut",
+            1,
+            new NativeModuleParameter(ModuleParameterDirection.In, "x", new(RuntimeMutability.Variable, PrimitiveType.Double, 1, true)),
+            new NativeModuleParameter(ModuleParameterDirection.Out, "y", new(RuntimeMutability.Variable, PrimitiveType.Double, 1, false)))),
+
+        CreateUncallableFunction(
+          new(
+            "IntArrayInIntOut",
+            1,
+            new NativeModuleParameter(ModuleParameterDirection.In, "x", new(RuntimeMutability.Variable, PrimitiveType.Int, 1, true)),
+            new NativeModuleParameter(ModuleParameterDirection.Out, "y", new(RuntimeMutability.Variable, PrimitiveType.Int, 1, false)))),
+
+        CreateUncallableFunction(
+          new(
+            "BoolArrayInBoolOut",
+            1,
+            new NativeModuleParameter(ModuleParameterDirection.In, "x", new(RuntimeMutability.Variable, PrimitiveType.Bool, 1, true)),
+            new NativeModuleParameter(ModuleParameterDirection.Out, "y", new(RuntimeMutability.Variable, PrimitiveType.Bool, 1, false)))),
+
+        CreateUncallableFunction(
+          new(
+            "StringArrayInStringOut",
+            1,
+            new NativeModuleParameter(ModuleParameterDirection.In, "x", new(RuntimeMutability.Constant, PrimitiveType.String, 1, true)),
+            new NativeModuleParameter(ModuleParameterDirection.Out, "y", new(RuntimeMutability.Constant, PrimitiveType.String, 1, false)))),
       ],
 
       OptimizationRules = [],
@@ -219,6 +254,12 @@ internal sealed class TestNativeLibraryRegistry : INativeLibraryRegistry, INativ
     context = null;
     return false;
   }
+
+  public NativeModule GetCoreNativeModule(NativeModuleSignature signature)
+    => _coreNativeLibrary.Modules.Single((v) => v.Signature == signature);
+
+  public NativeModule GetTestNativeModule(string name)
+    => _testNativeLibrary.Modules.Single((v) => v.Signature.Name == name);
 
   private static TElement Index<TElement>(TElement?[] array, int index)
     where TElement : unmanaged

@@ -33,7 +33,7 @@ internal class ProgramGraphOptimizer
 
     _optimizationRuleApplicator = new(optimizationRuleApplicatorContext);
 
-    _optimizationRuleComponentDepthTracker = new(context.NativeLibraryRegistry, optimizationRules);
+    _optimizationRuleComponentDepthTracker = new(optimizationRules);
   }
 
   public void OptimizeProgramGraph(
