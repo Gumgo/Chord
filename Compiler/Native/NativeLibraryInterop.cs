@@ -991,7 +991,7 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
             new Guid(new Span<byte>(nativeModuleCallData->NativeLibraryId, sizeof(Guid)), true),
             new Guid(new Span<byte>(nativeModuleCallData->NativeModuleId, sizeof(Guid)), true),
             nativeModuleCallData->UpsampleFactor,
-            nativeModuleCallData->OutputIndex);
+            nativeModuleCallData->OutputParameterIndex);
         }
 
       case NativeTypes.OptimizationRuleComponentType.Constant:

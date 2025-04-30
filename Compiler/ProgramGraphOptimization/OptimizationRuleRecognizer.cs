@@ -1,5 +1,6 @@
 ﻿using Compiler.Native;
 using Compiler.Program.ProgramGraphNodes;
+using Compiler.Types;
 using Compiler.Utilities;
 using System.Diagnostics;
 
@@ -155,7 +156,7 @@ internal class OptimizationRuleRecognizer
               nativeModuleCallComponent.NativeModule.NativeLibraryId,
               nativeModuleCallComponent.NativeModule.Id,
               nativeModuleCallComponent.UpsampleFactor,
-              nativeModuleCallComponent.OutputIndex);
+              nativeModuleCallComponent.OutputParameterIndex);
             if (!currentNode._nativeModuleCallChildNodes.TryGetValue(key, out var node))
             {
               node = new();
@@ -196,7 +197,7 @@ internal class OptimizationRuleRecognizer
               currentNode = currentNode.EnsureChildNode(element);
             }
 
-            return node;
+            return currentNode;
           }
 
         case InputOptimizationRuleComponent inputComponent:
@@ -265,7 +266,7 @@ internal class OptimizationRuleRecognizer
 
       // Grab the top entry and then advance the stack to point to the next sibling (if there are no more siblings, the case handled above will catch it)
       var topEntry = state.Stack[^1];
-      state.Stack.Add(new(topEntry.GraphNode, topEntry.NextInputIndex + 1));
+      state.Stack[^1] = new(topEntry.GraphNode, topEntry.NextInputIndex + 1);
 
       var nextInputNode = topEntry.GraphNode.GetInput(topEntry.NextInputIndex);
       Debug.Assert(nextInputNode.Connection != null);
@@ -276,10 +277,20 @@ internal class OptimizationRuleRecognizer
       {
         var upsampleFactor = nativeModuleCallNode.UpsampleFactor / upsampleFactorMultiplier;
 
-        // Check which native module output we're hooked up to
+        // Check which native module output we're hooked up to. The value we're matching against is actually the parameter index of the output.
         var outputIndex = Enumerable.Range(0, nativeModuleCallNode.Outputs.Count).Single((i) => nextInputNode.Connection == nativeModuleCallNode.Outputs[i]);
+        var outputParameterIndex = nativeModuleCallNode.NativeModule.Signature.Parameters
+          .Select((parameter, parameterIndex) => (parameter, parameterIndex))
+          .Where((v) => v.parameter.Direction == ModuleParameterDirection.Out)
+          .Skip(outputIndex)
+          .First()
+          .parameterIndex;
 
-        var key = new NativeModuleCallKey(nativeModuleCallNode.NativeModule.NativeLibraryId, nativeModuleCallNode.NativeModule.Id, upsampleFactor, outputIndex);
+        var key = new NativeModuleCallKey(
+          nativeModuleCallNode.NativeModule.NativeLibraryId,
+          nativeModuleCallNode.NativeModule.Id,
+          upsampleFactor,
+          outputParameterIndex);
         if (_nativeModuleCallChildNodes.TryGetValue(key, out var nextTreeNode))
         {
           var updatedState = UpdateOrBranch(nextTreeNode);
@@ -322,7 +333,7 @@ internal class OptimizationRuleRecognizer
       }
     }
 
-    private record NativeModuleCallKey(Guid NativeLibraryId, Guid NativeModuleId, int UpsampleFactor, int OutputIndex);
+    private record NativeModuleCallKey(Guid NativeLibraryId, Guid NativeModuleId, int UpsampleFactor, int OutputParameterIndex);
   }
 
   // The root tree node is separate because it needs to match any possible upsample factor. Upsample factors in nodes from that point on need to match relative

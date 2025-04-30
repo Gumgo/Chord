@@ -254,7 +254,7 @@ public unsafe class NativeLibraryInteropTests
           NativeModuleCallData = new()
           {
             UpsampleFactor = 1,
-            OutputIndex = 4,
+            OutputParameterIndex = 4,
           },
         },
       },
@@ -436,7 +436,7 @@ public unsafe class NativeLibraryInteropTests
     Assert.Equal(nativeLibraryId, inputComponent0.NativeLibraryId);
     Assert.Equal(nativeModuleId, inputComponent0.NativeModuleId);
     Assert.Equal(1, inputComponent0.UpsampleFactor);
-    Assert.Equal(4, inputComponent0.OutputIndex);
+    Assert.Equal(4, inputComponent0.OutputParameterIndex);
 
     var inputComponent1 = Assert.IsType<UnvalidatedConstantOptimizationRuleComponent>(optimizationRule.InputPattern[1]);
     Assert.Equal(PrimitiveType.Float, inputComponent1.PrimitiveType);

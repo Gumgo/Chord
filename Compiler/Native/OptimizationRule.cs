@@ -9,13 +9,13 @@ internal class OptimizationRuleComponent
 internal class NativeModuleCallOptimizationRuleComponent(
   NativeModule nativeModule,
   int upsampleFactor,
-  int outputIndex,
+  int outputParameterIndex,
   IReadOnlyList<OptimizationRuleComponent> parameters)
   : OptimizationRuleComponent
 {
   public NativeModule NativeModule => nativeModule;
   public int UpsampleFactor => upsampleFactor;
-  public int OutputIndex => outputIndex;
+  public int OutputParameterIndex => outputParameterIndex;
 
   public IReadOnlyList<OptimizationRuleComponent> Parameters => parameters;
 }

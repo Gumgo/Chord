@@ -300,7 +300,7 @@ internal unsafe struct NativeModuleCallOptimizationRuleComponentData
   public fixed byte NativeLibraryId[16];
   public fixed byte NativeModuleId[16];
   public int UpsampleFactor;
-  public int OutputIndex;
+  public int OutputParameterIndex;
 }
 
 [StructLayout(LayoutKind.Explicit)]

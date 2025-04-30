@@ -348,7 +348,7 @@ typedef struct
   int32_t m_upsampleFactor;
 
   // The parameter index of the output from the native module call that is being matched
-  int32_t m_outputIndex;
+  int32_t m_outputParameterIndex;
 } NativeModuleCallOptimizationRuleComponentData;
 
 typedef union

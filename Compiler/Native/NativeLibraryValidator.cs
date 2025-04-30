@@ -241,15 +241,15 @@ file static class ReportingExtensions
     reporting.Error("NativeModuleCallOptimizationRuleComponentWithSideEffectsDisallowed", sourceLocation, message);
   }
 
-  public static void InvalidNativeModuleCallOptimizationRuleComponentOutputIndexError(
+  public static void InvalidNativeModuleCallOptimizationRuleComponentOutputParameterIndexError(
     this IReporting reporting,
     SourceLocation sourceLocation,
     UnvalidatedOptimizationRule optimizationRule,
     int? outputPatternIndex)
     => reporting.Error(
-      "InvalidNativeModuleCallOptimizationRuleComponentOutputIndex",
+      "InvalidNativeModuleCallOptimizationRuleComponentOutputParameterIndex",
       sourceLocation,
-      $"Optimization rule '{optimizationRule.Name}' {PatternName(outputPatternIndex)} native module call component specifies invalid output index");
+      $"Optimization rule '{optimizationRule.Name}' {PatternName(outputPatternIndex)} native module call component specifies invalid output parameter index");
 
   public static void NativeModuleCallOptimizationRuleComponentParameterDirectionMismatchError(
     this IReporting reporting,
@@ -738,11 +738,11 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
       return null;
     }
 
-    if (component.OutputIndex < 0
-      || component.OutputIndex >= componentNativeModule.Signature.Parameters.Count
-      || componentNativeModule.Signature.Parameters[component.OutputIndex].Direction != ModuleParameterDirection.Out)
+    if (component.OutputParameterIndex < 0
+      || component.OutputParameterIndex >= componentNativeModule.Signature.Parameters.Count
+      || componentNativeModule.Signature.Parameters[component.OutputParameterIndex].Direction != ModuleParameterDirection.Out)
     {
-      context.Reporting.InvalidNativeModuleCallOptimizationRuleComponentOutputIndexError(
+      context.Reporting.InvalidNativeModuleCallOptimizationRuleComponentOutputParameterIndexError(
         validateContext.SourceLocation,
         validateContext.OptimizationRule,
         validateContext.OutputPatternIndex);
@@ -825,7 +825,7 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
 
       // Whichever output is being forward down the stack should be marked as consumed (except if this is the root native module call). This way, we know that
       // it doesn't need an explicit output pattern.
-      if (component != validateContext.Components[0] && component.OutputIndex == parameterIndex)
+      if (component != validateContext.Components[0] && component.OutputParameterIndex == parameterIndex)
       {
         parameterResult.OutputConsumed = true;
       }
@@ -836,14 +836,14 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
     var validatedComponent = new NativeModuleCallOptimizationRuleComponent(
       componentNativeModule,
       component.UpsampleFactor,
-      component.OutputIndex,
+      component.OutputParameterIndex,
       parameters);
 
     // The output data type comes from the selected output parameter (which will generally be the return value parameter)
     return new(
       validatedComponent,
       ModuleParameterDirection.In,
-      GetNativeModuleCallDataType(componentNativeModule.Signature.Parameters[component.OutputIndex].DataType));
+      GetNativeModuleCallDataType(componentNativeModule.Signature.Parameters[component.OutputParameterIndex].DataType));
   }
 
   private ValidateOptimizationRuleComponentResult? ValidateArrayOptimizationRuleComponent(

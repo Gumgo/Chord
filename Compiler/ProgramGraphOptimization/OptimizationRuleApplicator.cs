@@ -84,7 +84,7 @@ internal class OptimizationRuleApplicator(OptimizationRuleApplicatorContext cont
               var parameterOutputNode = nativeModuleCallNode.Outputs[outputIndex];
               outputIndex++;
 
-              if (nativeModuleCallComponent.OutputIndex == parameterIndex)
+              if (nativeModuleCallComponent.OutputParameterIndex == parameterIndex)
               {
                 if (component == data.RootComponent)
                 {
@@ -176,7 +176,7 @@ internal class OptimizationRuleApplicator(OptimizationRuleApplicatorContext cont
               Debug.Assert(parameter.Direction == ModuleParameterDirection.Out);
               Debug.Assert(parameterComponent is OutputOptimizationRuleComponent);
 
-              if (nativeModuleCallComponent.OutputIndex == parameterIndex)
+              if (nativeModuleCallComponent.OutputParameterIndex == parameterIndex)
               {
                 returnOutputIndex = outputIndex;
               }

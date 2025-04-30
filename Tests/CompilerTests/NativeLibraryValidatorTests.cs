@@ -272,7 +272,7 @@ public class NativeLibraryValidatorTests
     Assert.Equal(_nativeLibraryId, input0.NativeModule.NativeLibraryId);
     Assert.Equal(_nativeModuleFloatOutId, input0.NativeModule.Id);
     Assert.Equal(1, input0.UpsampleFactor);
-    Assert.Equal(0, input0.OutputIndex);
+    Assert.Equal(0, input0.OutputParameterIndex);
 
     Assert.IsType<OutputOptimizationRuleComponent>(Assert.Single(input0.Parameters));
 
@@ -307,7 +307,7 @@ public class NativeLibraryValidatorTests
     Assert.Equal(_nativeLibraryId, input0.NativeModule.NativeLibraryId);
     Assert.Equal(_nativeModuleFloatInFloatOutId, input0.NativeModule.Id);
     Assert.Equal(1, input0.UpsampleFactor);
-    Assert.Equal(1, input0.OutputIndex);
+    Assert.Equal(1, input0.OutputParameterIndex);
     Assert.Equal(2, input0.Parameters.Count);
 
     var input1 = Assert.IsType<InputOptimizationRuleComponent>(input0.Parameters[0]);
@@ -347,14 +347,14 @@ public class NativeLibraryValidatorTests
     Assert.Equal(_nativeLibraryId, input0.NativeModule.NativeLibraryId);
     Assert.Equal(_nativeModuleFloatInFloatOutId, input0.NativeModule.Id);
     Assert.Equal(1, input0.UpsampleFactor);
-    Assert.Equal(1, input0.OutputIndex);
+    Assert.Equal(1, input0.OutputParameterIndex);
     Assert.Equal(2, input0.Parameters.Count);
 
     var input1 = Assert.IsType<NativeModuleCallOptimizationRuleComponent>(input0.Parameters[0]);
     Assert.Equal(_nativeLibraryId, input1.NativeModule.NativeLibraryId);
     Assert.Equal(_nativeModuleFloatOutId, input1.NativeModule.Id);
     Assert.Equal(1, input1.UpsampleFactor);
-    Assert.Equal(0, input1.OutputIndex);
+    Assert.Equal(0, input1.OutputParameterIndex);
 
     Assert.IsType<OutputOptimizationRuleComponent>(Assert.Single(input1.Parameters));
 
@@ -391,7 +391,7 @@ public class NativeLibraryValidatorTests
     Assert.Equal(_nativeLibraryId, input0.NativeModule.NativeLibraryId);
     Assert.Equal(_nativeModuleFloatOutFloatOutId, input0.NativeModule.Id);
     Assert.Equal(1, input0.UpsampleFactor);
-    Assert.Equal(1, input0.OutputIndex);
+    Assert.Equal(1, input0.OutputParameterIndex);
     Assert.Equal(2, input0.Parameters.Count);
 
     Assert.IsType<OutputOptimizationRuleComponent>(input0.Parameters[0]);
@@ -445,7 +445,7 @@ public class NativeLibraryValidatorTests
     Assert.Equal(_nativeLibraryId, input0.NativeModule.NativeLibraryId);
     Assert.Equal(_nativeModuleFloatArrayInFloatOutId, input0.NativeModule.Id);
     Assert.Equal(1, input0.UpsampleFactor);
-    Assert.Equal(1, input0.OutputIndex);
+    Assert.Equal(1, input0.OutputParameterIndex);
     Assert.Equal(2, input0.Parameters.Count);
 
     var input1 = Assert.IsType<ArrayOptimizationRuleComponent>(input0.Parameters[0]);
@@ -468,7 +468,7 @@ public class NativeLibraryValidatorTests
     Assert.Equal(_nativeLibraryId, output00.NativeModule.NativeLibraryId);
     Assert.Equal(_nativeModuleFloatArrayInFloatOutId, output00.NativeModule.Id);
     Assert.Equal(1, output00.UpsampleFactor);
-    Assert.Equal(1, output00.OutputIndex);
+    Assert.Equal(1, output00.OutputParameterIndex);
     Assert.Equal(2, output00.Parameters.Count);
 
     var output01 = Assert.IsType<ArrayOptimizationRuleComponent>(output00.Parameters[0]);
@@ -521,7 +521,7 @@ public class NativeLibraryValidatorTests
     Assert.Equal(_nativeLibraryId, input0.NativeModule.NativeLibraryId);
     Assert.Equal(_nativeModuleFloatInFloatOutId, input0.NativeModule.Id);
     Assert.Equal(1, input0.UpsampleFactor);
-    Assert.Equal(1, input0.OutputIndex);
+    Assert.Equal(1, input0.OutputParameterIndex);
     Assert.Equal(2, input0.Parameters.Count);
 
     var input1 = Assert.IsType<InputOptimizationRuleComponent>(input0.Parameters[0]);
@@ -537,7 +537,7 @@ public class NativeLibraryValidatorTests
     Assert.Equal(_nativeLibraryId, output00.NativeModule.NativeLibraryId);
     Assert.Equal(_nativeModuleConstFloatInConstFloatOutId, output00.NativeModule.Id);
     Assert.Equal(1, output00.UpsampleFactor);
-    Assert.Equal(1, output00.OutputIndex);
+    Assert.Equal(1, output00.OutputParameterIndex);
     Assert.Equal(2, output00.Parameters.Count);
 
     var output01 = Assert.IsType<InputReferenceOptimizationRuleComponent>(output00.Parameters[0]);
@@ -1147,14 +1147,14 @@ public class NativeLibraryValidatorTests
   [InlineData(-1)]
   [InlineData(0)]
   [InlineData(2)]
-  public void InvalidNativeModuleCallOptimizationRuleComponentOutputIndex(int outputIndex)
+  public void InvalidNativeModuleCallOptimizationRuleComponentOutputParameterIndex(int outputParameterIndex)
   {
     var optimizationRule = new UnvalidatedOptimizationRule()
     {
       Name = "Rule",
       InputPattern =
       [
-        new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatInFloatOutId, 1, outputIndex),
+        new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatInFloatOutId, 1, outputParameterIndex),
         new UnvalidatedInputOptimizationRuleComponent(false),
         new UnvalidatedOutputOptimizationRuleComponent(),
       ],
@@ -1164,7 +1164,7 @@ public class NativeLibraryValidatorTests
     var result = ValidateOptimizationRule(_optimizationRuleNativeModules, optimizationRule, out var reporting);
 
     Assert.Null(result);
-    Assert.Equal(["InvalidNativeModuleCallOptimizationRuleComponentOutputIndex"], reporting.ErrorIdentifiers);
+    Assert.Equal(["InvalidNativeModuleCallOptimizationRuleComponentOutputParameterIndex"], reporting.ErrorIdentifiers);
   }
 
   [Fact]

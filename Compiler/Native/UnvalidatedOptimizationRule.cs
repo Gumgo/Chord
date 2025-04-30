@@ -10,13 +10,13 @@ internal class UnvalidatedNativeModuleCallOptimizationRuleComponent(
   Guid nativeLibraryId,
   Guid nativeModuleId,
   int upsampleFactor,
-  int outputIndex)
+  int outputParameterIndex)
   : UnvalidatedOptimizationRuleComponent
 {
   public Guid NativeLibraryId => nativeLibraryId;
   public Guid NativeModuleId => nativeModuleId;
   public int UpsampleFactor => upsampleFactor;
-  public int OutputIndex => outputIndex;
+  public int OutputParameterIndex => outputParameterIndex;
 }
 
 internal class UnvalidatedConstantOptimizationRuleComponent : UnvalidatedOptimizationRuleComponent
