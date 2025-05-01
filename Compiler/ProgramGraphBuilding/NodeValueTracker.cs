@@ -114,6 +114,9 @@ internal class NodeValueTracker
     Debug.Assert(assignmentTarget.ValueDefinition != null);
 
     // Because we use pass-by-value semantics with a copy-on-write optimization, we need to determine which nodes need to be copied
+    // $TODO for cases like 'x[i] = v' and 'x.foo = v', where we're updating a single array element or struct field, it might be possible to avoid making a copy
+    // of the entire array/struct. If the only reference to 'x' is the one being held to perform the assignment, I think we can just swap out the element
+    // directly because nothing else is pointing at the old value.
     var updatedNode = node;
     for (var referenceNodeIndex = assignmentTarget.ReferenceNodes.Count - 1; referenceNodeIndex >= 0; referenceNodeIndex--)
     {

@@ -210,6 +210,13 @@ internal sealed class TestNativeLibraryRegistry : INativeLibraryRegistry, INativ
             1,
             new NativeModuleParameter(ModuleParameterDirection.In, "x", new(RuntimeMutability.Constant, PrimitiveType.String, 1, true)),
             new NativeModuleParameter(ModuleParameterDirection.Out, "y", new(RuntimeMutability.Constant, PrimitiveType.String, 1, false)))),
+
+        CreateUncallableFunction(
+          new(
+            "FloatOutFloatOut",
+            1,
+            new NativeModuleParameter(ModuleParameterDirection.Out, "x", new(RuntimeMutability.Variable, PrimitiveType.Float, 1, false)),
+            new NativeModuleParameter(ModuleParameterDirection.Out, "y", new(RuntimeMutability.Variable, PrimitiveType.Float, 1, false)))),
       ],
 
       OptimizationRules = [],

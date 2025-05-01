@@ -18,6 +18,24 @@ public class ProgramGraphSimplifierTests
 
   private static readonly SourceLocation _sourceLocation = SourceLocation.FromNativeLibrary("test");
 
+  private readonly TestNativeLibraryRegistry _nativeLibraryRegistry = new();
+
+  [Fact]
+  public void DisconnectUnreachableNodes()
+  {
+    var nativeLibraryRegistry = new TestNativeLibraryRegistry();
+
+    var constantNode = new ConstantProgramGraphNode(1.0f);
+    CreateNativeModuleCallNode(nativeLibraryRegistry.GetCoreNativeModule(CoreNativeLibrary.NegateFloat), [constantNode.Output]);
+    var outputNode = new GraphOutputProgramGraphNode(PrimitiveType.Float, constantNode.Output);
+
+    var outputNodes = new[] { outputNode };
+
+    ProgramGraphSimplifier.SimplifyGraph(outputNodes);
+
+    Assert.Equal([outputNode.Input], constantNode.Output.Connections);
+  }
+
   [Theory]
   [InlineData((int)PrimitiveType.Float, 1.0f, 2.0f)]
   [InlineData((int)PrimitiveType.Double, 1.0, 2.0)]
@@ -71,8 +89,6 @@ public class ProgramGraphSimplifierTests
   {
     var primitiveType = (PrimitiveType)primitiveTypeInt;
 
-    var nativeLibraryRegistry = new TestNativeLibraryRegistry();
-
     ConstantProgramGraphNode CreateConstantNode(object value)
       => primitiveType switch
       {
@@ -83,21 +99,6 @@ public class ProgramGraphSimplifierTests
         PrimitiveType.String => new ConstantProgramGraphNode((string)value),
         _ => throw UnhandledEnumValueException.Create(primitiveType),
       };
-
-    NativeModuleCallProgramGraphNode CreateNativeModuleCallNode(NativeModule nativeModule, IReadOnlyList<IOutputProgramGraphNode> inputArguments)
-    {
-      var reporting = new Reporting();
-      var result = new NativeModuleCallProgramGraphNode(
-        nativeLibraryRegistry,
-        reporting,
-        _programVariantProperties,
-        nativeModule,
-        1,
-        inputArguments,
-        _sourceLocation);
-      Assert.Empty(reporting.ErrorIdentifiers);
-      return result;
-    }
 
     var nativeModuleName = primitiveType switch
     {
@@ -114,10 +115,10 @@ public class ProgramGraphSimplifierTests
     var arrayNodeC = new ArrayProgramGraphNode(primitiveType, [CreateConstantNode(valueC).Output, CreateConstantNode(valueD).Output]);
     var arrayNodeD = new ArrayProgramGraphNode(primitiveType, [CreateConstantNode(valueC).Output, CreateConstantNode(valueD).Output]);
 
-    var nativeModuleCallNodeA = CreateNativeModuleCallNode(nativeLibraryRegistry.GetTestNativeModule(nativeModuleName), [arrayNodeA.Output]);
-    var nativeModuleCallNodeB = CreateNativeModuleCallNode(nativeLibraryRegistry.GetTestNativeModule(nativeModuleName), [arrayNodeB.Output]);
-    var nativeModuleCallNodeC = CreateNativeModuleCallNode(nativeLibraryRegistry.GetTestNativeModule(nativeModuleName), [arrayNodeC.Output]);
-    var nativeModuleCallNodeD = CreateNativeModuleCallNode(nativeLibraryRegistry.GetTestNativeModule(nativeModuleName), [arrayNodeD.Output]);
+    var nativeModuleCallNodeA = CreateNativeModuleCallNode(_nativeLibraryRegistry.GetTestNativeModule(nativeModuleName), [arrayNodeA.Output]);
+    var nativeModuleCallNodeB = CreateNativeModuleCallNode(_nativeLibraryRegistry.GetTestNativeModule(nativeModuleName), [arrayNodeB.Output]);
+    var nativeModuleCallNodeC = CreateNativeModuleCallNode(_nativeLibraryRegistry.GetTestNativeModule(nativeModuleName), [arrayNodeC.Output]);
+    var nativeModuleCallNodeD = CreateNativeModuleCallNode(_nativeLibraryRegistry.GetTestNativeModule(nativeModuleName), [arrayNodeD.Output]);
 
     var outputNodeA = new GraphOutputProgramGraphNode(primitiveType, nativeModuleCallNodeA.Outputs[0]);
     var outputNodeB = new GraphOutputProgramGraphNode(primitiveType, nativeModuleCallNodeB.Outputs[0]);
@@ -136,37 +137,20 @@ public class ProgramGraphSimplifierTests
   [Fact]
   public void DeduplicateNativeModuleCalls()
   {
-    var nativeLibraryRegistry = new TestNativeLibraryRegistry();
-
-    NativeModuleCallProgramGraphNode CreateNativeModuleCallNode(NativeModule nativeModule, IReadOnlyList<IOutputProgramGraphNode> inputArguments)
-    {
-      var reporting = new Reporting();
-      var result = new NativeModuleCallProgramGraphNode(
-        nativeLibraryRegistry,
-        reporting,
-        _programVariantProperties,
-        nativeModule,
-        1,
-        inputArguments,
-        _sourceLocation);
-      Assert.Empty(reporting.ErrorIdentifiers);
-      return result;
-    }
-
     var nativeModuleCallNodeA = CreateNativeModuleCallNode(
-      nativeLibraryRegistry.GetCoreNativeModule(CoreNativeLibrary.AddFloatFloat),
+      _nativeLibraryRegistry.GetCoreNativeModule(CoreNativeLibrary.AddFloatFloat),
       [new ConstantProgramGraphNode(1.0f).Output, new ConstantProgramGraphNode(2.0f).Output]);
 
     var nativeModuleCallNodeB = CreateNativeModuleCallNode(
-      nativeLibraryRegistry.GetCoreNativeModule(CoreNativeLibrary.AddFloatFloat),
+      _nativeLibraryRegistry.GetCoreNativeModule(CoreNativeLibrary.AddFloatFloat),
       [new ConstantProgramGraphNode(1.0f).Output, new ConstantProgramGraphNode(2.0f).Output]);
 
     var nativeModuleCallNodeC = CreateNativeModuleCallNode(
-      nativeLibraryRegistry.GetCoreNativeModule(CoreNativeLibrary.SubtractFloatFloat),
+      _nativeLibraryRegistry.GetCoreNativeModule(CoreNativeLibrary.SubtractFloatFloat),
       [new ConstantProgramGraphNode(1.0f).Output, new ConstantProgramGraphNode(2.0f).Output]);
 
     var nativeModuleCallNodeD = CreateNativeModuleCallNode(
-      nativeLibraryRegistry.GetCoreNativeModule(CoreNativeLibrary.SubtractFloatFloat),
+      _nativeLibraryRegistry.GetCoreNativeModule(CoreNativeLibrary.SubtractFloatFloat),
       [new ConstantProgramGraphNode(1.0f).Output, new ConstantProgramGraphNode(2.0f).Output]);
 
     var outputNodeA = new GraphOutputProgramGraphNode(PrimitiveType.Float, nativeModuleCallNodeA.Outputs[0]);
@@ -186,39 +170,22 @@ public class ProgramGraphSimplifierTests
   [Fact]
   public void DeduplicateChain()
   {
-    var nativeLibraryRegistry = new TestNativeLibraryRegistry();
-
-    NativeModuleCallProgramGraphNode CreateNativeModuleCallNode(NativeModule nativeModule, IReadOnlyList<IOutputProgramGraphNode> inputArguments)
-    {
-      var reporting = new Reporting();
-      var result = new NativeModuleCallProgramGraphNode(
-        nativeLibraryRegistry,
-        reporting,
-        _programVariantProperties,
-        nativeModule,
-        1,
-        inputArguments,
-        _sourceLocation);
-      Assert.Empty(reporting.ErrorIdentifiers);
-      return result;
-    }
-
     GraphOutputProgramGraphNode BuildChain(float finalValue)
     {
       var nativeModuleCallNodeA = CreateNativeModuleCallNode(
-        nativeLibraryRegistry.GetCoreNativeModule(CoreNativeLibrary.AddFloatFloat),
+        _nativeLibraryRegistry.GetCoreNativeModule(CoreNativeLibrary.AddFloatFloat),
         [new ConstantProgramGraphNode(finalValue).Output, new ConstantProgramGraphNode(2.0f).Output]);
 
       var nativeModuleCallNodeB = CreateNativeModuleCallNode(
-        nativeLibraryRegistry.GetCoreNativeModule(CoreNativeLibrary.MultiplyFloatFloat),
+        _nativeLibraryRegistry.GetCoreNativeModule(CoreNativeLibrary.MultiplyFloatFloat),
         [new ConstantProgramGraphNode(3.0f).Output, new ConstantProgramGraphNode(4.0f).Output]);
 
       var nativeModuleCallNodeC = CreateNativeModuleCallNode(
-        nativeLibraryRegistry.GetCoreNativeModule(CoreNativeLibrary.SubtractFloatFloat),
+        _nativeLibraryRegistry.GetCoreNativeModule(CoreNativeLibrary.SubtractFloatFloat),
         [nativeModuleCallNodeA.Outputs[0], nativeModuleCallNodeB.Outputs[0]]);
 
       var nativeModuleCallNodeD = CreateNativeModuleCallNode(
-        nativeLibraryRegistry.GetCoreNativeModule(CoreNativeLibrary.NegateFloat),
+        _nativeLibraryRegistry.GetCoreNativeModule(CoreNativeLibrary.NegateFloat),
         [nativeModuleCallNodeC.Outputs[0]]);
 
       return new(PrimitiveType.Float, nativeModuleCallNodeD.Outputs[0]);
@@ -236,5 +203,20 @@ public class ProgramGraphSimplifierTests
     Assert.Equal(outputNodeA.Input.Connection, outputNodeB.Input.Connection);
     Assert.Equal(outputNodeC.Input.Connection, outputNodeD.Input.Connection);
     Assert.NotEqual(outputNodeA.Input.Connection, outputNodeC.Input.Connection);
+  }
+
+  private NativeModuleCallProgramGraphNode CreateNativeModuleCallNode(NativeModule nativeModule, IReadOnlyList<IOutputProgramGraphNode> inputArguments)
+  {
+    var reporting = new Reporting();
+    var result = new NativeModuleCallProgramGraphNode(
+      _nativeLibraryRegistry,
+      reporting,
+      _programVariantProperties,
+      nativeModule,
+      1,
+      inputArguments,
+      _sourceLocation);
+    Assert.Empty(reporting.ErrorIdentifiers);
+    return result;
   }
 }

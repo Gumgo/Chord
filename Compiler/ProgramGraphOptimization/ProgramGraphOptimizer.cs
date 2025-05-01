@@ -1,6 +1,5 @@
 ﻿using Compiler.Native;
 using Compiler.Program.ProgramGraphNodes;
-using Compiler.ProgramGraphBuilding;
 using Compiler.Utilities;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -59,21 +58,19 @@ internal class ProgramGraphOptimizer
       }
 
       // An optimization rule can be applied so apply it
-      var applyOptimizationRuleResult = _optimizationRuleApplicator.ApplyOptimizationRule(
+      var newNodes = _optimizationRuleApplicator.ApplyOptimizationRule(
         programVariantProperties,
         detectOptimizationRuleResult.OptimizationRule,
         node,
         detectOptimizationRuleResult.UpsampleFactorMultiplier);
 
-      // Update the graph walker with the swapped out nodes
-      foreach (var (oldNode, newNode) in applyOptimizationRuleResult.ReplacedNodes)
-      {
-        graphWalker.ReplaceNode(oldNode, newNode);
-      }
-
       cycleDetector.DetectCycles(programGraph, detectOptimizationRuleResult.OptimizationRule, graphType);
 
-      var rewindDepth = int.MaxValue;
+      // Now we need to rewind our graph walk enough so that we don't miss any optimization rules that can be applied further back in the graph. First, we know
+      // that we just replaced at least one node at a depth of nodeDepth which means that our graph walker now contains at least one (and possibly more) now-
+      // unused nodes in the queue. To fix this, rewind back to nodeDepth - 1 so that all nodes at nodeDepth (and beyond) get properly queued.
+      var rewindDepth = nodeDepth.Value - 1;
+
       void UpdateRewindDepth(NativeModuleCallProgramGraphNode nativeModuleCallNode)
       {
         var maxComponentDepth = _optimizationRuleComponentDepthTracker.TryGetNativeModuleMaxComponentDepth(nativeModuleCallNode.NativeModule);
@@ -90,11 +87,10 @@ internal class ProgramGraphOptimizer
         rewindDepth = Math.Min(newNodeDepth - maxComponentDepth.Value, rewindDepth);
       }
 
-      // Now we need to rewind our graph walk enough so that we don't miss any optimization rules that can be applied further back in the graph. First, look at
-      // every native module call node that was produced by the optimization rule. For each native module, we have already calculated the maximum depth into any
-      // optimization rule of any native module call component for that native module. Therefore, backing up by that depth will allow us to detect these new
-      // native module call nodes when they can be optimized.
-      foreach (var newNode in applyOptimizationRuleResult.NewNodes.OfType<NativeModuleCallProgramGraphNode>())
+      // Next, look at every native module call node that was produced by the optimization rule. For each native module, we have already calculated the maximum
+      // depth into any optimization rule of any native module call component for that native module. Therefore, backing up by that depth will allow us to
+      // detect these new native module call nodes when they can be optimized.
+      foreach (var newNode in newNodes.OfType<NativeModuleCallProgramGraphNode>())
       {
         UpdateRewindDepth(newNode);
       }
@@ -106,7 +102,7 @@ internal class ProgramGraphOptimizer
       // optimization rule will always consist of native module call components at all depths except for branch leaves (array components do not count toward
       // depth), which could be input components, constant components, etc. Therefore, in order to detect all nodes that may require a rewind, we need to
       // additionally check one depth level back from all newly produced nodes.
-      foreach (var newNode in applyOptimizationRuleResult.NewNodes)
+      foreach (var newNode in newNodes)
       {
         foreach (var newNodeOutput in newNode.EnumerateOutputs())
         {
@@ -171,24 +167,6 @@ internal class ProgramGraphOptimizer
 
     public int? TryGetNodeDepth(IProcessorProgramGraphNode node)
       => _nodeDepths.TryGetValue(node, out var nodeDepth) ? nodeDepth : null;
-
-    // This should be called for all nodes replaced by output patterns when an optimization rule runs. This is because the nodes being replaced might be in the
-    // queue.
-    public void ReplaceNode(IProcessorProgramGraphNode oldNode, IProcessorProgramGraphNode newNode)
-    {
-      if (_nodeQueueIndices.TryGetValue(oldNode, out var nodeQueueIndex))
-      {
-        _nodeQueueIndices.Remove(oldNode);
-        _nodeQueueIndices.Add(newNode, nodeQueueIndex);
-        _nodeQueue[nodeQueueIndex] = newNode;
-
-        if (_nodeDepths.TryGetValue(oldNode, out var nodeDepth))
-        {
-          _nodeDepths.Remove(oldNode);
-          _nodeDepths.Add(newNode, nodeDepth);
-        }
-      }
-    }
 
     // Rewinds so that the next set of nodes we visit are the ones with the given depth
     public void Rewind(int depth)

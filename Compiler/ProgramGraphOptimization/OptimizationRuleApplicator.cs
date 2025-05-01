@@ -15,7 +15,9 @@ internal class OptimizationRuleApplicatorContext
 
 internal class OptimizationRuleApplicator(OptimizationRuleApplicatorContext context)
 {
-  public ApplyOptimizationRuleResult ApplyOptimizationRule(
+  // Returns the set of new nodes that were created applying this rule. Note that this also includes nodes referenced from the input pattern. This is because
+  // these nodes may have been brought forward in terms of graph depth so they must be analyzed after rule application.
+  public IReadOnlySet<IProcessorProgramGraphNode> ApplyOptimizationRule(
     ProgramVariantProperties programVariantProperties,
     OptimizationRule optimizationRule,
     IProcessorProgramGraphNode node,
@@ -52,7 +54,7 @@ internal class OptimizationRuleApplicator(OptimizationRuleApplicatorContext cont
       newNodes.UnionWith(outputPatternData.NewNodes);
     }
 
-    return new() { ReplacedNodes = replacedNodes, NewNodes = newNodes };
+    return newNodes;
   }
 
   private static void ProcessInputPattern(InputPatternData data, OptimizationRuleComponent component, IOutputProgramGraphNode outputNode)
@@ -170,6 +172,7 @@ internal class OptimizationRuleApplicator(OptimizationRuleApplicatorContext cont
                 upsampleFactorMultiplier,
                 parameterComponent,
                 parameter.DataType.PrimitiveType.Value);
+              inputArguments.Add(inputArgumentNode);
             }
             else
             {
@@ -271,17 +274,12 @@ internal class OptimizationRuleApplicator(OptimizationRuleApplicatorContext cont
         throw new InvalidOperationException("Output components should be handled within the native module call case");
 
       case InputReferenceOptimizationRuleComponent inputReferenceComponent:
-        return data.InputNodes[inputReferenceComponent];
+        data.NewNodes.Add(data.InputNodes[inputReferenceComponent.ReferencedComponent].Processor);
+        return data.InputNodes[inputReferenceComponent.ReferencedComponent];
 
       default:
         throw UnhandledSubclassException.Create(component);
     }
-  }
-
-  public class ApplyOptimizationRuleResult
-  {
-    public required IReadOnlyList<(IProcessorProgramGraphNode OldNode, IProcessorProgramGraphNode NewNode)> ReplacedNodes { get; init; }
-    public required IReadOnlySet<IProcessorProgramGraphNode> NewNodes { get; init; }
   }
 
   private class InputPatternData
