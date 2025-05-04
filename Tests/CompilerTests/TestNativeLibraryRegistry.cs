@@ -217,6 +217,55 @@ internal sealed class TestNativeLibraryRegistry : INativeLibraryRegistry, INativ
             1,
             new NativeModuleParameter(ModuleParameterDirection.Out, "x", new(RuntimeMutability.Variable, PrimitiveType.Float, 1, false)),
             new NativeModuleParameter(ModuleParameterDirection.Out, "y", new(RuntimeMutability.Variable, PrimitiveType.Float, 1, false)))),
+
+        CreateUncallableFunction(
+          new(
+            "ChainA",
+            1,
+            new NativeModuleParameter(ModuleParameterDirection.In, "x", new(RuntimeMutability.Variable, PrimitiveType.Float, 1, false)),
+            new NativeModuleParameter(ModuleParameterDirection.Out, "y", new(RuntimeMutability.Variable, PrimitiveType.Float, 1, false)))),
+
+        CreateUncallableFunction(
+          new(
+            "ChainB",
+            1,
+            new NativeModuleParameter(ModuleParameterDirection.In, "x", new(RuntimeMutability.Variable, PrimitiveType.Float, 1, false)),
+            new NativeModuleParameter(ModuleParameterDirection.Out, "y", new(RuntimeMutability.Variable, PrimitiveType.Float, 1, false)))),
+
+        CreateUncallableFunction(
+          new(
+            "ChainC",
+            1,
+            new NativeModuleParameter(ModuleParameterDirection.In, "x", new(RuntimeMutability.Variable, PrimitiveType.Float, 1, false)),
+            new NativeModuleParameter(ModuleParameterDirection.Out, "y", new(RuntimeMutability.Variable, PrimitiveType.Float, 1, false)))),
+
+        CreateUncallableFunction(
+          new(
+            "ChainD",
+            1,
+            new NativeModuleParameter(ModuleParameterDirection.In, "x", new(RuntimeMutability.Variable, PrimitiveType.Float, 1, false)),
+            new NativeModuleParameter(ModuleParameterDirection.Out, "y", new(RuntimeMutability.Variable, PrimitiveType.Float, 1, false)))),
+
+        CreateUncallableFunction(
+          new(
+            "ChainE",
+            1,
+            new NativeModuleParameter(ModuleParameterDirection.In, "x", new(RuntimeMutability.Variable, PrimitiveType.Float, 1, false)),
+            new NativeModuleParameter(ModuleParameterDirection.Out, "y", new(RuntimeMutability.Variable, PrimitiveType.Float, 1, false)))),
+
+        CreateUncallableFunction(
+          new(
+            "ChainF",
+            1,
+            new NativeModuleParameter(ModuleParameterDirection.In, "x", new(RuntimeMutability.Variable, PrimitiveType.Float, 1, false)),
+            new NativeModuleParameter(ModuleParameterDirection.Out, "y", new(RuntimeMutability.Variable, PrimitiveType.Float, 1, false)))),
+
+        CreateUncallableFunction(
+          new(
+            "ChainG",
+            1,
+            new NativeModuleParameter(ModuleParameterDirection.In, "x", new(RuntimeMutability.Variable, PrimitiveType.Float, 1, false)),
+            new NativeModuleParameter(ModuleParameterDirection.Out, "y", new(RuntimeMutability.Variable, PrimitiveType.Float, 1, false)))),
       ],
 
       OptimizationRules = [],

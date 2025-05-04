@@ -134,7 +134,7 @@ internal class ProgramGraphOptimizer
       foreach (var node in rootNodes)
       {
         Debug.Assert(node is not ArrayProgramGraphNode);
-        Enqueue(node, 0);
+        EnqueueIfNotPresent(node, 0);
       }
     }
 
@@ -151,15 +151,10 @@ internal class ProgramGraphOptimizer
       _queueIndex++;
 
       nodeDepth = _nodeDepths[node];
-      foreach (var output in node.EnumerateOutputs())
+      foreach (var input in node.EnumerateInputs())
       {
-        foreach (var connection in output.Connections)
-        {
-          if (!_nodeDepths.ContainsKey(connection.Processor))
-          {
-            Enqueue(node, nodeDepth.Value + 1);
-          }
-        }
+        Debug.Assert(input.Connection != null);
+        EnqueueIfNotPresent(input.Connection.Processor, nodeDepth.Value + 1);
       }
 
       return true;
@@ -199,7 +194,7 @@ internal class ProgramGraphOptimizer
       }
     }
 
-    private void Enqueue(IProcessorProgramGraphNode node, int nodeDepth)
+    private void EnqueueIfNotPresent(IProcessorProgramGraphNode node, int nodeDepth)
     {
       // Array nodes are simply a collection of values and don't count toward depth
       if (node is ArrayProgramGraphNode arrayNode)
@@ -207,14 +202,13 @@ internal class ProgramGraphOptimizer
         foreach (var element in arrayNode.Elements)
         {
           Debug.Assert(element.Connection != null);
-          Enqueue(element.Connection.Processor, nodeDepth);
+          EnqueueIfNotPresent(element.Connection.Processor, nodeDepth);
         }
       }
-      else
+      else if (_nodeDepths.TryAdd(node, nodeDepth))
       {
         _nodeQueueIndices.Add(node, _nodeQueue.Count);
         _nodeQueue.Add(node);
-        _nodeDepths.Add(node, nodeDepth);
       }
     }
   }

@@ -6,7 +6,6 @@ using Compiler.Types;
 
 namespace Tests.CompilerTests;
 
-// !!! add int tests
 // Note: node tests are listed in alphabetical order for simplicity, except for expression nodes, which are tested in ParserExpressionTests.cs
 public class ParserTests
 {
