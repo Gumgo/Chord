@@ -56,7 +56,7 @@ internal unsafe struct DataType
 internal unsafe struct NativeModuleParameter
 {
   public ModuleParameterDirection Direction;
-  public sbyte* Name;
+  public uint* Name;
   public DataType DataType;
   public NativeBool DisallowBufferSharing;
 }
@@ -64,7 +64,7 @@ internal unsafe struct NativeModuleParameter
 [StructLayout(LayoutKind.Sequential)]
 internal unsafe struct NativeModuleSignature
 {
-  public sbyte* Name;
+  public uint* Name;
   public NativeModuleParameter* Parameters;
   public SizeT ParameterCount;
   public int ReturnParameterIndex;
@@ -310,7 +310,7 @@ internal unsafe struct ConstantOptimizationRuleComponentValue
   [FieldOffset(0)] public double DoubleValue;
   [FieldOffset(0)] public int IntValue;
   [FieldOffset(0)] public NativeBool BoolValue;
-  [FieldOffset(0)] public sbyte* StringValue;
+  [FieldOffset(0)] public uint* StringValue;
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -358,7 +358,7 @@ internal unsafe struct OptimizationRuleComponent
 [StructLayout(LayoutKind.Sequential)]
 internal unsafe struct OptimizationRule
 {
-  public sbyte* Name;
+  public uint* Name;
   public OptimizationRuleComponent* InputPattern;
   public OptimizationRuleComponent** OutputPatterns;
 }
@@ -376,7 +376,7 @@ internal unsafe struct NativeLibrary
 {
   public fixed byte Id[16];
   public NativeLibraryVersion Version;
-  public sbyte* Name;
+  public uint* Name;
   public delegate* unmanaged[Cdecl]<void*> Initialize;
   public delegate* unmanaged[Cdecl]<void*, void> Deinitialize;
   public delegate* unmanaged[Cdecl]<void*, void*> InitializeVoice;

@@ -129,7 +129,7 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
     NativeTypes.NativeLibrary* nativeLibraryNative)
   {
     var nativeLibraryId = new Guid(new Span<byte>(nativeLibraryNative->Id, sizeof(Guid)), true);
-    var nativeLibraryName = Marshal.PtrToStringUTF8((nint)nativeLibraryNative->Name);
+    var nativeLibraryName = ReadUTF32String(nativeLibraryNative->Name);
     if (nativeLibraryName == null)
     {
       context.Reporting.NullNativeLibraryNameError();
@@ -201,6 +201,23 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
     return (nativeLibrary, optimizationRules);
   }
 
+  private static unsafe string? ReadUTF32String(uint* utf32String)
+  {
+    if (utf32String == null)
+    {
+      return null;
+    }
+
+    // PtrToStringUni() doesn't handle UTF32 but it's easy to do manually since characters are fixed-width
+    var length = 0;
+    while (utf32String[length] != 0)
+    {
+      length++;
+    }
+
+    return Encoding.UTF32.GetString(new Span<byte>(utf32String, length * sizeof(uint)));
+  }
+
   private static unsafe DisposableCallback NativeModuleContextToNative(
     NativeModuleContext nativeModuleContext,
     out NativeTypes.NativeModuleContext nativeModuleContextNative)
@@ -209,20 +226,7 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
     // then back to a managed context. We don't have to dereference the Reporting pointer from within native code.
     var memoryHandle = GCHandle.Alloc(nativeModuleContext.Reporting, GCHandleType.Normal);
 
-    // $TODO I'm not sure if null-terminated UTF32 is the right choice for these messages. Other options are:
-    // - UTF32 and count - this is used for string primitive values and the C++ string helper functions will use this (so it might be the right option?)
-    // - null-terminated UTF8 - this is used for fixed values like module names for ASCII compatibility (in common cases)
-    static string ReadUnicodeMessage(uint* message)
-    {
-      // PtrToStringUni() doesn't handle UTF32 but it's easy to do manually since characters are fixed-width
-      var length = 0;
-      while (message[length] != 0)
-      {
-        length++;
-      }
-
-      return Encoding.UTF32.GetString(new Span<byte>(message, length * sizeof(uint)));
-    }
+    // $TODO I'm not sure if null-terminated UTF32 is the right choice for these messages. The alternative is pointer/count.
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     static void ReportWarningWrapper(void* reportingContext, uint* message)
@@ -230,7 +234,7 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
       var reportingContextHandle = GCHandle.FromIntPtr((nint)reportingContext);
       Debug.Assert(reportingContextHandle.Target != null);
       var pinnedReporting = (IReporting)reportingContextHandle.Target;
-      pinnedReporting.Warning("NativeModuleCall", ReadUnicodeMessage(message));
+      pinnedReporting.Warning("NativeModuleCall", ReadUTF32String(message) ?? string.Empty);
     }
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
@@ -239,7 +243,7 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
       var reportingContextHandle = GCHandle.FromIntPtr((nint)reportingContext);
       Debug.Assert(reportingContextHandle.Target != null);
       var pinnedReporting = (IReporting)reportingContextHandle.Target;
-      pinnedReporting.Error("NativeModuleCall", ReadUnicodeMessage(message));
+      pinnedReporting.Error("NativeModuleCall", ReadUTF32String(message) ?? string.Empty);
     }
 
     nativeModuleContextNative = new()
@@ -729,7 +733,7 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
       return null;
     }
 
-    var name = Marshal.PtrToStringUTF8((nint)nativeModuleParameterNative->Name);
+    var name = ReadUTF32String(nativeModuleParameterNative->Name);
     if (name == null)
     {
       context.Reporting.NullNativeModuleParameterNameError(sourceLocation, nativeModuleName);
@@ -765,7 +769,7 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
 
   private unsafe NativeModule? NativeModuleFromNative(SourceLocation sourceLocation, Guid nativeLibraryId, NativeTypes.NativeModule* nativeModuleNative)
   {
-    var nativeModuleName = Marshal.PtrToStringUTF8((nint)nativeModuleNative->Signature.Name);
+    var nativeModuleName = ReadUTF32String(nativeModuleNative->Signature.Name);
     if (nativeModuleName == null)
     {
       context.Reporting.NullNativeModuleNameError(sourceLocation);
@@ -908,7 +912,7 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
 
   private unsafe UnvalidatedOptimizationRule? OptimizationRuleFromNative(SourceLocation sourceLocation, NativeTypes.OptimizationRule* optimizationRuleNative)
   {
-    var name = Marshal.PtrToStringUTF8((nint)optimizationRuleNative->Name);
+    var name = ReadUTF32String(optimizationRuleNative->Name);
     if (name == null)
     {
       context.Reporting.NullOptimizationRuleNameError(sourceLocation);
@@ -1013,7 +1017,7 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
 
             case NativeTypes.PrimitiveType.String:
               {
-                var stringValue = Marshal.PtrToStringUTF8((nint)constantData->Value.StringValue);
+                var stringValue = ReadUTF32String(constantData->Value.StringValue);
                 if (stringValue == null)
                 {
                   context.Reporting.NullConstantOptimizationRuleComponentStringValueError(sourceLocation, optimizationRuleName);

@@ -84,7 +84,7 @@ public unsafe class NativeLibraryInteropTests
     var nativeLibraryNative = new NativeTypes.NativeLibrary()
     {
       Version = new() { Major = 1, Minor = 2, Patch = 3 },
-      Name = GetUTF8String("test", memoryHandles),
+      Name = GetUTF32String("test", memoryHandles),
       Initialize = &Initialize,
       Deinitialize = &Deinitialize,
       InitializeVoice = &InitializeVoice,
@@ -97,7 +97,7 @@ public unsafe class NativeLibraryInteropTests
       new()
       {
         Direction = NativeTypes.ModuleParameterDirection.In,
-        Name = GetUTF8String("x", memoryHandles),
+        Name = GetUTF32String("x", memoryHandles),
         DataType = new()
         {
           RuntimeMutability = NativeTypes.RuntimeMutability.Variable,
@@ -109,7 +109,7 @@ public unsafe class NativeLibraryInteropTests
       new()
       {
         Direction = NativeTypes.ModuleParameterDirection.In,
-        Name = GetUTF8String("y", memoryHandles),
+        Name = GetUTF32String("y", memoryHandles),
         DataType = new()
         {
           RuntimeMutability = NativeTypes.RuntimeMutability.DependentConstant,
@@ -121,7 +121,7 @@ public unsafe class NativeLibraryInteropTests
       new()
       {
         Direction = NativeTypes.ModuleParameterDirection.In,
-        Name = GetUTF8String("z", memoryHandles),
+        Name = GetUTF32String("z", memoryHandles),
         DataType = new()
         {
           RuntimeMutability = NativeTypes.RuntimeMutability.Variable,
@@ -133,7 +133,7 @@ public unsafe class NativeLibraryInteropTests
       new()
       {
         Direction = NativeTypes.ModuleParameterDirection.In,
-        Name = GetUTF8String("w", memoryHandles),
+        Name = GetUTF32String("w", memoryHandles),
         DataType = new()
         {
           RuntimeMutability = NativeTypes.RuntimeMutability.Constant,
@@ -145,7 +145,7 @@ public unsafe class NativeLibraryInteropTests
       new()
       {
         Direction = NativeTypes.ModuleParameterDirection.Out,
-        Name = GetUTF8String("o", memoryHandles),
+        Name = GetUTF32String("o", memoryHandles),
         DataType = new()
         {
           RuntimeMutability = NativeTypes.RuntimeMutability.Variable,
@@ -223,7 +223,7 @@ public unsafe class NativeLibraryInteropTests
     {
       Signature = new()
       {
-        Name = GetUTF8String("Foo", memoryHandles),
+        Name = GetUTF32String("Foo", memoryHandles),
         Parameters = GetPointer(nativeModuleParameters, memoryHandles),
         ParameterCount = (nuint)nativeModuleParameters.Length,
         ReturnParameterIndex = 4,
@@ -314,7 +314,7 @@ public unsafe class NativeLibraryInteropTests
           ConstantData = new()
           {
             PrimitiveType = NativeTypes.PrimitiveType.String,
-            Value = new() { StringValue = GetUTF8String("str", memoryHandles) },
+            Value = new() { StringValue = GetUTF32String("str", memoryHandles) },
           },
         },
       },
@@ -372,7 +372,7 @@ public unsafe class NativeLibraryInteropTests
 
     var optimizationRuleNative = new NativeTypes.OptimizationRule()
     {
-      Name = GetUTF8String("Rule", memoryHandles),
+      Name = GetUTF32String("Rule", memoryHandles),
       InputPattern = GetPointer(inputPattern, memoryHandles),
       OutputPatterns = GetPointer(new[] { GetPointer(outputPattern, memoryHandles), null }, memoryHandles),
     };
@@ -574,7 +574,7 @@ public unsafe class NativeLibraryInteropTests
       new()
       {
         Direction = (NativeTypes.ModuleParameterDirection)10,
-        Name = GetUTF8String("x", memoryHandles),
+        Name = GetUTF32String("x", memoryHandles),
         DataType = _floatDataType,
       },
       memoryHandles);
@@ -622,7 +622,7 @@ public unsafe class NativeLibraryInteropTests
       new()
       {
         Direction = NativeTypes.ModuleParameterDirection.In,
-        Name = GetUTF8String("x", memoryHandles),
+        Name = GetUTF32String("x", memoryHandles),
         DataType = new()
         {
           RuntimeMutability = (NativeTypes.RuntimeMutability)10,
@@ -652,7 +652,7 @@ public unsafe class NativeLibraryInteropTests
       new()
       {
         Direction = NativeTypes.ModuleParameterDirection.In,
-        Name = GetUTF8String("x", memoryHandles),
+        Name = GetUTF32String("x", memoryHandles),
         DataType = new()
         {
           RuntimeMutability = NativeTypes.RuntimeMutability.Variable,
@@ -712,14 +712,13 @@ public unsafe class NativeLibraryInteropTests
     {
       Signature = new()
       {
-        Name = GetUTF8String("Foo", memoryHandles),
+        Name = GetUTF32String("Foo", memoryHandles),
         Parameters = GetPointer(
-          new[]
-          {
+          [
             new NativeTypes.NativeModuleParameter()
             {
               Direction = NativeTypes.ModuleParameterDirection.In,
-              Name = GetUTF8String("x", memoryHandles),
+              Name = GetUTF32String("x", memoryHandles),
               DataType = new()
               {
                 RuntimeMutability = NativeTypes.RuntimeMutability.Constant,
@@ -728,7 +727,7 @@ public unsafe class NativeLibraryInteropTests
                 IsArray = NativeFalse,
               },
             },
-          },
+          ],
           memoryHandles),
         ParameterCount = 1,
       },
@@ -776,7 +775,7 @@ public unsafe class NativeLibraryInteropTests
       new()
       {
         Direction = NativeTypes.ModuleParameterDirection.In,
-        Name = GetUTF8String("x", memoryHandles),
+        Name = GetUTF32String("x", memoryHandles),
         DataType = new()
         {
           RuntimeMutability = NativeTypes.RuntimeMutability.Constant,
@@ -836,7 +835,7 @@ public unsafe class NativeLibraryInteropTests
       new()
       {
         Direction = NativeTypes.ModuleParameterDirection.Out,
-        Name = GetUTF8String("x", memoryHandles),
+        Name = GetUTF32String("x", memoryHandles),
         DataType = new()
         {
           RuntimeMutability = NativeTypes.RuntimeMutability.Constant,
@@ -851,7 +850,7 @@ public unsafe class NativeLibraryInteropTests
     {
       Signature = new()
       {
-        Name = GetUTF8String("Foo", memoryHandles),
+        Name = GetUTF32String("Foo", memoryHandles),
         Parameters = GetPointer(nativeModuleParameters, memoryHandles),
         ParameterCount = (nuint)nativeModuleParameters.Length,
         ReturnParameterIndex = 0,
@@ -920,7 +919,7 @@ public unsafe class NativeLibraryInteropTests
     // Note: the patterns aren't validated in NativeLibraryInterop so they don't have to be correct, they just can't contain low-level native-to-managed errors
     var optimizationRuleNative = new NativeTypes.OptimizationRule()
     {
-      Name = GetUTF8String("Rule", memoryHandles),
+      Name = GetUTF32String("Rule", memoryHandles),
       InputPattern = GetPointer(
         [
           new NativeTypes.OptimizationRuleComponent()
@@ -962,7 +961,7 @@ public unsafe class NativeLibraryInteropTests
     // Note: the patterns aren't validated in NativeLibraryInterop so they don't have to be correct, they just can't contain low-level native-to-managed errors
     var optimizationRuleNative = new NativeTypes.OptimizationRule()
     {
-      Name = GetUTF8String("Rule", memoryHandles),
+      Name = GetUTF32String("Rule", memoryHandles),
       InputPattern = GetPointer(
         [
           new NativeTypes.OptimizationRuleComponent()
@@ -1000,7 +999,7 @@ public unsafe class NativeLibraryInteropTests
     // Note: the patterns aren't validated in NativeLibraryInterop so they don't have to be correct, they just can't contain low-level native-to-managed errors
     var optimizationRuleNative = new NativeTypes.OptimizationRule()
     {
-      Name = GetUTF8String("Rule", memoryHandles),
+      Name = GetUTF32String("Rule", memoryHandles),
       InputPattern = GetPointer(
         [
           new NativeTypes.OptimizationRuleComponent() { Type = (NativeTypes.OptimizationRuleComponentType)10 },
@@ -1054,10 +1053,10 @@ public unsafe class NativeLibraryInteropTests
     return (TMemory**)handle.AddrOfPinnedObject().ToPointer();
   }
 
-  private static sbyte* GetUTF8String(string str, DisposableCollection disposableCollection)
+  private static uint* GetUTF32String(string str, DisposableCollection disposableCollection)
   {
-    var bytes = Encoding.UTF8.GetBytes(str);
-    return (sbyte*)GetPointer(bytes, disposableCollection);
+    var bytes = Encoding.UTF32.GetBytes(str);
+    return (uint*)GetPointer(bytes, disposableCollection);
   }
 
   [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
@@ -1074,7 +1073,7 @@ public unsafe class NativeLibraryInteropTests
     var nativeModules = new[] { &nativeModule };
     return new()
     {
-      Name = GetUTF8String("test", memoryHandles),
+      Name = GetUTF32String("test", memoryHandles),
       NativeModules = GetPointer(nativeModules, memoryHandles),
       NativeModuleCount = (nuint)nativeModules.Length,
     };
@@ -1087,7 +1086,7 @@ public unsafe class NativeLibraryInteropTests
     var optimizationRules = new[] { &optimizationRule };
     return new()
     {
-      Name = GetUTF8String("test", memoryHandles),
+      Name = GetUTF32String("test", memoryHandles),
       OptimizationRules = GetPointer(optimizationRules, memoryHandles),
       OptimizationRuleCount = (nuint)optimizationRules.Length,
     };
@@ -1098,8 +1097,8 @@ public unsafe class NativeLibraryInteropTests
     {
       Signature = new()
       {
-        Name = GetUTF8String("Foo", memoryHandles),
-        Parameters = GetPointer(new[] { parameter }, memoryHandles),
+        Name = GetUTF32String("Foo", memoryHandles),
+        Parameters = GetPointer([parameter], memoryHandles),
         ParameterCount = 1,
       },
       Invoke = &EmptyInvoke,
