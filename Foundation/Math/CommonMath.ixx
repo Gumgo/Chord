@@ -135,28 +135,6 @@ namespace Chord
         { return std::nearbyint(v); }
     }
 
-    inline constexpr f64 Round(f64 v)
-    {
-      if consteval
-      {
-        if (IsNaN(v) || Abs(v) >= 0x1p52)
-        {
-          // Number is above 2^52 (which means there are no fractional bits and it's already guaranteed to be an int) or it's NaN. Either way, do nothing here.
-          return v;
-        }
-
-        // Adding and then subtracting 2^52 will round the value properly using the current rounding mode (which is exactly what our non-constexpr Round does,
-        // using std::nearbyint). Think of it as pushing all of the fractional mantissa bits off of the bottom end (because adding 2^52 puts the implied "1" bit
-        // of the mantissa there, which means the 52 bits of mantissa are all non-fractional). (It does need to have its sign match the sign of our input,
-        // though.)
-        f64 signedAdder = std::bit_cast<f64>(std::bit_cast<s64>(0x1p52) | (std::bit_cast<s64>(v) & 0x8000'0000'0000'0000));
-        return (v + signedAdder) - signedAdder;
-      }
-      else
-        // Note: using nearbyint uses the current rounding mode, which is round to nearest and break ties toward evens, which matches SSE
-        { return std::nearbyint(v); }
-    }
-
     template<std::floating_point T>
     inline constexpr T Sqrt(T v)
     {

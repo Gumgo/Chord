@@ -17,6 +17,12 @@ namespace Chord
 
     enum class Uninitialized_t { Uninitialized };
     using enum Uninitialized_t;
+
+    template<typename T>
+    constexpr bool AlwaysFalse = false;
+
+    template<typename T>
+    constexpr bool AlwaysTrue = true;
   }
 
   template<typename... TTypes>

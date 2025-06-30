@@ -29,6 +29,7 @@ namespace Chord
     class Vector
     {
     public:
+      using Element = TElement;
       using FloatVector = typename SimdRelatedTypes<TElement>::FloatElement;
       using SignedVector = typename SimdRelatedTypes<TElement>::SignedElement;
       using UnsignedVector = typename SimdRelatedTypes<TElement>::UnsignedElement;
