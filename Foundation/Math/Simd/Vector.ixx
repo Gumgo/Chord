@@ -313,6 +313,11 @@ namespace Chord
       { return RunSimdOperation<TElement, ElementCount, SimdOperation::Round>(v); }
 
     template<basic_numeric TElement, usz ElementCount>
+      requires (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::Trunc>)
+    Vector<TElement, ElementCount> Trunc(const Vector<TElement, ElementCount>& v)
+      { return RunSimdOperation<TElement, ElementCount, SimdOperation::Trunc>(v); }
+
+    template<basic_numeric TElement, usz ElementCount>
       requires (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::Min>)
     Vector<TElement, ElementCount> Min(const Vector<TElement, ElementCount>& a, const Vector<TElement, ElementCount>& b)
       { return RunSimdOperation<TElement, ElementCount, SimdOperation::Min>(a, b); }

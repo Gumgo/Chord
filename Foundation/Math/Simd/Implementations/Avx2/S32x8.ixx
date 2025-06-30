@@ -359,6 +359,10 @@ namespace Chord
         { };
 
       template<>
+      struct SimdOperationImplementation<s32, 8, SimdOperation::Trunc> : public UnsupportedSimdOperationImplementation
+        { };
+
+      template<>
       struct SimdOperationImplementation<s32, 8, SimdOperation::Min> : public SupportedSimdOperationImplementation
       {
         static __m256s32 Run(const __m256s32& a, const __m256s32& b)

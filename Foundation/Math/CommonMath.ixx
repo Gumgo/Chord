@@ -136,6 +136,24 @@ namespace Chord
     }
 
     template<std::floating_point T>
+    inline constexpr T Trunc(T v)
+    {
+      if consteval
+      {
+        using SignedType = typename FloatTraits<T>::SignedType;
+        static constexpr T IntRangeBoundary = T(SignedType(1) << FloatTraits<T>::MantissaBitCount);
+
+        // Writing it this way catches NaN (as well as inf)
+        if (!(IntRangeBoundary > Abs(v))
+          { return v; }
+
+        return T(SignedType(v));
+      }
+      else
+        { return std::trunc(v); }
+    }
+
+    template<std::floating_point T>
     inline constexpr T Sqrt(T v)
     {
       if consteval

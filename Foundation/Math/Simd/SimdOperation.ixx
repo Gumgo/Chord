@@ -69,6 +69,7 @@ namespace Chord
       Floor,
       Ceil,
       Round,
+      Trunc,
       Min,
       Max,
       Reciprocal,

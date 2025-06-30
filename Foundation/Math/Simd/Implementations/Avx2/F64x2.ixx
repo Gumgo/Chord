@@ -323,7 +323,14 @@ namespace Chord
       struct SimdOperationImplementation<f64, 2, SimdOperation::Round> : public SupportedSimdOperationImplementation
       {
         static __m128d Run(const __m128d& v)
-          { return _mm_round_pd(v, _MM_FROUND_TO_NEAREST_INT); }
+          { return _mm_round_pd(v, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC); }
+      };
+
+      template<>
+      struct SimdOperationImplementation<f64, 2, SimdOperation::Trunc> : public SupportedSimdOperationImplementation
+      {
+        static __m128d Run(const __m128d& v)
+          { return _mm_round_pd(v, _MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC); }
       };
 
       template<>
