@@ -24,16 +24,50 @@
     <ClCompile Include="Containers\ResizableArrayBase.ixx" />
     <ClCompile Include="Containers\Span.ixx" />
     <ClCompile Include="Containers\UnboundedArray.ixx" />
+    <ClCompile Include="Core\Assert.cpp" />
     <ClCompile Include="Core\Assert.ixx" />
+    <ClCompile Include="Core\Coerce.ixx" />
     <ClCompile Include="Core\Concepts.ixx" />
     <ClCompile Include="Core\Core.ixx" />
+    <ClCompile Include="Core\FloatTraits.ixx" />
+    <ClCompile Include="Foundation.ixx" />
     <ClCompile Include="Core\NullTerminatedString.ixx" />
     <ClCompile Include="Core\Types.ixx" />
     <ClCompile Include="Core\Utilities.ixx" />
+    <ClCompile Include="Math\CommonMath.ixx" />
+    <ClCompile Include="Math\Simd\Implementations\Avx2.ixx" />
+    <ClCompile Include="Math\Simd\Implementations\Avx2\F32x4.ixx" />
+    <ClCompile Include="Math\Simd\Implementations\Avx2\F32x8.ixx" />
+    <ClCompile Include="Math\Simd\Implementations\Avx2\F64x2.ixx" />
+    <ClCompile Include="Math\Simd\Implementations\Avx2\F64x4.ixx" />
+    <ClCompile Include="Math\Simd\Implementations\Avx2\S32x4.ixx" />
+    <ClCompile Include="Math\Simd\Implementations\Avx2\S32x8.ixx" />
+    <ClCompile Include="Math\Simd\Implementations\Avx2\S64x2.ixx" />
+    <ClCompile Include="Math\Simd\Implementations\Avx2\S64x4.ixx" />
+    <ClCompile Include="Math\Simd\Implementations\Avx2\Types.ixx" />
+    <ClCompile Include="Math\Simd\Implementations\Avx2\U32x4.ixx" />
+    <ClCompile Include="Math\Simd\Implementations\Avx2\U32x8.ixx" />
+    <ClCompile Include="Math\Simd\Implementations\Avx2\U64x2.ixx" />
+    <ClCompile Include="Math\Simd\Implementations\Avx2\U64x4.ixx" />
+    <ClCompile Include="Math\Simd\Implementations\Avx2\Utilities.ixx" />
+    <ClCompile Include="Math\Simd\Implementations\Emulated.ixx" />
+    <ClCompile Include="Math\Simd\Simd.ixx" />
+    <ClCompile Include="Math\Simd\SimdImplementations.ixx" />
+    <ClCompile Include="Math\Simd\SimdOperation.ixx" />
+    <ClCompile Include="Math\Simd\SimdUnderlyingType.ixx" />
+    <ClCompile Include="Math\Simd\Vector.ixx" />
     <ClCompile Include="String\String.ixx" />
+    <ClCompile Include="Utilities\Alignment.ixx" />
     <ClCompile Include="Utilities\BitOperations.ixx" />
     <ClCompile Include="Utilities\Copy.ixx" />
     <ClCompile Include="Utilities\Bounds.ixx" />
+    <ClCompile Include="Utilities\DisallowAllocationScope.ixx" />
+    <ClCompile Include="Utilities\Unroll.ixx" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Core\Assert.Macros.h" />
+    <ClInclude Include="Core\Platform.Macros.h" />
+    <ClInclude Include="Macros.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
@@ -91,8 +125,14 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;DEBUG=1;RELEASE=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+      <AssemblerListingLocation>$(IntDir)%(RelativeDir)</AssemblerListingLocation>
+      <ModuleOutputFile>$(IntDir)%(RelativeDir)</ModuleOutputFile>
+      <ModuleDependenciesFile>$(IntDir)%(RelativeDir)</ModuleDependenciesFile>
+      <ForcedIncludeFiles>$(ProjectDir)Macros.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -105,8 +145,14 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;DEBUG=0;RELEASE=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+      <AssemblerListingLocation>$(IntDir)%(RelativeDir)</AssemblerListingLocation>
+      <ModuleOutputFile>$(IntDir)%(RelativeDir)</ModuleOutputFile>
+      <ModuleDependenciesFile>$(IntDir)%(RelativeDir)</ModuleDependenciesFile>
+      <ForcedIncludeFiles>$(ProjectDir)Macros.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -119,9 +165,16 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;DEBUG=1;RELEASE=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp23</LanguageStandard>
+      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+      <AssemblerListingLocation>$(IntDir)%(RelativeDir)</AssemblerListingLocation>
+      <ModuleOutputFile>$(IntDir)%(RelativeDir)</ModuleOutputFile>
+      <ModuleDependenciesFile>$(IntDir)%(RelativeDir)</ModuleDependenciesFile>
+      <ForcedIncludeFiles>$(ProjectDir)Macros.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -134,9 +187,16 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;DEBUG=0;RELEASE=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp23</LanguageStandard>
+      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+      <AssemblerListingLocation>$(IntDir)%(RelativeDir)</AssemblerListingLocation>
+      <ModuleOutputFile>$(IntDir)%(RelativeDir)</ModuleOutputFile>
+      <ModuleDependenciesFile>$(IntDir)%(RelativeDir)</ModuleDependenciesFile>
+      <ForcedIncludeFiles>$(ProjectDir)Macros.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

@@ -48,7 +48,75 @@ namespace Chord
       return result;
     }
 
-    // !!! stuff to add here:
-    // Clamp, IsInRange, Coerce, CanCoerce
+    template<std::floating_point TA, std::floating_point... TBs> requires (sizeof...(TBs) >= 1)
+    constexpr std::floating_point auto Min(TA a, TBs... bs)
+    {
+      CommonType<TA, TBs...> result = a;
+      ((result = result < bs ? result : bs), ...);
+      return result;
+    }
+
+    template<std::floating_point TA, std::floating_point... TBs> requires (sizeof...(TBs) >= 1)
+    constexpr std::floating_point auto Max(TA a, TBs... bs)
+    {
+      CommonType<TA, TBs...> result = a;
+      ((result = result > bs ? result : bs), ...);
+      return result;
+    }
+
+    template<typename TA, typename... TBs>
+      requires (sizeof...(TBs) >= 1
+        && (std::same_as<TA, TBs> && ...)
+        && !std::integral<TA>
+        && !std::floating_point<TA>
+        && requires (TA a, TA b) { { a < b } -> std::same_as<bool>; })
+    constexpr std::floating_point auto Min(TA a, TBs... bs)
+    {
+      ((a = a < bs ? a : bs), ...);
+      return a;
+    }
+
+    template<typename TA, typename... TBs>
+      requires (sizeof...(TBs) >= 1
+        && (std::same_as<TA, TBs> && ...)
+        && !std::integral<TA>
+        && !std::floating_point<TA>
+        && requires (TA a, TA b) { { a < b } -> std::same_as<bool>; })
+    constexpr std::floating_point auto Max(TA a, TBs... bs)
+    {
+      ((a = a < bs ? bs : a), ...);
+      return a;
+    }
+
+    template<typename T>
+      requires requires (T a, T b)
+      {
+        { Min(a, b) } -> std::same_as<T>;
+        { Max(a, b) } -> std::same_as<T>;
+      }
+    constexpr T Clamp(T v, std::type_identity_t<T> min, std::type_identity_t<T> max)
+      { return Min(Max(v, min), max); }
+
+    template<typename T>
+      requires requires (T a, T b)
+      {
+        { a >= b } -> std::same_as<bool>;
+        { a <= b } -> std::same_as<bool>;
+      }
+    constexpr bool IsInRangeInclusive(T v, T min, T max)
+      { return v >= min && v <= max; }
+
+    template<typename T>
+      requires requires (T a, T b)
+      {
+        { a >= b } -> std::same_as<bool>;
+        { a <= b } -> std::same_as<bool>;
+      }
+    constexpr bool IsInRangeExclusive(T v, T min, T max)
+      { return v > min && v < max; }
+
+    template<basic_integral TIndex, basic_integral TElementCount>
+    constexpr bool IsInRangeArray(TIndex index, TElementCount elementCount)
+      { return index >= 0 && index < elementCount; }
   }
 }

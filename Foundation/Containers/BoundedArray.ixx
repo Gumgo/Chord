@@ -72,17 +72,17 @@ namespace Chord
       constexpr const TElement* Elements() const
         { return reinterpret_cast<const TElement*>(m_storage); }
 
-      static usz Capacity()
+      constexpr static usz Capacity()
         { return FixedCapacity; }
 
-      bool IsFull() const
+      constexpr bool IsFull() const
         { return this->m_count == FixedCapacity; }
 
     private:
       friend class Super;
 
-      void EnsureCapacity(usz capacity)
-        { Assert(capacity <= FixedCapacity); }
+      constexpr void EnsureCapacity(usz capacity)
+        { ASSERT(capacity <= FixedCapacity); }
 
       alignas(TElement) u8 m_storage[sizeof(TElement) * FixedCapacity];
     };
@@ -140,7 +140,7 @@ namespace Chord
 
       constexpr BoundedArray& operator=(BoundedArray&& other) noexcept
       {
-        Assert(this != &other);
+        ASSERT(this != &other);
         FreeElements();
 
         m_elements = std::exchange(other.m_elements, nullptr);
@@ -154,7 +154,7 @@ namespace Chord
 
     private:
       void EnsureCapacity(usz capacity)
-        { Assert(capacity <= m_capacity); }
+        { ASSERT(capacity <= m_capacity); }
 
       void FreeElements()
       {

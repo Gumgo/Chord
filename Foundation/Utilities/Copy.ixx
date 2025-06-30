@@ -12,7 +12,7 @@ namespace Chord
       requires (std::is_copy_assignable_v<TDestination>)
     constexpr void Copy(TDestination* destination, TSource* source, usz count)
     {
-      Assert(source + count <= destination || source >= destination + count);
+      ASSERT(source + count <= destination || source >= destination + count);
       std::copy(source, source + count, destination);
     }
 
@@ -36,7 +36,7 @@ namespace Chord
       requires (std::is_move_assignable_v<TDestination>)
     constexpr void Move(TDestination* destination, TSource* source, usz count)
     {
-      Assert(source + count <= destination || source >= destination + count);
+      ASSERT(source + count <= destination || source >= destination + count);
       std::move(source, source + count, destination);
     }
 

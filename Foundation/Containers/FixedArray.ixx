@@ -9,9 +9,6 @@ namespace Chord
 {
   export
   {
-    template<typename TElement, usz Length = 0> // !!! does this need to be pre-declared?
-    class FixedArray;
-
     template<typename TElement, usz Length>
     class FixedArray : public SpanBase<TElement>
     {
@@ -30,6 +27,12 @@ namespace Chord
         : m_storage(std::move(other.m_storage))
         { }
 
+      template <typename... TArgs>
+        requires ((std::is_same_v<std::remove_cvref_t<TArgs>, TElement> && ...) && sizeof...(TArgs) == Length)
+      constexpr FixedArray(TArgs&&... args)
+        : m_storage({ std::forward<TArgs>(args)... })
+        { }
+
       constexpr ~FixedArray() noexcept = default;
 
       constexpr FixedArray& operator=(const FixedArray& other) requires (std::is_copy_assignable_v<TElement>)
@@ -44,7 +47,7 @@ namespace Chord
         return *this;
       }
 
-      constexpr auto* Elements(this auto&& self) // !!! does this work or do we need two explicit getters, one const and one not?
+      constexpr auto* Elements(this auto&& self)
         { return self.m_storage.data(); }
 
       static constexpr usz Count()
@@ -128,7 +131,7 @@ namespace Chord
 
       constexpr FixedArray& operator=(FixedArray&& other) noexcept
       {
-        Assert(this != &other);
+        ASSERT(this != &other);
         FreeElements();
 
         m_elements = std::exchange(other.m_elements, nullptr);
@@ -136,7 +139,7 @@ namespace Chord
         return *this;
       }
 
-      constexpr auto* Elements(this auto&& self) // !!! does this work or do we need two explicit getters, one const and one not?
+      constexpr auto* Elements(this auto&& self)
         { return m_elements; }
 
       static constexpr usz Count()

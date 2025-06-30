@@ -5,6 +5,7 @@ import std;
 import :Containers.ResizableArrayBase;
 import :Core;
 import :Utilities.BitOperations;
+import :Utilities.Bounds;
 
 namespace Chord
 {
@@ -63,7 +64,7 @@ namespace Chord
 
       constexpr UnboundedArray& operator=(UnboundedArray&& other) noexcept
       {
-        Assert(this != &other);
+        ASSERT(this != &other);
         FreeElements();
 
         m_elements = std::exchange(other.m_elements, nullptr);
@@ -75,12 +76,12 @@ namespace Chord
       constexpr auto* Elements(this auto&& self)
         { return m_elements; }
 
-      void EnsureCapacity(usz capacity)
+      constexpr void EnsureCapacity(usz capacity)
       {
         if (capacity <= m_capacity)
           { return; }
 
-        usz newCapacity = NextPowerOf2(std::max(m_capacity, 1)); // !!! add our own Min/Max
+        usz newCapacity = NextPowerOfTwo(Max(m_capacity, 1));
         TElement* newElements = std::allocator<TElement>().allocate(newCapacity);
         for (usz i = 0; i < this->m_count; i++)
         {
@@ -96,7 +97,7 @@ namespace Chord
       }
 
     private:
-      void FreeElements()
+      constexpr void FreeElements()
       {
         for (usz i = 0; i < this->m_count; i++)
           { std::destroy_at(&m_elements[this->m_count - i - 1]); }

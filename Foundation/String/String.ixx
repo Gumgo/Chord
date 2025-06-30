@@ -303,7 +303,7 @@ namespace Chord
     template<fixed_char TChar>
     constexpr void String<TChar>::Set(const TChar* pointer)
     {
-      Assert(pointer != nullptr);
+      ASSERT(pointer != nullptr);
       Set(pointer, NullTerminatedStringLength(pointer));
     }
 
@@ -311,14 +311,14 @@ namespace Chord
     template<fixed_char TOtherChar> requires (!std::is_same_v<TChar, TOtherChar>)
     constexpr void String<TChar>::Set(const TOtherChar* pointer, TChar replacementCharacter)
     {
-      Assert(pointer != nullptr);
+      ASSERT(pointer != nullptr);
       Set(pointer, NullTerminatedStringLength(pointer), replacementCharacter);
     }
 
     template<fixed_char TChar>
     constexpr void String<TChar>::Set(const TChar* pointer, usz length)
     {
-      Assert(pointer != nullptr);
+      ASSERT(pointer != nullptr);
 
       if (length == 0)
       {
@@ -333,7 +333,7 @@ namespace Chord
         { SetStringData(stringData); }
       else
       {
-        Assert(modifyMode == ModifyMode::InPlace);
+        ASSERT(modifyMode == ModifyMode::InPlace);
         stringData->m_length = length;
       }
     }
@@ -342,7 +342,7 @@ namespace Chord
     template<fixed_char TOtherChar> requires (!std::is_same_v<TChar, TOtherChar>)
     constexpr void String<TChar>::Set(const TOtherChar* pointer, usz length, TChar replacementCharacter)
     {
-      Assert(pointer != nullptr);
+      ASSERT(pointer != nullptr);
 
       if (length == 0)
       {
@@ -359,7 +359,7 @@ namespace Chord
         { SetStringData(stringData); }
       else
       {
-        Assert(modifyMode == ModifyMode::InPlace);
+        ASSERT(modifyMode == ModifyMode::InPlace);
         stringData->m_length = length;
       }
     }
@@ -383,7 +383,7 @@ namespace Chord
     template<fixed_char TChar>
     template<fixed_char TOtherChar> constexpr bool String<TChar>::operator==(const TOtherChar* other) const
     {
-      Assert(other != nullptr);
+      ASSERT(other != nullptr);
       auto thisSpan = AsSpan();
       const TOtherChar* otherChar = other;
       for (TChar a : thisSpan)
@@ -544,7 +544,7 @@ namespace Chord
     constexpr std::tuple<ModifyMode, StringData<TChar>*> String<TChar>::PrepareForModification(usz newLength)
     {
       // If the new length would be 0, we should just clear the string
-      Assert(newLength > 0);
+      ASSERT(newLength > 0);
 
       StringData<TChar>* stringData = TryGetStringData();
 
@@ -627,7 +627,7 @@ namespace Chord
       }
       else
       {
-        Assert(modifyMode == ModifyMode::InPlace);
+        ASSERT(modifyMode == ModifyMode::InPlace);
 
         // Make a space for insertion
         CopyOverlapping(&stringData->m_pointer[evaluatedIndex + otherSpan.Count()], &stringData->m_pointer[evaluatedIndex], afterInsertCount);
@@ -716,7 +716,7 @@ namespace Chord
       }
       else
       {
-        Assert(modifyMode == ModifyMode::InPlace);
+        ASSERT(modifyMode == ModifyMode::InPlace);
         CopyOverlapping(&stringData->m_pointer[evaluatedStart], &stringData->m_pointer[evaluatedStart + evaluatedCount], afterRemoveCount);
         stringData->m_length = newLength;
       }

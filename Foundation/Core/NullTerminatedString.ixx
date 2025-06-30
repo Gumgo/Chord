@@ -13,7 +13,7 @@ namespace Chord
     template<fixed_char TChar>
     usz NullTerminatedStringLength(const TChar* str)
     {
-      Assert(str != nullptr);
+      ASSERT(str != nullptr);
       usz length = 0;
       while (str[length] != 0)
         { length++; }

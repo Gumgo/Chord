@@ -14,6 +14,9 @@ namespace Chord
 
     enum class Zero_t { Zero };
     using enum Zero_t;
+
+    enum class Uninitialized_t { Uninitialized };
+    using enum Uninitialized_t;
   }
 
   template<typename... TTypes>

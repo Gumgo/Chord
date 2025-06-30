@@ -3,6 +3,7 @@ export module Chord.Foundation:Containers.Span;
 import std;
 
 import :Core;
+import :Utilities.Bounds;
 import :Utilities.Copy;
 
 namespace Chord
@@ -10,7 +11,6 @@ namespace Chord
   export template<typename TElement>
   class Span;
 
-  // !!! should these be uppercase?
   template<typename TDestination, typename TSource>
   inline constexpr bool IsCompatibleSpanElementType = false;
 
@@ -98,16 +98,16 @@ namespace Chord
       constexpr usz EvaluateIndex(this const auto& self, basic_integral auto index)
       {
         if constexpr (std::is_signed_v<decltype(index)>)
-          { Assert(index >= 0); }
-        Assert(Coerce<usz>(index) < self.Count());
+          { ASSERT(index >= 0); }
+        ASSERT(Coerce<usz>(index) < self.Count());
         return Coerce<usz>(index);
       }
 
       constexpr usz EvaluateSubspanStart(this auto const& self, basic_integral auto index)
       {
         if constexpr (std::is_signed_v<decltype(index)>)
-          { Assert(index >= 0); }
-        Assert(Coerce<usz>(index) <= self.Count());
+          { ASSERT(index >= 0); }
+        ASSERT(Coerce<usz>(index) <= self.Count());
         return Coerce<usz>(index);
       }
 
@@ -118,7 +118,7 @@ namespace Chord
         else
         {
           usz result = Coerce<usz>(count);
-          Assert(start + result <= self.Count());
+          ASSERT(start + result <= self.Count());
           return result;
         }
       }
@@ -240,7 +240,7 @@ namespace Chord
     constexpr void SpanBase<TElement>::CopyElementsFrom(this has_writable_elements auto&& self, Span<const TElement> other)
       requires (std::is_copy_assignable_v<TElement>)
     {
-      Assert(self.Count() == other.Count());
+      ASSERT(self.Count() == other.Count());
       Copy(self.Elements(), other.Elements(), other.Count());
     }
 
@@ -248,7 +248,7 @@ namespace Chord
     constexpr void SpanBase<TElement>::MoveElementsFrom(this has_writable_elements auto&& self, Span<const TElement> other)
       requires (std::is_copy_assignable_v<TElement>)
     {
-      Assert(self.Count() == other.Count());
+      ASSERT(self.Count() == other.Count());
       Move(self.Elements(), other.Elements(), other.Count());
     }
 
@@ -256,7 +256,7 @@ namespace Chord
     constexpr void SpanBase<TElement>::CopyOverlappingElementsFrom(this has_writable_elements auto&& self, Span<const TElement> other)
       requires (std::is_copy_assignable_v<TElement>)
     {
-      Assert(self.Count() == other.Count());
+      ASSERT(self.Count() == other.Count());
       CopyOverlapping(self.Elements(), other.Elements(), other.Count());
     }
 
@@ -264,7 +264,7 @@ namespace Chord
     constexpr void SpanBase<TElement>::MoveOverlappingElementsFrom(this has_writable_elements auto&& self, Span<const TElement> other)
       requires (std::is_copy_assignable_v<TElement>)
     {
-      Assert(self.Count() == other.Count());
+      ASSERT(self.Count() == other.Count());
       MoveOverlapping(self.Elements(), other.Elements(), other.Count());
     }
   }
