@@ -248,5 +248,14 @@ namespace Chord
       else
         { return std::fma(a, b, c); }
     }
+
+    inline constexpr f64 FMSub(f64 a, f64 b, f64 c)
+      { return FMAdd(a, b, -c); }
+
+    inline constexpr f64 FNMAdd(f64 a, f64 b, f64 c)
+      { return FMAdd(-a, b, c); }
+
+    inline constexpr f64 FNMSub(f64 a, f64 b, f64 c)
+      { return FMAdd(-a, b, -c); }
   }
 }

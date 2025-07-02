@@ -281,7 +281,7 @@ namespace Chord
         {
           return _mm_castps_si128(
             _mm_shuffle_ps(
-              _mm_castsi128_ps(MmCvtEpi64Epi32(a)), // !!! add this
+              _mm_castsi128_ps(MmCvtEpi64Epi32(a)),
               _mm_castsi128_ps(MmCvtEpi64Epi32(b)),
               _MM_SHUFFLE(1, 0, 1, 0)));
         }

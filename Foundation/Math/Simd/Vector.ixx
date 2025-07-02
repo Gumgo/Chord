@@ -465,12 +465,12 @@ namespace Chord
 
     template<basic_numeric TElement, usz ElementCount>
       requires (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::GetMask>)
-    constexpr s32 TestMaskAllZeros(const Vector<TElement, ElementCount>& v)
+    constexpr bool TestMaskAllZeros(const Vector<TElement, ElementCount>& v)
       { return GetMask(v) == 0; }
 
     template<basic_numeric TElement, usz ElementCount>
       requires (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::GetMask>)
-    constexpr s32 TestMaskAllOnes(const Vector<TElement, ElementCount>& v)
+    constexpr bool TestMaskAllOnes(const Vector<TElement, ElementCount>& v)
       { return GetMask(v) == ((1 << ElementCount) - 1); }
 
     // Additional functions which don't rely on IsSimdOperationSupported directly:
