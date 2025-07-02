@@ -259,6 +259,17 @@ namespace Chord
         { };
 
       template<>
+      struct SimdOperationImplementation<f32, 4, SimdOperation::WidenAndSplit> : public SupportedSimdOperationImplementation
+      {
+        static std::tuple<__m128d, __m128d> Run(const __m128& v)
+          { return { _mm_cvtps_pd(v), _mm_cvtps_pd(_mm_permute_ps(v, _MM_SHUFFLE(1, 0, 3, 2))) }; }
+      };
+
+      template<>
+      struct SimdOperationImplementation<f32, 4, SimdOperation::NarrowAndCombine> : public UnsupportedSimdOperationImplementation
+        { };
+
+      template<>
       struct SimdOperationImplementation<f32, 4, SimdOperation::Shuffle2> : public UnsupportedSimdOperationImplementation
         { };
 
@@ -391,6 +402,10 @@ namespace Chord
       };
 
       template<>
+      struct SimdOperationImplementation<f32, 4, SimdOperation::CountLeadingZeros> : public UnsupportedSimdOperationImplementation
+        { };
+
+      template<>
       struct SimdOperationImplementation<f32, 4, SimdOperation::SumElements> : public SupportedSimdOperationImplementation
       {
         static __m128 Run(const __m128& v)
@@ -486,6 +501,13 @@ namespace Chord
       {
         static __m128 Run(const __m128s32& condition, const __m128& trueValue, const __m128& falseValue)
           { return _mm_blendv_ps(_mm_castsi128_ps(condition), trueValue, falseValue); }
+      };
+
+      template<>
+      struct SimdOperationImplementation<f32, 4, SimdOperation::GetMask> : public SupportedSimdOperationImplementation
+      {
+        static s32 Run(const __m128& v)
+          { return _mm_movemask_ps(v); }
       };
     #endif
   }

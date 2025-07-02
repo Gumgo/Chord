@@ -165,28 +165,28 @@ namespace Chord
       template<>
       struct SimdOperationImplementation<u32, 4, SimdOperation::ShiftLeftScalar> : public SupportedSimdOperationImplementation
       {
-        static __m128u32 Run(const __m128u32& a, u32 b)
+        static __m128u32 Run(const __m128u32& a, s32 b)
           { return _mm_slli_epi32(a, b); }
       };
 
       template<>
       struct SimdOperationImplementation<u32, 4, SimdOperation::ShiftLeftVector> : public SupportedSimdOperationImplementation
       {
-        static __m128u32 Run(const __m128u32& a, const __m128u32& b)
+        static __m128u32 Run(const __m128u32& a, const __m128s32& b)
           { return _mm_sllv_epi32(a, b); }
       };
 
       template<>
       struct SimdOperationImplementation<u32, 4, SimdOperation::ShiftRightScalar> : public SupportedSimdOperationImplementation
       {
-        static __m128u32 Run(const __m128u32& a, u32 b)
+        static __m128u32 Run(const __m128u32& a, s32 b)
           { return _mm_srli_epi32(a, b); }
       };
 
       template<>
       struct SimdOperationImplementation<u32, 4, SimdOperation::ShiftRightVector> : public SupportedSimdOperationImplementation
       {
-        static __m128u32 Run(const __m128u32& a, const __m128u32& b)
+        static __m128u32 Run(const __m128u32& a, const __m128s32& b)
           { return _mm_srlv_epi32(a, b); }
       };
 
@@ -277,6 +277,17 @@ namespace Chord
 
       template<>
       struct SimdOperationImplementation<u32, 4, SimdOperation::UpperHalf> : public UnsupportedSimdOperationImplementation
+        { };
+
+      template<>
+      struct SimdOperationImplementation<u32, 4, SimdOperation::WidenAndSplit> : public SupportedSimdOperationImplementation
+      {
+        static std::tuple<__m128u64, __m128u64> Run(const __m128u32& v)
+          { return { _mm_cvtepu32_epi64(v), _mm_cvtepu32_epi64(_mm_shuffle_epi32(v, _MM_SHUFFLE(1, 0, 3, 2))) }; }
+      };
+
+      template<>
+      struct SimdOperationImplementation<u32, 4, SimdOperation::NarrowAndCombine> : public UnsupportedSimdOperationImplementation
         { };
 
       template<>
@@ -388,6 +399,13 @@ namespace Chord
       };
 
       template<>
+      struct SimdOperationImplementation<u32, 4, SimdOperation::CountLeadingZeros> : public SupportedSimdOperationImplementation
+      {
+        static __m128u32 Run(const __m128u32& v)
+          { return MmLzcntEpi32(v); }
+      };
+
+      template<>
       struct SimdOperationImplementation<u32, 4, SimdOperation::SumElements> : public SupportedSimdOperationImplementation
       {
         static __m128u32 Run(const __m128u32& v)
@@ -445,6 +463,13 @@ namespace Chord
       {
         static __m128u32 Run(const __m128u32& condition, const __m128u32& trueValue, const __m128u32& falseValue)
           { return _mm_castps_si128(_mm_blendv_ps(_mm_castsi128_ps(condition), _mm_castsi128_ps(trueValue), _mm_castsi128_ps(falseValue))); }
+      };
+
+      template<>
+      struct SimdOperationImplementation<u32, 4, SimdOperation::GetMask> : public SupportedSimdOperationImplementation
+      {
+        static s32 Run(const __m128u32& v)
+          { return _mm_movemask_ps(_mm_castsi128_ps(v)); }
       };
     #endif
   }

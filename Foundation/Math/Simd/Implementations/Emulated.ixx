@@ -4,25 +4,11 @@ import :Containers.FixedArray;
 import :Core;
 import :Math.CommonMath;
 import :Math.Simd.SimdOperation;
+import :Math.Simd.SimdUnderlyingType;
 import :Utilities.Unroll;
 
 namespace Chord
 {
-  template<basic_numeric T>
-  struct SignedTypeData
-    { using Type = std::make_signed_t<T>; };
-
-  template<>
-  struct SignedTypeData<f32>
-    { using Type = s32; };
-
-  template<>
-  struct SignedTypeData<f64>
-    { using Type = s64; };
-
-  template<basic_numeric T>
-  using SignedType = typename SignedTypeData<T>::Type;
-
   export
   {
     template<basic_numeric TElement, usz ElementCount, SimdOperation Operation>
@@ -185,7 +171,7 @@ namespace Chord
       static constexpr FixedArray<TElement, ElementCount> Run(const FixedArray<TElement, ElementCount>& v)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = std::bit_cast<TElement>(~std::bit_cast<SignedType<TElement>>(v[i])); });
+        Unroll<0, ElementCount>([&](usz i) { result[i] = std::bit_cast<TElement>(~std::bit_cast<SimdRelatedSignedElement<TElement>>(v[i])); });
         return result;
       }
     };
@@ -197,7 +183,11 @@ namespace Chord
       {
         FixedArray<TElement, ElementCount> result;
         Unroll<0, ElementCount>(
-          [&](usz i) { result[i] = std::bit_cast<TElement>(std::bit_cast<SignedType<TElement>>(a[i]) & std::bit_cast<SignedType<TElement>>(b[i])); });
+          [&](usz i)
+          {
+            result[i] =
+              std::bit_cast<TElement>(std::bit_cast<SimdRelatedSignedElement<TElement>>(a[i]) & std::bit_cast<SimdRelatedSignedElement<TElement>>(b[i]));
+          });
         return result;
       }
     };
@@ -209,7 +199,11 @@ namespace Chord
       {
         FixedArray<TElement, ElementCount> result;
         Unroll<0, ElementCount>(
-          [&](usz i) { result[i] = std::bit_cast<TElement>(std::bit_cast<SignedType<TElement>>(a[i]) | std::bit_cast<SignedType<TElement>>(b[i])); });
+          [&](usz i)
+          {
+            result[i] =
+              std::bit_cast<TElement>(std::bit_cast<SimdRelatedSignedElement<TElement>>(a[i]) | std::bit_cast<SimdRelatedSignedElement<TElement>>(b[i]));
+          });
         return result;
       }
     };
@@ -221,7 +215,11 @@ namespace Chord
       {
         FixedArray<TElement, ElementCount> result;
         Unroll<0, ElementCount>(
-          [&](usz i) { result[i] = std::bit_cast<TElement>(std::bit_cast<SignedType<TElement>>(a[i]) ^ std::bit_cast<SignedType<TElement>>(b[i])); });
+          [&](usz i)
+          {
+            result[i] =
+              std::bit_cast<TElement>(std::bit_cast<SimdRelatedSignedElement<TElement>>(a[i]) ^ std::bit_cast<SimdRelatedSignedElement<TElement>>(b[i]));
+          });
         return result;
       }
     };
@@ -277,10 +275,12 @@ namespace Chord
     template<basic_numeric TElement, usz ElementCount>
     struct EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::Equal>
     {
-      static constexpr FixedArray<SignedType<TElement>, ElementCount> Run(const FixedArray<TElement, ElementCount>& a, const FixedArray<s32, ElementCount>& b)
+      static constexpr FixedArray<SimdRelatedSignedElement<TElement>, ElementCount> Run(
+        const FixedArray<TElement, ElementCount>& a,
+        const FixedArray<TElement, ElementCount>& b)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = -SignedType<TElement>(a[i] == b[i]); });
+        Unroll<0, ElementCount>([&](usz i) { result[i] = -SimdRelatedSignedElement<TElement>(a[i] == b[i]); });
         return result;
       }
     };
@@ -288,10 +288,12 @@ namespace Chord
     template<basic_numeric TElement, usz ElementCount>
     struct EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::NotEqual>
     {
-      static constexpr FixedArray<SignedType<TElement>, ElementCount> Run(const FixedArray<TElement, ElementCount>& a, const FixedArray<s32, ElementCount>& b)
+      static constexpr FixedArray<SimdRelatedSignedElement<TElement>, ElementCount> Run(
+        const FixedArray<TElement, ElementCount>& a,
+        const FixedArray<TElement, ElementCount>& b)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = -SignedType<TElement>(a[i] != b[i]); });
+        Unroll<0, ElementCount>([&](usz i) { result[i] = -SimdRelatedSignedElement<TElement>(a[i] != b[i]); });
         return result;
       }
     };
@@ -299,10 +301,12 @@ namespace Chord
     template<basic_numeric TElement, usz ElementCount>
     struct EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::Greater>
     {
-      static constexpr FixedArray<SignedType<TElement>, ElementCount> Run(const FixedArray<TElement, ElementCount>& a, const FixedArray<s32, ElementCount>& b)
+      static constexpr FixedArray<SimdRelatedSignedElement<TElement>, ElementCount> Run(
+        const FixedArray<TElement, ElementCount>& a,
+        const FixedArray<TElement, ElementCount>& b)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = -SignedType<TElement>(a[i] > b[i]); });
+        Unroll<0, ElementCount>([&](usz i) { result[i] = -SimdRelatedSignedElement<TElement>(a[i] > b[i]); });
         return result;
       }
     };
@@ -310,10 +314,12 @@ namespace Chord
     template<basic_numeric TElement, usz ElementCount>
     struct EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::Less>
     {
-      static constexpr FixedArray<SignedType<TElement>, ElementCount> Run(const FixedArray<TElement, ElementCount>& a, const FixedArray<s32, ElementCount>& b)
+      static constexpr FixedArray<SimdRelatedSignedElement<TElement>, ElementCount> Run(
+        const FixedArray<TElement, ElementCount>& a,
+        const FixedArray<TElement, ElementCount>& b)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = -SignedType<TElement>(a[i] < b[i]); });
+        Unroll<0, ElementCount>([&](usz i) { result[i] = -SimdRelatedSignedElement<TElement>(a[i] < b[i]); });
         return result;
       }
     };
@@ -321,10 +327,12 @@ namespace Chord
     template<basic_numeric TElement, usz ElementCount>
     struct EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::GreaterEqual>
     {
-      static constexpr FixedArray<SignedType<TElement>, ElementCount> Run(const FixedArray<TElement, ElementCount>& a, const FixedArray<s32, ElementCount>& b)
+      static constexpr FixedArray<SimdRelatedSignedElement<TElement>, ElementCount> Run(
+        const FixedArray<TElement, ElementCount>& a,
+        const FixedArray<TElement, ElementCount>& b)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = -SignedType<TElement>(a[i] >= b[i]); });
+        Unroll<0, ElementCount>([&](usz i) { result[i] = -SimdRelatedSignedElement<TElement>(a[i] >= b[i]); });
         return result;
       }
     };
@@ -332,10 +340,12 @@ namespace Chord
     template<basic_numeric TElement, usz ElementCount>
     struct EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::LessEqual>
     {
-      static constexpr FixedArray<SignedType<TElement>, ElementCount> Run(const FixedArray<TElement, ElementCount>& a, const FixedArray<s32, ElementCount>& b)
+      static constexpr FixedArray<SimdRelatedSignedElement<TElement>, ElementCount> Run(
+        const FixedArray<TElement, ElementCount>& a,
+        const FixedArray<TElement, ElementCount>& b)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = -SignedType<TElement>(a[i] <= b[i]); });
+        Unroll<0, ElementCount>([&](usz i) { result[i] = -SimdRelatedSignedElement<TElement>(a[i] <= b[i]); });
         return result;
       }
     };
@@ -431,6 +441,35 @@ namespace Chord
     };
 
     template<basic_numeric TElement, usz ElementCount>
+    struct EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::WidenAndSplit>
+    {
+      static constexpr std::tuple<FixedArray<Widen<TElement>, ElementCount / 2>, FixedArray<Widen<TElement>, ElementCount / 2>> Run(
+        const FixedArray<TElement, ElementCount>& v)
+        requires (ElementCount > 1 && IsWidenable<TElement>)
+      {
+        FixedArray<Widen<TElement>, ElementCount / 2> resultLower;
+        FixedArray<Widen<TElement>, ElementCount / 2> resultUpper;
+        Unroll<0, ElementCount / 2>([&](usz i) { resultLower[i] = Widen<TElement>(v[i]); });
+        Unroll<0, ElementCount / 2>([&](usz i) { resultUpper[i] = Widen<TElement>(v[ElementCount / 2 + i]); });
+        return { resultLower, resultUpper };
+      }
+    };
+
+    template<basic_numeric TElement, usz ElementCount>
+    struct EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::NarrowAndCombine>
+    {
+      static constexpr FixedArray<Narrow<TElement>, ElementCount * 2> Run(
+        const FixedArray<TElement, ElementCount>& a, const FixedArray<TElement, ElementCount>& b)
+        requires (IsNarrowable<TElement>)
+      {
+        FixedArray<Narrow<TElement>, ElementCount * 2> result;
+        Unroll<0, ElementCount>([&](usz i) { result[i] = Narrow<TElement>(a[i]); });
+        Unroll<0, ElementCount>([&](usz i) { result[ElementCount + i] = Narrow<TElement>(b[i]); });
+        return result;
+      }
+    };
+
+    template<basic_numeric TElement, usz ElementCount>
     struct EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::Shuffle2>
     {
       template<u32 PackedIndices>
@@ -490,7 +529,10 @@ namespace Chord
             if consteval
             {
               if constexpr (std::floating_point<TElement>)
-                { result[i] = std::bit_cast<TElement>(std::bit_cast<SignedType<TElement>>(v[i]) & ~std::bit_cast<SignedType<TElement>>(TElement(-0.0))); }
+              {
+                result[i] = std::bit_cast<TElement>(
+                  std::bit_cast<SimdRelatedSignedElement<TElement>>(v[i]) & ~std::bit_cast<SimdRelatedSignedElement<TElement>>(TElement(-0.0)));
+              }
               else
                 { result[i] = v[i] < 0 ? -v[i] : v[i]; }
             }
@@ -602,7 +644,23 @@ namespace Chord
       {
         FixedArray<TElement, ElementCount> result;
         Unroll<0, ElementCount>(
-          [&](usz i) { result[i] = std::bit_cast<TElement>(~std::bit_cast<SignedType<TElement>>(a[i]) & std::bit_cast<SignedType<TElement>>(b[i])); });
+          [&](usz i)
+          {
+            result[i] =
+              std::bit_cast<TElement>(~std::bit_cast<SimdRelatedSignedElement<TElement>>(a[i]) & std::bit_cast<SimdRelatedSignedElement<TElement>>(b[i]));
+          });
+        return result;
+      }
+    };
+
+    template<basic_numeric TElement, usz ElementCount>
+      requires (basic_integral<TElement>)
+    struct EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::CountLeadingZeros>
+    {
+      static constexpr FixedArray<SimdRelatedSignedElement<TElement>, ElementCount> Run(const FixedArray<TElement, ElementCount>& v)
+      {
+        FixedArray<TElement, ElementCount> result;
+        Unroll<0, ElementCount>([&](usz i) { result[i] = CountLeadingZeros(SimdRelatedUnsignedElement<TElement>(v[i])); });
         return result;
       }
     };
@@ -768,7 +826,7 @@ namespace Chord
     struct EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::Select>
     {
       static constexpr FixedArray<TElement, ElementCount> Run(
-        const FixedArray<SignedType<TElement>, ElementCount>& condition,
+        const FixedArray<SimdRelatedSignedElement<TElement>, ElementCount>& condition,
         const FixedArray<TElement, ElementCount>& trueValue,
         const FixedArray<TElement, ElementCount>& falseValue)
       {

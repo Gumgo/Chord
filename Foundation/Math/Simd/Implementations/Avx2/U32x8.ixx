@@ -168,28 +168,28 @@ namespace Chord
       template<>
       struct SimdOperationImplementation<u32, 8, SimdOperation::ShiftLeftScalar> : public SupportedSimdOperationImplementation
       {
-        static __m256u32 Run(const __m256u32& a, u32 b)
+        static __m256u32 Run(const __m256u32& a, s32 b)
           { return _mm256_slli_epi32(a, b); }
       };
 
       template<>
       struct SimdOperationImplementation<u32, 8, SimdOperation::ShiftLeftVector> : public SupportedSimdOperationImplementation
       {
-        static __m256u32 Run(const __m256u32& a, const __m256u32& b)
+        static __m256u32 Run(const __m256u32& a, const __m256s32& b)
           { return _mm256_sllv_epi32(a, b); }
       };
 
       template<>
       struct SimdOperationImplementation<u32, 8, SimdOperation::ShiftRightScalar> : public SupportedSimdOperationImplementation
       {
-        static __m256u32 Run(const __m256u32& a, u32 b)
+        static __m256u32 Run(const __m256u32& a, s32 b)
           { return _mm256_srli_epi32(a, b); }
       };
 
       template<>
       struct SimdOperationImplementation<u32, 8, SimdOperation::ShiftRightVector> : public SupportedSimdOperationImplementation
       {
-        static __m256u32 Run(const __m256u32& a, const __m256u32& b)
+        static __m256u32 Run(const __m256u32& a, const __m256s32& b)
           { return _mm256_srlv_epi32(a, b); }
       };
 
@@ -278,6 +278,17 @@ namespace Chord
         static __m128u32 Run(const __m256u32& v)
           { return _mm256_extracti128_si256(v, 1); }
       };
+
+      template<>
+      struct SimdOperationImplementation<u32, 8, SimdOperation::WidenAndSplit> : public SupportedSimdOperationImplementation
+      {
+        static std::tuple<__m256u64, __m256u64> Run(const __m256u32& v)
+          { return { _mm256_cvtepu32_epi64(_mm256_castsi256_si128(v)), _mm256_cvtepu32_epi64(_mm256_extracti128_si256(v, 1)) }; }
+      };
+
+      template<>
+      struct SimdOperationImplementation<u32, 8, SimdOperation::NarrowAndCombine> : public UnsupportedSimdOperationImplementation
+        { };
 
       template<>
       struct SimdOperationImplementation<u32, 8, SimdOperation::Shuffle2> : public UnsupportedSimdOperationImplementation
@@ -393,6 +404,13 @@ namespace Chord
       };
 
       template<>
+      struct SimdOperationImplementation<u32, 8, SimdOperation::CountLeadingZeros> : public SupportedSimdOperationImplementation
+      {
+        static __m256u32 Run(const __m256u32& v)
+          { return Mm256LzcntEpi32(v); }
+      };
+
+      template<>
       struct SimdOperationImplementation<u32, 8, SimdOperation::SumElements> : public SupportedSimdOperationImplementation
       {
         static __m256u32 Run(const __m256u32& v)
@@ -453,6 +471,13 @@ namespace Chord
       {
         static __m256u32 Run(const __m256u32& condition, const __m256u32& trueValue, const __m256u32& falseValue)
           { return _mm256_castps_si256(_mm256_blendv_ps(_mm256_castsi256_ps(condition), _mm256_castsi256_ps(trueValue), _mm256_castsi256_ps(falseValue))); }
+      };
+
+      template<>
+      struct SimdOperationImplementation<u32, 8, SimdOperation::GetMask> : public SupportedSimdOperationImplementation
+      {
+        static s32 Run(const __m256u32& v)
+          { return _mm256_movemask_ps(_mm256_castsi256_ps(v)); }
       };
     #endif
   }

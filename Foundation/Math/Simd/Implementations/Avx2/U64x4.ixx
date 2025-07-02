@@ -175,7 +175,7 @@ namespace Chord
       template<>
       struct SimdOperationImplementation<u64, 4, SimdOperation::ShiftLeftVector> : public SupportedSimdOperationImplementation
       {
-        static __m256u64 Run(const __m256u64& a, const __m256u64& b)
+        static __m256u64 Run(const __m256u64& a, const __m256s64& b)
           { return _mm256_sllv_epi64(a, b); }
       };
 
@@ -189,7 +189,7 @@ namespace Chord
       template<>
       struct SimdOperationImplementation<u64, 4, SimdOperation::ShiftRightVector> : public SupportedSimdOperationImplementation
       {
-        static __m256u64 Run(const __m256u64& a, const __m256u64& b)
+        static __m256u64 Run(const __m256u64& a, const __m256s64& b)
           { return _mm256_srlv_epi64(a, b); }
       };
 
@@ -292,6 +292,17 @@ namespace Chord
       {
         static __m128u64 Run(const __m256u64& v)
           { return _mm256_extracti128_si256(v, 1); }
+      };
+
+      template<>
+      struct SimdOperationImplementation<u64, 4, SimdOperation::WidenAndSplit> : public UnsupportedSimdOperationImplementation
+        { };
+
+      template<>
+      struct SimdOperationImplementation<u64, 4, SimdOperation::NarrowAndCombine> : public SupportedSimdOperationImplementation
+      {
+        static __m256u32 Run(const __m256u64& a, const __m256u64& b)
+          { return _mm256_inserti128_si256(_mm256_castsi128_si256(Mm256CvtEpi64Epi32(a)), Mm256CvtEpi64Epi32(b), 1); }
       };
 
       template<>
@@ -405,6 +416,13 @@ namespace Chord
       };
 
       template<>
+      struct SimdOperationImplementation<u64, 2, SimdOperation::CountLeadingZeros> : public SupportedSimdOperationImplementation
+      {
+        static __m256u64 Run(const __m256u64& v)
+          { return Mm256LzcntEpi64(v); }
+      };
+
+      template<>
       struct SimdOperationImplementation<u64, 4, SimdOperation::SumElements> : public SupportedSimdOperationImplementation
       {
         static __m256u64 Run(const __m256u64& v)
@@ -461,6 +479,13 @@ namespace Chord
       {
         static __m256u64 Run(const __m256u64& condition, const __m256u64& trueValue, const __m256u64& falseValue)
           { return _mm256_castpd_si256(_mm256_blendv_pd(_mm256_castsi256_pd(condition), _mm256_castsi256_pd(trueValue), _mm256_castsi256_pd(falseValue))); }
+      };
+
+      template<>
+      struct SimdOperationImplementation<u64, 4, SimdOperation::GetMask> : public SupportedSimdOperationImplementation
+      {
+        static s32 Run(const __m256u64& v)
+          { return _mm256_movemask_pd(_mm256_castsi256_pd(v)); }
       };
     #endif
   }

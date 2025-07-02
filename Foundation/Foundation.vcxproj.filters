@@ -147,6 +147,15 @@
     <ClCompile Include="Core\FloatTraits.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Math\Transcendentals.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Math\Fmod.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Math\MaskedResult.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Assert.Macros.h">

@@ -31,11 +31,11 @@ namespace Chord
     };
 
     template<>
-    struct FloatTraits<f32> : FloatTraitsData<s32, u32, 23, 8, 127>
+    struct FloatTraits<f32> : public FloatTraitsData<s32, u32, 23, 8, 127>
       { };
 
     template<>
-    struct FloatTraits<f64> : FloatTraitsData<s64, u64, 52, 11, 1023>
+    struct FloatTraits<f64> : public FloatTraitsData<s64, u64, 52, 11, 1023>
       { };
   }
 }

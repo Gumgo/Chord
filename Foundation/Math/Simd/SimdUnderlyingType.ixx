@@ -41,6 +41,49 @@ namespace Chord
       using UnsignedElement = std::conditional_t<sizeof(TElement) == 4, u32, u64>;
     };
 
+    template<basic_numeric TElement>
+    using SimdRelatedFloatElement = typename SimdRelatedTypes<TElement>::FloatElement;
+
+    template<basic_numeric TElement>
+    using SimdRelatedSignedElement = typename SimdRelatedTypes<TElement>::SignedElement;
+
+    template<basic_numeric TElement>
+    using SimdRelatedUnsignedElement = typename SimdRelatedTypes<TElement>::UnsignedElement;
+
+    template<basic_numeric TElement>
+    struct WidenTypeData
+      { static constexpr bool IsSupported = false; };
+
+    template<basic_numeric TElement>
+    struct NarrowTypeData
+      { static constexpr bool IsSupported = false; };
+
+    template<typename TElement>
+    struct SupportedWidenNarrowTypeData
+    {
+      static constexpr bool IsSupported = true;
+      using Type = TElement;
+    };
+
+    template<> struct WidenTypeData<f32> : public SupportedWidenNarrowTypeData<f64> { };
+    template<> struct NarrowTypeData<f64> : public SupportedWidenNarrowTypeData<f32> { };
+    template<> struct WidenTypeData<s32> : public SupportedWidenNarrowTypeData<s64> { };
+    template<> struct NarrowTypeData<s64> : public SupportedWidenNarrowTypeData<s32> { };
+    template<> struct WidenTypeData<u32> : public SupportedWidenNarrowTypeData<u64> { };
+    template<> struct NarrowTypeData<u64> : public SupportedWidenNarrowTypeData<u32> { };
+
+    template<basic_numeric TElement>
+    constexpr bool IsWidenable = WidenTypeData<TElement>::IsSupported;
+
+    template<basic_numeric TElement>
+    using Widen = WidenTypeData<TElement>::Type;
+
+    template<basic_numeric TElement>
+    constexpr bool IsNarrowable = NarrowTypeData<TElement>::IsSupported;
+
+    template<basic_numeric TElement>
+    using Narrow = NarrowTypeData<TElement>::Type;
+
     template<typename T>
     constexpr auto SimdUnderlyingTypeToEmulated(const T& v)
       { return v; }

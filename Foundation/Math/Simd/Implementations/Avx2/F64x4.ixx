@@ -268,6 +268,17 @@ namespace Chord
       };
 
       template<>
+      struct SimdOperationImplementation<f64, 4, SimdOperation::WidenAndSplit> : public UnsupportedSimdOperationImplementation
+        { };
+
+      template<>
+      struct SimdOperationImplementation<f64, 4, SimdOperation::NarrowAndCombine> : public SupportedSimdOperationImplementation
+      {
+        static __m256 Run(const __m256d& a, const __m256d& b)
+          { return _mm256_insertf128_ps(_mm256_castps128_ps256(_mm256_cvtpd_ps(a)), _mm256_cvtpd_ps(b), 1); }
+      };
+
+      template<>
       struct SimdOperationImplementation<f64, 2, SimdOperation::Shuffle2> : public SupportedSimdOperationImplementation
       {
         template<u32 PackedIndices>
@@ -399,6 +410,10 @@ namespace Chord
       };
 
       template<>
+      struct SimdOperationImplementation<f64, 4, SimdOperation::CountLeadingZeros> : public UnsupportedSimdOperationImplementation
+        { };
+
+      template<>
       struct SimdOperationImplementation<f64, 4, SimdOperation::SumElements> : public SupportedSimdOperationImplementation
       {
         static __m256d Run(const __m256d& v)
@@ -493,6 +508,13 @@ namespace Chord
       {
         static __m256d Run(const __m256s64& condition, const __m256d& trueValue, const __m256d& falseValue)
           { return _mm256_blendv_pd(_mm256_castsi256_pd(condition), trueValue, falseValue); }
+      };
+
+      template<>
+      struct SimdOperationImplementation<f64, 4, SimdOperation::GetMask> : public SupportedSimdOperationImplementation
+      {
+        static s32 Run(const __m256d& v)
+          { return _mm256_movemask_pd(v); }
       };
     #endif
   }

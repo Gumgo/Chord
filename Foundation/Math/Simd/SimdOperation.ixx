@@ -58,6 +58,8 @@ namespace Chord
 
       LowerHalf,
       UpperHalf,
+      WidenAndSplit,
+      NarrowAndCombine,
 
       Shuffle2,
       Shuffle4,
@@ -76,6 +78,7 @@ namespace Chord
       ReciprocalSqrt,
       Sqrt,
       AndNot,
+      CountLeadingZeros,
 
       SumElements,
 
@@ -92,6 +95,8 @@ namespace Chord
       SubAdd,
 
       Select,
+
+      GetMask,
     };
 
     // Defines metadata regarding a SIMD operation. Should implement Run() to perform the operation.

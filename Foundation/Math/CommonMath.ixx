@@ -63,16 +63,18 @@ namespace Chord
 
   export
   {
+    template<basic_integral T>
+    inline constexpr s32 CountLeadingZeros(T v)
+      { return std::make_unsigned_t<T>(std::countl_zero(v)); }
+
     template<basic_numeric T>
       requires (!std::is_unsigned_v<T>)
     inline constexpr T Abs(T v)
     {
       if consteval
       {
-        if constexpr (std::is_same_v<T, f32>)
-          { return std::bit_cast<f32>(std::bit_cast<s32>(v) & ~std::bit_cast<s32>(-0.0f)); }
-        else if constexpr (std::is_same_v<T, f64>)
-          { return std::bit_cast<f64>(std::bit_cast<s64>(v) & ~std::bit_cast<s64>(-0.0)); }
+        if (std::floating_point<T>)
+          { return std::bit_cast<T>(std::bit_cast<typename FloatTraits<T>::SignedType>(v) & ~FloatTraits<T>::SignBitMask); }
         else
           { return v < 0 ? -v : v; }
       }
@@ -144,7 +146,7 @@ namespace Chord
         static constexpr T IntRangeBoundary = T(SignedType(1) << FloatTraits<T>::MantissaBitCount);
 
         // Writing it this way catches NaN (as well as inf)
-        if (!(IntRangeBoundary > Abs(v))
+        if (!(IntRangeBoundary > Abs(v)))
           { return v; }
 
         return T(SignedType(v));
@@ -162,7 +164,7 @@ namespace Chord
         if (v < T(0) || IsNaN(v))
           { return std::numeric_limits<T>::quiet_NaN(); }
 
-        if (std::isinf(v))
+        if (IsInf(v))
           { return v; }
 
         T current = v;

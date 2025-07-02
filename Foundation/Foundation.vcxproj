@@ -35,6 +35,9 @@
     <ClCompile Include="Core\Types.ixx" />
     <ClCompile Include="Core\Utilities.ixx" />
     <ClCompile Include="Math\CommonMath.ixx" />
+    <ClCompile Include="Math\Fmod.ixx" />
+    <ClCompile Include="Math\MaskedResult.ixx" />
+    <ClCompile Include="Math\Transcendentals.ixx" />
     <ClCompile Include="Math\Simd\Implementations\Avx2.ixx" />
     <ClCompile Include="Math\Simd\Implementations\Avx2\F32x4.ixx" />
     <ClCompile Include="Math\Simd\Implementations\Avx2\F32x8.ixx" />
