@@ -3,14 +3,17 @@ export module Chord.Foundation:Core.FloatTraits;
 import std;
 
 import :Core.Types;
+import :Core.Utilities;
 
 namespace Chord
 {
   export
   {
-    template<std::floating_point T>
+    // Note: FloatTraits is not constrained to std::floating_point so that it can be implemented for other float-related types (e.g. SIMD vectors), but these
+    // implementations are not part of Core
+    template<typename T>
     struct FloatTraits
-      { };
+      { static_assert(AlwaysFalse<T>, "FloatTraits not supported for this type"); };
 
     template<std::signed_integral TSigned, std::unsigned_integral TUnsigned, s32 MantissaBitCountParam, s32 ExponentBitCountParam, s32 ExponentBiasParam>
     struct FloatTraitsData

@@ -83,6 +83,13 @@ namespace Chord
     }
 
     template<std::floating_point T>
+    inline constexpr T CopySign(T v, T sign)
+    {
+      using uBB = typename FloatTraits<T>::UnsignedType;
+      return std::bit_cast<T>((std::bit_cast<uBB>(v) & ~FloatTraits<T>::SignBitMask) | (std::bit_cast<uBB>(sign) & FloatTraits<T>::SignBitMask));
+    }
+
+    template<std::floating_point T>
     inline constexpr T Floor(T v)
     {
       if consteval

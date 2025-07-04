@@ -15,8 +15,15 @@ namespace Chord
     public:
       static_assert(!vector<T>);
 
-      bool SetResult(bool condition, T value)
+      constexpr MaskedResult() = default;
+
+      // Note: all scalar functions assert that m_setResult is false. This is because scalar values only have one lane and so once a result is set, it should
+      // immediately be returned.
+
+      constexpr bool SetResult(bool condition, T value)
       {
+        ASSERT(!m_setResult);
+
         if (condition)
         {
           m_result = value;
@@ -28,21 +35,43 @@ namespace Chord
         return condition;
       }
 
-      void SetResult(T value)
+      template<typename TGetValue>
+        requires requires (TGetValue&& getValue) { { getValue() } -> std::same_as<T>; }
+      constexpr bool SetResult(bool condition, TGetValue&& getValue)
       {
+        ASSERT(!m_setResult);
+
+        if (condition)
+        {
+          m_result = getValue();
+          #if CHORD_ASSERTS_ENABLED
+            m_setResult = true;
+          #endif
+        }
+
+        return condition;
+      }
+
+      constexpr void SetResult(T value)
+      {
+        ASSERT(!m_setResult);
         m_result = value;
         #if CHORD_ASSERTS_ENABLED
           m_setResult = true;
         #endif
       }
 
-      const T& Result() const
+      constexpr const T& Result() const
       {
         ASSERT(m_setResult);
         return m_result;
       }
 
-      // !!! should we have a Mask() function? should m_setResult be non-debug-only?
+      constexpr bool Mask() const
+      {
+        ASSERT(!m_setResult);
+        return false;
+      }
 
     private:
       T m_result = T(0);
@@ -55,28 +84,37 @@ namespace Chord
     class MaskedResult<T>
     {
     public:
-      MaskedResult() = default;
+      constexpr MaskedResult() = default;
 
-      bool SetResult(const typename T::SignedVector& condition, const T& value)
+      constexpr bool SetResult(const typename T::SignedVector& condition, const T& value)
       {
-        m_result |= std::bit_cast<T>(NotAnd(m_mask, condition));
+        m_result |= std::bit_cast<T>(NotAnd(m_mask, condition) & std::bit_cast<typename T::SignedVector>(value));
         m_mask |= condition;
         return TestMaskAllOnes(m_mask);
       }
 
-      void SetResult(const T& value)
+      template<typename TGetValue>
+        requires requires (TGetValue&& getValue) { { getValue() } -> std::same_as<T>; }
+      constexpr bool SetResult(const typename T::SignedVector& condition, TGetValue&& getValue)
       {
-        m_result |= std::bit_cast<T>(~m_mask);
+        m_result |= std::bit_cast<T>(NotAnd(m_mask, condition) & std::bit_cast<typename T::SignedVector>(getValue()));
+        m_mask |= condition;
+        return TestMaskAllOnes(m_mask);
+      }
+
+      constexpr void SetResult(const T& value)
+      {
+        m_result |= std::bit_cast<T>(NotAnd(m_mask, std::bit_cast<typename T::SignedVector>(value)));
         m_mask = typename T::SignedVector(-1);
       }
 
-      const T& Result() const
+      constexpr const T& Result() const
       {
         ASSERT(TestMaskAllOnes(m_mask));
         return m_result;
       }
 
-      const typename T::SignedVector& Mask() const
+      constexpr const typename T::SignedVector& Mask() const
         { return m_mask; }
 
     private:

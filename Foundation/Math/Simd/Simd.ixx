@@ -139,5 +139,54 @@ namespace Chord
 
     template<typename T>
     concept unsigned_scalar_or_vector = std::unsigned_integral<T> || unsigned_vector<T>;
+
+    template<floating_point_vector T>
+    struct FloatTraits<T> : public FloatTraits<typename T::Element>
+      { };
+
+    template<scalar_or_vector T>
+    struct ScalarOrVectorTypeData
+    {
+      using ElementType = T;
+      using FloatElementType = SimdRelatedFloatElement<ElementType>;
+      using SignedElementType = SimdRelatedSignedElement<ElementType>;
+      using UnsignedElementType = SimdRelatedUnsignedElement<ElementType>;
+      using FloatType = SimdRelatedFloatElement<ElementType>;
+      using SignedType = SimdRelatedSignedElement<ElementType>;
+      using UnsignedType = SimdRelatedUnsignedElement<ElementType>;
+    };
+
+    template<vector T>
+    struct ScalarOrVectorTypeData<T>
+    {
+      using ElementType = typename T::Element;
+      using FloatElementType = SimdRelatedFloatElement<ElementType>;
+      using SignedElementType = SimdRelatedSignedElement<ElementType>;
+      using UnsignedElementType = SimdRelatedUnsignedElement<ElementType>;
+      using FloatType = typename T::FloatVector;
+      using SignedType = typename T::SignedVector;
+      using UnsignedType = typename T::UnsignedVector;
+    };
+
+    template<scalar_or_vector T>
+    using ScalarOrVectorElementType = typename ScalarOrVectorTypeData<T>::ElementType;
+
+    template<scalar_or_vector T>
+    using ScalarOrVectorFloatElementType = typename ScalarOrVectorTypeData<T>::FloatElementType;
+
+    template<scalar_or_vector T>
+    using ScalarOrVectorSignedElementType = typename ScalarOrVectorTypeData<T>::SignedElementType;
+
+    template<scalar_or_vector T>
+    using ScalarOrVectorUnsignedElementType = typename ScalarOrVectorTypeData<T>::UnsignedElementType;
+
+    template<scalar_or_vector T>
+    using ScalarOrVectorFloatType = typename ScalarOrVectorTypeData<T>::FloatType;
+
+    template<scalar_or_vector T>
+    using ScalarOrVectorSignedType = typename ScalarOrVectorTypeData<T>::SignedType;
+
+    template<scalar_or_vector T>
+    using ScalarOrVectorUnsignedType = typename ScalarOrVectorTypeData<T>::UnsignedType;
   }
 }

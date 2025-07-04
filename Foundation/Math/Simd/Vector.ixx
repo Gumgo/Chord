@@ -296,6 +296,17 @@ namespace Chord
         return *this;
       }
 
+      // These operators are defined identically to ~, &, and |. Note that they do not short-circuit. This is done so that the Vector class is compatible with
+      // scalar syntax in a templated context.
+      constexpr Vector operator!() const requires Vector::template IsSupported<SimdOperation::BitwiseNot>
+        { return Vector(Run<SimdOperation::BitwiseNot>(m_data)); }
+
+      constexpr Vector operator&&(const Vector& v) const requires Vector::template IsSupported<SimdOperation::BitwiseAnd>
+        { return Vector(Run<SimdOperation::BitwiseAnd>(m_data, v.m_data)); }
+
+      constexpr Vector operator||(const Vector& v) const requires Vector::template IsSupported<SimdOperation::BitwiseOr>
+        { return Vector(Run<SimdOperation::BitwiseOr>(m_data, v.m_data)); }
+
       SimdUnderlyingType<TElement, ElementCount>::Type m_data;
 
     private:
@@ -489,5 +500,16 @@ namespace Chord
       requires (IsSimdTypeSupported<TElement, ElementCount>)
     constexpr auto IsNaN(const Vector<TElement, ElementCount>& v) -> typename Vector<TElement, ElementCount>::SignedVector
       { return v != v; }
+
+    template<std::floating_point TElement, usz ElementCount>
+      requires (IsSimdTypeSupported<TElement, ElementCount>)
+    constexpr Vector<TElement, ElementCount> CopySign(const Vector<TElement, ElementCount>& v, const Vector<TElement, ElementCount>& sign)
+    {
+      using fBBxC = Vector<TElement, ElementCount>;
+      using uBBxC = typename Vector<TElement, ElementCount>::UnsignedVector;
+      return std::bit_cast<fBBxC>(
+        (std::bit_cast<uBBxC>(v) & ~FloatTraits<TElement>::SignBitMask) | (std::bit_cast<uBBxC>(sign) & FloatTraits<TElement>::SignBitMask));
+      return v != v;
+    }
   }
 }

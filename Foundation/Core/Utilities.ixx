@@ -1,5 +1,8 @@
 export module Chord.Foundation:Core.Utilities;
 
+import std;
+
+import :Core.Concepts;
 import :Core.Types;
 
 namespace Chord
@@ -12,8 +15,15 @@ namespace Chord
     enum class ToEnd_t { ToEnd };
     using enum ToEnd_t;
 
-    enum class Zero_t { Zero };
-    using enum Zero_t;
+    // This one is declared as a struct so that the cast operator can allow assignment of Zero to numeric types
+    struct Zero_t
+    {
+      template<basic_numeric T>
+      operator T() const
+        { return T(0); }
+    };
+
+    constexpr Zero_t Zero;
 
     enum class Uninitialized_t { Uninitialized };
     using enum Uninitialized_t;
