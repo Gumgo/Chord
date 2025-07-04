@@ -12,7 +12,7 @@ namespace Chord
     inline constexpr void Unroll(TFunc&& func)
     {
       return []<usz... Indices>(TFunc&& funcInner, std::index_sequence<Indices...>)
-        { (func(InclusiveStart + Indices), ...); }(std::forward<TFunc>(func), std::make_index_sequence<ExclusiveEnd - InclusiveStart>());
+        { (funcInner(InclusiveStart + Indices), ...); }(std::forward<TFunc>(func), std::make_index_sequence<ExclusiveEnd - InclusiveStart>());
     }
   }
 }

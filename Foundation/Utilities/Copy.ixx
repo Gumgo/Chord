@@ -23,7 +23,7 @@ namespace Chord
       if (destination < source)
         { std::copy(source, source + count, destination); }
       else
-        { std::copy_backward(source, source + count, destination); }
+        { std::copy_backward(source, source + count, destination + count); }
     }
 
     constexpr void CopyBytes(void* destination, const void* source, usz count)
@@ -47,7 +47,7 @@ namespace Chord
       if (destination < source)
         { std::move(source, source + count, destination); }
       else
-        { std::move_backward(source, source + count, destination); }
+        { std::move_backward(source, source + count, destination + count); }
     }
   }
 }

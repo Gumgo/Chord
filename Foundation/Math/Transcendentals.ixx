@@ -13,7 +13,7 @@ export import :Math.Fmod;
 
 namespace Chord
 {
-  // Taylor series coefficients for Sin(x * 2 * pi) for x in range [-0.25, 0.25]
+  // Taylor series coefficients for sin(x * 2 * pi) for x in range [-0.25, 0.25]
   template<std::floating_point T>
   constexpr FixedArray<T, 3> SinCoefficients = { T(1.0), T(2.0), T(3.0) }; // !!! this just needs to be the taylor series, I think?
 
