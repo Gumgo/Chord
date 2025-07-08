@@ -150,23 +150,10 @@ namespace Chord
 
       // Handle denormals by breaking off a separate multiplier if necessary
       T minExponent = T(FloatTraits<T>::MinExponent);
-      T denormalMultiplier =
-        [&]()
-        {
-          if constexpr (vector<T>)
-          {
-            return Select(
-              intPart < minExponent,
-              std::bit_cast<T>((uBBxC(intPart - minExponent) + uBBxC(FloatTraits<T>::ExponentBias)) << FloatTraits<T>::MantissaBitCount),
-              T(1.0));
-          }
-          else
-          {
-            return intPart < minExponent
-              ? std::bit_cast<T>((uBBxC(intPart - minExponent) + uBBxC(FloatTraits<T>::ExponentBias)) << FloatTraits<T>::MantissaBitCount)
-              : T(1.0);
-          }
-        }();
+      T denormalMultiplier = Select(
+        intPart < minExponent,
+        [&] { return std::bit_cast<T>((uBBxC(intPart - minExponent) + uBBxC(FloatTraits<T>::ExponentBias)) << FloatTraits<T>::MantissaBitCount); },
+        [&] { return T(1.0); });
       intPart = Max(intPart, minExponent);
 
       // Exponentiate by using the int part directly as the exponent in a floating point number

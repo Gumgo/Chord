@@ -405,13 +405,10 @@ namespace Chord
       polyResult *= Sqrt(T(1.0) - vAbs);
 
       // Mirror and offset the result to cover the range [-1, 0]
-      if constexpr (vector<T>)
-        { polyResult = Select(polyResult < Zero, T(std::numbers::pi_v<fBB>) - polyResult); }
-      else
-      {
-        if (v < T(0.0))
-          { polyResult = std::numbers::pi_v<T> - polyResult; }
-      }
+      polyResult = Select(
+        polyResult < T(0.0),
+        [&] { return T(std::numbers::pi_v<fBB>) - polyResult; },
+        [&] { return polyResult; });
 
       result.SetResult(polyResult);
       return result.Result();
@@ -435,22 +432,17 @@ namespace Chord
         { return result.Result(); }
 
       auto inputExceedsOne = (vAbs > T(1.0));
+      T polyInput = Select(inputExceedsOne, [&] { return T(-1.0) / vAbs; }, [&] { return vAbs; });
+      T polyResult = EvaluateAtanPolynomial(polyInput);
       if constexpr (vector<T>)
-      {
-        T polyInput = Select(inputExceedsOne, T(-1.0) / vAbs, vAbs);
-        T polyResult = EvaluateAtanPolynomial(polyInput);
-        polyResult += std::bit_cast<T>(inputExceedsOne) & T(std::numbers::pi * 0.5);
-        result.SetResult(CopySign(polyResult, v));
-      }
+        { polyResult += std::bit_cast<T>(inputExceedsOne) & T(std::numbers::pi * 0.5); }
       else
       {
-        T polyInput = inputExceedsOne ? T(-1.0) / vAbs : vAbs;
-        T polyResult = EvaluateAtanPolynomial(polyInput);
         if (inputExceedsOne)
           { polyResult += T(std::numbers::pi * 0.5); }
-        result.SetResult(CopySign(polyResult, v));
       }
 
+      result.SetResult(CopySign(polyResult, v));
       return result.Result();
     }
 

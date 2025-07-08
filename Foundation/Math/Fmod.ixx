@@ -11,7 +11,10 @@ import :Utilities.Bounds;
 namespace Chord
 {
   template<usz ElementCount>
-  static constexpr Vector<f64, ElementCount> FmodIterateF32(const Vector<f64, ElementCount>& xAbs, const Vector<f64, ElementCount>& yAbs)
+  static constexpr Vector<f64, ElementCount> FmodIterateF32(
+    const Vector<f64, ElementCount>& xAbs,
+    const Vector<f64, ElementCount>& yAbs,
+    const Vector<s64, ElementCount>& resultMask)
   {
     using f64xC = Vector<f64, ElementCount>;
     using s64xC = Vector<f64, ElementCount>;
@@ -20,7 +23,7 @@ namespace Chord
     f64xC xRemainder = xAbs;
     while (true)
     {
-      s64xC mask = (xRemainder > yAbs);
+      s64xC mask = AndNot(resultMask, xRemainder > yAbs);
       if (TestMaskAllZeros(mask))
         { break; }
 
@@ -84,7 +87,8 @@ namespace Chord
           {
             auto xAbsF64 = Vector<f64, ElementCount>(xAbs);
             auto yAbsF64 = Vector<f64, ElementCount>(yAbs);
-            auto xRemainderF64 = FmodIterateF32(xAbsF64, yAbsF64);
+            auto resultMaskF64 = Vector<s64, ElementCount>(result.Mask());
+            auto xRemainderF64 = FmodIterateF32(xAbsF64, yAbsF64, resultMaskF64);
             xRemainder = T(xRemainderF64);
           }
           else
@@ -92,8 +96,9 @@ namespace Chord
             // f64 vector with same element count isn't supported so we have to split into two f64 vectors
             auto [xAbsF64Lower, xAbsF64Upper] = xAbs.WidenAndSplit();
             auto [yAbsF64Lower, yAbsF64Upper] = yAbs.WidenAndSplit();
-            auto xRemainderF64Lower = FmodIterateF32(xAbsF64Lower, yAbsF64Lower);
-            auto xRemainderF64Upper = FmodIterateF32(xAbsF64Upper, yAbsF64Upper);
+            auto [resultMaskF64Lower, resultMaskF64Upper] = result.Mask().WidenAndSplit();
+            auto xRemainderF64Lower = FmodIterateF32(xAbsF64Lower, yAbsF64Lower, resultMaskF64Lower);
+            auto xRemainderF64Upper = FmodIterateF32(xAbsF64Upper, yAbsF64Upper, resultMaskF64Upper);
             xRemainder = T::NarrowAndCombine(xRemainderF64Lower, xRemainderF64Upper);
           }
 
