@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Containers\BoundedArray.ixx" />
+    <ClCompile Include="Containers\Containers.ixx" />
     <ClCompile Include="Containers\FixedArray.ixx" />
     <ClCompile Include="Containers\ResizableArrayBase.ixx" />
     <ClCompile Include="Containers\Span.ixx" />
@@ -37,7 +38,8 @@
     <ClCompile Include="Math\CommonMath.ixx" />
     <ClCompile Include="Math\Fmod.ixx" />
     <ClCompile Include="Math\MaskedResult.ixx" />
-    <ClCompile Include="Math\Transcendentals.ixx" />
+    <ClCompile Include="Math\Math.ixx" />
+    <ClCompile Include="Math\PowerFunctions.ixx" />
     <ClCompile Include="Math\Simd\Implementations\Avx2.ixx" />
     <ClCompile Include="Math\Simd\Implementations\Avx2\F32x4.ixx" />
     <ClCompile Include="Math\Simd\Implementations\Avx2\F32x8.ixx" />
@@ -59,6 +61,7 @@
     <ClCompile Include="Math\Simd\SimdOperation.ixx" />
     <ClCompile Include="Math\Simd\SimdUnderlyingType.ixx" />
     <ClCompile Include="Math\Simd\Vector.ixx" />
+    <ClCompile Include="Math\TrigFunctions.ixx" />
     <ClCompile Include="String\String.ixx" />
     <ClCompile Include="Utilities\Alignment.ixx" />
     <ClCompile Include="Utilities\BitOperations.ixx" />
@@ -66,6 +69,7 @@
     <ClCompile Include="Utilities\Bounds.ixx" />
     <ClCompile Include="Utilities\DisallowAllocationScope.ixx" />
     <ClCompile Include="Utilities\Unroll.ixx" />
+    <ClCompile Include="Utilities\Utilities.ixx" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Assert.Macros.h" />

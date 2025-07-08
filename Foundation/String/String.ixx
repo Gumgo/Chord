@@ -4,7 +4,6 @@ import std;
 
 import :Containers.Span;
 import :Core;
-import :Core.Concepts;
 import :Utilities.Copy;
 
 namespace Chord

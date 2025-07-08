@@ -147,13 +147,25 @@
     <ClCompile Include="Core\FloatTraits.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Math\Transcendentals.ixx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Math\Fmod.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Math\MaskedResult.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Math\PowerFunctions.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Math\TrigFunctions.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Math\Math.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Containers\Containers.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Utilities\Utilities.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
