@@ -8,6 +8,7 @@ export import :Containers.UnboundedArray;
 export import :Core;
 export import :Math.CommonMath;
 export import :Math.Simd;
+export import :Math.Transcendentals;
 export import :String.String;
 export import :Utilities.Alignment;
 export import :Utilities.BitOperations;

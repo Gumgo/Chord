@@ -133,8 +133,8 @@ namespace Chord
   static constexpr Vector<f64, ElementCount> FmodIterate(const Vector<f64, ElementCount>& xAbs, const Vector<f64, ElementCount>& yAbs)
   {
     using f64xC = Vector<f64, ElementCount>;
-    using s64xC = Vector<s64, ElementCount>;
-    using u64xC = Vector<u64, ElementCount>;
+    using s64xC = Vector<f64, ElementCount>;
+    using u64xC = Vector<f64, ElementCount>;
 
     f64xC xRemainder = xAbs;
     f64xC twiceYAbs = yAbs + yAbs;
@@ -190,26 +190,26 @@ namespace Chord
     template<usz ElementCount>
     constexpr Vector<f32, ElementCount> Fmod(const Vector<f32, ElementCount>& x, const Vector<f32, ElementCount>& y)
     {
-      using FloatVector = Vector<f64, ElementCount>;
-      using SignedVector = Vector<s64, ElementCount>;
-      using UnsignedVector = Vector<u64, ElementCount>;
+      using f64xC = Vector<f64, ElementCount>;
+      using s64xC = Vector<s64, ElementCount>;
+      using u64xC = Vector<u64, ElementCount>;
 
       // The following math computes x - Trunc(x / y) * y. Note that the sign of y cancels out so we can ignore it.
-      MaskedResult<FloatVector> result;
+      MaskedResult<f64xC> result;
 
-      result.SetResult(IsInf(x) | IsNaN(x) | IsNaN(y) | y == Zero, FloatVector(std::numeric_limits<f32>::quiet_NaN()));
+      result.SetResult(IsInf(x) | IsNaN(x) | IsNaN(y) | y == Zero, f64xC(std::numeric_limits<f32>::quiet_NaN()));
 
-      FloatVector xAbs = Abs(x);
-      FloatVector xSignBit = x & FloatVector(std::bit_cast<f32>(FloatTraits<f32>::SignBitMask));
-      FloatVector yAbs = Abs(y);
+      f64xC xAbs = Abs(x);
+      f64xC xSignBit = x & f64xC(std::bit_cast<f32>(FloatTraits<f32>::SignBitMask));
+      f64xC yAbs = Abs(y);
 
-      FloatVector xRemainder = Uninitialized;
+      f64xC xRemainder = Uninitialized;
       if constexpr (IsSimdTypeSupported<f64, ElementCount>)
       {
         auto xAbsF64 = Vector<f64, ElementCount>(xAbs);
         auto yAbsF64 = Vector<f64, ElementCount>(yAbs);
         auto xRemainderF64 = FmodIterate(xAbsF64, yAbsF64);
-        xRemainder = FloatVector(xRemainderF64);
+        xRemainder = f64xC(xRemainderF64);
       }
       else
       {
@@ -218,7 +218,7 @@ namespace Chord
         auto [yAbsF64Lower, yAbsF64Upper] = yAbs.WidenAndSplit();
         auto xRemainderF64Lower = FmodIterate(xAbsF64Lower, yAbsF64Lower);
         auto xRemainderF64Upper = FmodIterate(xAbsF64Upper, yAbsF64Upper);
-        xRemainder = FloatVector::NarrowAndCombine(xRemainderF64Lower, xRemainderF64Upper);
+        xRemainder = f64xC::NarrowAndCombine(xRemainderF64Lower, xRemainderF64Upper);
       }
 
       result.SetResult(xRemainder | xSignBit);
@@ -293,6 +293,7 @@ namespace Chord
       using f64xC = Vector<f64, ElementCount>;
 
       // Currently, the fastest f64 implementation I know of is to just use scalar math because there is no good 64-bit integer remainder operation
+      // !!! update this to use Josh's new version
       alignas(alignof(f64xC)) FixedArray<f64, ElementCount> xElements;
       alignas(alignof(f64xC)) FixedArray<f64, ElementCount> yElements;
       x.StoreAligned(xElements);

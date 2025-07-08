@@ -22,7 +22,9 @@ namespace Chord
 
       constexpr bool SetResult(bool condition, T value)
       {
-        ASSERT(!m_setResult);
+        #if CHORD_ASSERTS_ENABLED
+          ASSERT(!m_setResult);
+        #endif
 
         if (condition)
         {
@@ -39,7 +41,9 @@ namespace Chord
         requires requires (TGetValue&& getValue) { { getValue() } -> std::same_as<T>; }
       constexpr bool SetResult(bool condition, TGetValue&& getValue)
       {
-        ASSERT(!m_setResult);
+        #if CHORD_ASSERTS_ENABLED
+          ASSERT(!m_setResult);
+        #endif
 
         if (condition)
         {
@@ -54,22 +58,27 @@ namespace Chord
 
       constexpr void SetResult(T value)
       {
-        ASSERT(!m_setResult);
-        m_result = value;
         #if CHORD_ASSERTS_ENABLED
+          ASSERT(!m_setResult);
           m_setResult = true;
         #endif
+
+        m_result = value;
       }
 
       constexpr const T& Result() const
       {
-        ASSERT(m_setResult);
+        #if CHORD_ASSERTS_ENABLED
+          ASSERT(m_setResult);
+        #endif
         return m_result;
       }
 
       constexpr bool Mask() const
       {
-        ASSERT(!m_setResult);
+        #if CHORD_ASSERTS_ENABLED
+          ASSERT(!m_setResult);
+        #endif
         return false;
       }
 

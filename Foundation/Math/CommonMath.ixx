@@ -90,6 +90,33 @@ namespace Chord
     }
 
     template<std::floating_point T>
+    inline constexpr T Round(T v)
+    {
+      // This value is 2^M, where M is the mantissa bit count
+      using sBB = typename FloatTraits<T>::SignedType;
+      static constexpr T Threshold = T(sBB(1) << FloatTraits<T>::MantissaBitCount);
+
+      if consteval
+      {
+        if (IsNaN(v) || Abs(v) >= Threshold)
+        {
+          // Number is above 2^M (which means there are no fractional bits and it's already guaranteed to be an int) or it's NaN. Either way, do nothing here.
+          return v;
+        }
+
+        // Adding and then subtracting 2^M will round the value properly using the current rounding mode (which is exactly what our non-constexpr Round does,
+        // using std::nearbyint). Think of it as pushing all of the fractional mantissa bits off of the bottom end (because adding 2^M puts the implied "1" bit
+        // of the mantissa there, which means the M bits of mantissa are all non-fractional). (It does need to have its sign match the sign of our input,
+        // though.)
+        T signedAdder = std::bit_cast<T>(std::bit_cast<sBB>(Threshold) | (std::bit_cast<sBB>(v) & FloatTraits<T>::SignBitMask));
+        return (v + signedAdder) - signedAdder;
+      }
+      else
+        // Note: using nearbyint uses the current rounding mode, which is round to nearest and break ties toward evens, which matches SSE
+        { return std::nearbyint(v); }
+    }
+
+    template<std::floating_point T>
     inline constexpr T Floor(T v)
     {
       if consteval
@@ -118,45 +145,18 @@ namespace Chord
     }
 
     template<std::floating_point T>
-    inline constexpr T Round(T v)
-    {
-      // This value is 2^M, where M is the mantissa bit count
-      using SignedType = typename FloatTraits<T>::SignedType;
-      static constexpr T Threshold = T(SignedType(1 << FloatTraits<T>::MantissaBitCount));
-
-      if consteval
-      {
-        if (IsNaN(v) || Abs(v) >= Threshold)
-        {
-          // Number is above 2^M (which means there are no fractional bits and it's already guaranteed to be an int) or it's NaN. Either way, do nothing here.
-          return v;
-        }
-
-        // Adding and then subtracting 2^M will round the value properly using the current rounding mode (which is exactly what our non-constexpr Round does,
-        // using std::nearbyint). Think of it as pushing all of the fractional mantissa bits off of the bottom end (because adding 2^M puts the implied "1" bit
-        // of the mantissa there, which means the M bits of mantissa are all non-fractional). (It does need to have its sign match the sign of our input,
-        // though.)
-        T signedAdder = std::bit_cast<T>(std::bit_cast<SignedType>(Threshold) | (std::bit_cast<SignedType>(v) & std::bit_cast<T>(FloatTraits<T>::SignBitMask)));
-        return (v + signedAdder) - signedAdder;
-      }
-      else
-        // Note: using nearbyint uses the current rounding mode, which is round to nearest and break ties toward evens, which matches SSE
-        { return std::nearbyint(v); }
-    }
-
-    template<std::floating_point T>
     inline constexpr T Trunc(T v)
     {
       if consteval
       {
-        using SignedType = typename FloatTraits<T>::SignedType;
-        static constexpr T IntRangeBoundary = T(SignedType(1) << FloatTraits<T>::MantissaBitCount);
+        using sBB = typename FloatTraits<T>::SignedType;
+        static constexpr T IntRangeBoundary = T(sBB(1) << FloatTraits<T>::MantissaBitCount);
 
         // Writing it this way catches NaN (as well as inf)
         if (!(IntRangeBoundary > Abs(v)))
           { return v; }
 
-        return T(SignedType(v));
+        return T(sBB(v));
       }
       else
         { return std::trunc(v); }

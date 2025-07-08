@@ -3,3 +3,4 @@
 **/obj/
 **/x64/
 **/*.vcxproj.user
+**/vcpkg_installed

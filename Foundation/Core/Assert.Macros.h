@@ -12,9 +12,10 @@
   #define DEBUG_BREAK() abort()
 #endif
 
-#if CHORD_ASSERTS_ENABLED
-  #define ASSERT_MESSAGE(condition, ...) CHORD_IF(CHORD_HAS_ARGS(__VA_ARGS__))(__VA_ARGS__, #condition)
+// This is outside of CHORD_ASSERTS_ENABLED so that the EXPECT macro can use it within the NativeTests project
+#define ASSERT_MESSAGE(condition, ...) CHORD_IF(CHORD_HAS_ARGS(__VA_ARGS__))(__VA_ARGS__, #condition)
 
+#if CHORD_ASSERTS_ENABLED
   #define ASSERT(condition, ...) \
     do \
     { \
@@ -64,7 +65,7 @@
     { \
       while (false) \
         { std::ignore = std::make_tuple(condition, __VA_ARGS__); } \
-      condition;
+      condition; \
     } \
     while (false)
 #endif

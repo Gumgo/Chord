@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -18,65 +18,11 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="Containers\BoundedArray.ixx" />
-    <ClCompile Include="Containers\FixedArray.ixx" />
-    <ClCompile Include="Containers\ResizableArrayBase.ixx" />
-    <ClCompile Include="Containers\Span.ixx" />
-    <ClCompile Include="Containers\UnboundedArray.ixx" />
-    <ClCompile Include="Core\Assert.cpp" />
-    <ClCompile Include="Core\Assert.ixx" />
-    <ClCompile Include="Core\Coerce.ixx" />
-    <ClCompile Include="Core\Concepts.ixx" />
-    <ClCompile Include="Core\Core.ixx" />
-    <ClCompile Include="Core\FloatTraits.ixx" />
-    <ClCompile Include="Foundation.ixx" />
-    <ClCompile Include="Core\NullTerminatedString.ixx" />
-    <ClCompile Include="Core\Types.ixx" />
-    <ClCompile Include="Core\Utilities.ixx" />
-    <ClCompile Include="Math\CommonMath.ixx" />
-    <ClCompile Include="Math\Fmod.ixx" />
-    <ClCompile Include="Math\MaskedResult.ixx" />
-    <ClCompile Include="Math\Transcendentals.ixx" />
-    <ClCompile Include="Math\Simd\Implementations\Avx2.ixx" />
-    <ClCompile Include="Math\Simd\Implementations\Avx2\F32x4.ixx" />
-    <ClCompile Include="Math\Simd\Implementations\Avx2\F32x8.ixx" />
-    <ClCompile Include="Math\Simd\Implementations\Avx2\F64x2.ixx" />
-    <ClCompile Include="Math\Simd\Implementations\Avx2\F64x4.ixx" />
-    <ClCompile Include="Math\Simd\Implementations\Avx2\S32x4.ixx" />
-    <ClCompile Include="Math\Simd\Implementations\Avx2\S32x8.ixx" />
-    <ClCompile Include="Math\Simd\Implementations\Avx2\S64x2.ixx" />
-    <ClCompile Include="Math\Simd\Implementations\Avx2\S64x4.ixx" />
-    <ClCompile Include="Math\Simd\Implementations\Avx2\Types.ixx" />
-    <ClCompile Include="Math\Simd\Implementations\Avx2\U32x4.ixx" />
-    <ClCompile Include="Math\Simd\Implementations\Avx2\U32x8.ixx" />
-    <ClCompile Include="Math\Simd\Implementations\Avx2\U64x2.ixx" />
-    <ClCompile Include="Math\Simd\Implementations\Avx2\U64x4.ixx" />
-    <ClCompile Include="Math\Simd\Implementations\Avx2\Utilities.ixx" />
-    <ClCompile Include="Math\Simd\Implementations\Emulated.ixx" />
-    <ClCompile Include="Math\Simd\Simd.ixx" />
-    <ClCompile Include="Math\Simd\SimdImplementations.ixx" />
-    <ClCompile Include="Math\Simd\SimdOperation.ixx" />
-    <ClCompile Include="Math\Simd\SimdUnderlyingType.ixx" />
-    <ClCompile Include="Math\Simd\Vector.ixx" />
-    <ClCompile Include="String\String.ixx" />
-    <ClCompile Include="Utilities\Alignment.ixx" />
-    <ClCompile Include="Utilities\BitOperations.ixx" />
-    <ClCompile Include="Utilities\Copy.ixx" />
-    <ClCompile Include="Utilities\Bounds.ixx" />
-    <ClCompile Include="Utilities\DisallowAllocationScope.ixx" />
-    <ClCompile Include="Utilities\Unroll.ixx" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Core\Assert.Macros.h" />
-    <ClInclude Include="Core\Platform.Macros.h" />
-    <ClInclude Include="Macros.h" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{a95efdcc-40d3-4094-9a26-6783eb2ac1b8}</ProjectGuid>
-    <RootNamespace>Foundation</RootNamespace>
+    <ProjectGuid>{79190c67-2458-4ca2-959d-ef4bdea3514f}</ProjectGuid>
+    <RootNamespace>MathPrecisionTests</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -94,13 +40,13 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -124,19 +70,22 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Label="Vcpkg">
+    <VcpkgEnableManifest>true</VcpkgEnableManifest>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;DEBUG=1;RELEASE=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+      <LanguageStandard>stdcpp23</LanguageStandard>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
       <AssemblerListingLocation>$(IntDir)%(RelativeDir)</AssemblerListingLocation>
       <ModuleOutputFile>$(IntDir)%(RelativeDir)</ModuleOutputFile>
       <ModuleDependenciesFile>$(IntDir)%(RelativeDir)</ModuleDependenciesFile>
-      <ForcedIncludeFiles>$(ProjectDir)Macros.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
-      <UseStandardPreprocessor>true</UseStandardPreprocessor>
-      <LanguageStandard>stdcpp23</LanguageStandard>
+      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+      <ForcedIncludeFiles>$(ProjectDir)Macros.h</ForcedIncludeFiles>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
@@ -152,19 +101,17 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;DEBUG=0;RELEASE=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+      <LanguageStandard>stdcpp23</LanguageStandard>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
       <AssemblerListingLocation>$(IntDir)%(RelativeDir)</AssemblerListingLocation>
       <ModuleOutputFile>$(IntDir)%(RelativeDir)</ModuleOutputFile>
       <ModuleDependenciesFile>$(IntDir)%(RelativeDir)</ModuleDependenciesFile>
-      <ForcedIncludeFiles>$(ProjectDir)Macros.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
-      <UseStandardPreprocessor>true</UseStandardPreprocessor>
-      <LanguageStandard>stdcpp23</LanguageStandard>
+      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+      <ForcedIncludeFiles>$(ProjectDir)Macros.h</ForcedIncludeFiles>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
@@ -175,13 +122,12 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;DEBUG=1;RELEASE=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp23</LanguageStandard>
-      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
       <AssemblerListingLocation>$(IntDir)%(RelativeDir)</AssemblerListingLocation>
       <ModuleOutputFile>$(IntDir)%(RelativeDir)</ModuleOutputFile>
       <ModuleDependenciesFile>$(IntDir)%(RelativeDir)</ModuleDependenciesFile>
-      <ForcedIncludeFiles>$(ProjectDir)Macros.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
-      <UseStandardPreprocessor>true</UseStandardPreprocessor>
-      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+      <ForcedIncludeFiles>$(ProjectDir)Macros.h</ForcedIncludeFiles>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
@@ -198,22 +144,31 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;DEBUG=0;RELEASE=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp23</LanguageStandard>
-      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
       <AssemblerListingLocation>$(IntDir)%(RelativeDir)</AssemblerListingLocation>
       <ModuleOutputFile>$(IntDir)%(RelativeDir)</ModuleOutputFile>
       <ModuleDependenciesFile>$(IntDir)%(RelativeDir)</ModuleDependenciesFile>
-      <ForcedIncludeFiles>$(ProjectDir)Macros.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
-      <UseStandardPreprocessor>true</UseStandardPreprocessor>
-      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+      <ForcedIncludeFiles>$(ProjectDir)Macros.h</ForcedIncludeFiles>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="Main.cpp" />
+    <ClCompile Include="MathPrecisionTests.ixx" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Foundation\Foundation.vcxproj">
+      <Project>{a95efdcc-40d3-4094-9a26-6783eb2ac1b8}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Macros.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

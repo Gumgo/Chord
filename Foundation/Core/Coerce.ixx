@@ -37,7 +37,7 @@ namespace Chord
     {
       if constexpr (std::is_same_v<TFrom, TTo>
         || std::floating_point<TFrom> && std::floating_point<TTo> && sizeof(TTo) >= sizeof(TFrom))
-        { return true; }
+        { return v; }
       else if constexpr (std::is_enum_v<TFrom>)
         { return Coerce<TTo>(std::underlying_type_t<TFrom>(v)); }
       else if constexpr (std::is_enum_v<TTo>)
