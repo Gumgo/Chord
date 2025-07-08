@@ -1,9 +1,3 @@
-module;
-
-#if COMPILER_MSVC
-  #include <immintrin.h>
-#endif
-
 export module Chord.Foundation:Math.Fmod;
 
 import std;
@@ -16,133 +10,18 @@ import :Utilities.Bounds;
 
 namespace Chord
 {
-  template<u64 BitCount>
-    requires (BitCount == 64 || BitCount == 128)
-  static constexpr std::tuple<s32, u64> DecomposeF64ForRemainder(f64 value)
-  {
-    static constexpr u64 ImpliedOneBit = 1_u64 << FloatTraits<f64>::MantissaBitCount;
-
-    u64 absValueBits = std::bit_cast<u64>(Abs(value));
-
-    u64 mantissaBits;
-    s32 biasedExponent = s32(absValueBits >> FloatTraits<f64>::MantissaBitCount);
-    if (biasedExponent != 0) [[likely]]
-    {
-      // Add the mantissa's implicit 1 bit
-      mantissaBits = (absValueBits & FloatTraits<f64>::MantissaMask) | ImpliedOneBit;
-
-      if constexpr (BitCount == 128)
-      {
-        // We're going to treat this as a 128-bit value, shifting it 63 bits over, so adjust the exponent to account for this. We're not shifting 64 bits over
-        // because that leaves 1 bit empty to avoid integer overflow when we perform division.
-        biasedExponent -= 63;
-      }
-    }
-    else
-    {
-      // Subnormal value, there is no implied leading 1, count leading zeros to determine the actual exponent
-      biasedExponent = -s32(CountLeadingZeros(absValueBits) - FloatTraits<f64>::ExponentBitCount - 1);
-
-      // Put the topmost bit into the "implied 1 bit" position
-      mantissaBits = absValueBits << (1 - biasedExponent);
-    }
-
-    return { biasedExponent, mantissaBits };
-  }
-
-  static constexpr f64 ComposeF64(u64 signBit, s32 biasedExponent, u64 mantissa)
-  {
-    static constexpr u64 ImpliedOneBit = 1_u64 << FloatTraits<f64>::MantissaBitCount;
-
-    if (biasedExponent > 0) [[likely]]
-    {
-      // Float in normal range - reconstruct it normally
-      return std::bit_cast<f64>((mantissa ^ ImpliedOneBit) | (u64(biasedExponent) << FloatTraits<f64>::MantissaBitCount) | signBit);
-    }
-    else
-    {
-      // Denormal float - reconstruct it and then multiply by 1 so that it gets flushed to 0 if denormal-to-zero is enabled
-      return 1.0 * std::bit_cast<f64>((u64(mantissa) >> (1 - biasedExponent)) | signBit);
-    }
-  }
-
-  static constexpr u64 RemainderOf128By64(u64 high128, u64 low128, u64 divisor)
-  {
-    if consteval
-    {
-      usz remainingShift = 64;
-
-      auto Shift =
-        [&](usz count)
-        {
-          high128 <<= count;
-          high128 |= (low128 >> (64 - count));
-          low128 <<= count;
-          remainingShift -= count;
-        };
-
-      {
-        usz shiftSpace = usz(CountLeadingZeros(high128));
-        usz freeShift = Min(shiftSpace, remainingShift);
-        if (freeShift > 0)
-          { Shift(freeShift); }
-      }
-
-      high128 %= divisor;
-
-      while (remainingShift > 0)
-      {
-        usz shiftSpace = usz(CountLeadingZeros(high128));
-        usz nextShift = Min(shiftSpace, remainingShift);
-        if (nextShift > 0)
-        {
-          Shift(nextShift);
-          high128 %= divisor;
-        }
-        else
-        {
-          Shift(1);
-          high128 -= divisor;
-        }
-      }
-
-      return high128;
-    }
-    else
-    {
-      #if COMPILER_MSVC
-        u64 remainder;
-        _udiv128(high128, low128, divisor, &remainder);
-        return remainder;
-      #elif (COMPILER_GCC || COMPILER_CLANG) && PROCESSOR_X64
-        u64 remainder;
-        u64 unused;
-        __asm__(
-          "div %[b]"
-          : "=a"(unused), "=d"(remainder)
-          : [b] "r"(divisor), "a"(low128), "b"(high128));
-        return remainder;
-      #else
-        unsigned __int128 a128 = (static_cast<unsigned __int128>(high128) << 64);
-        return u64(a128 % divisor);
-      #endif
-    }
-  }
-
   template<usz ElementCount>
-  static constexpr Vector<f64, ElementCount> FmodIterate(const Vector<f64, ElementCount>& xAbs, const Vector<f64, ElementCount>& yAbs)
+  static constexpr Vector<f64, ElementCount> FmodIterateF32(const Vector<f64, ElementCount>& xAbs, const Vector<f64, ElementCount>& yAbs)
   {
     using f64xC = Vector<f64, ElementCount>;
     using s64xC = Vector<f64, ElementCount>;
     using u64xC = Vector<f64, ElementCount>;
 
     f64xC xRemainder = xAbs;
-    f64xC twiceYAbs = yAbs + yAbs;
-
     while (true)
     {
-      s64xC mask = (xRemainder < twiceYAbs);
-      if (TestMaskAllOnes(mask))
+      s64xC mask = (xRemainder > yAbs);
+      if (TestMaskAllZeros(mask))
         { break; }
 
       // After performing the division, subtract 1 from the integer representation to guarantee that the division didn't round up
@@ -152,155 +31,186 @@ namespace Chord
       xRemainder = FNMAdd(AndNot(std::bit_cast<f64xC>(mask), quotient), yAbs, xRemainder);
     }
 
-    xRemainder -= yAbs & std::bit_cast<f64xC>(xRemainder >= yAbs);
-
     return xRemainder;
+  }
+
+  template<floating_point_scalar_or_vector T>
+  static constexpr std::tuple<T, T> ProductWithError(const T& a, const T& b)
+  {
+    T product = a * b;
+    return { product, FMSub(a, b, product) }; // FMSub has infinite precision so we can accurately measure the error
+  }
+
+  template<floating_point_scalar_or_vector T>
+  static constexpr std::tuple<T, T> FastDoubleSubtract(const T& aHigh, const T& aLow, const T& bHigh, const T& bLow)
+  {
+    // In our specific use case, a > b, they share signs, and their exponents are within 1, so we don't lose any precision here
+    T subHigh = aHigh - bHigh;
+    T subLow = aLow - bLow;
+
+    // These values are known to be non-overlapping, i.e. a + b == a. This is possible when a's exponent is high enough compared to b's that 100% of b's
+    // precision is lost. Therefore, the high/low exponent ranges should still be ordered or, if the high parts were equal, they should cancel to 0.
+    ASSERT(TestMaskAllOnes(subHigh >= subLow || subHigh == T(0.0)));
+    T resultHigh = subHigh + subLow;
+    return { resultHigh, subLow - (resultHigh - subHigh) };
   }
 
   export
   {
-    constexpr f32 Fmod(f32 x, f32 y)
+    template<floating_point_scalar_or_vector T>
+    constexpr T Fmod(const T& x, const T& y)
     {
-      // The following math computes x - Trunc(x / y) * y. Note that the sign of y cancels out so we can ignore it.
-      if (IsInf(x) || IsNaN(x) || IsNaN(y) || y == 0.0f)
-        { return std::numeric_limits<f32>::quiet_NaN(); }
+      using fBB = ScalarOrVectorElementType<T>;
+      using sBBxC = ScalarOrVectorSignedType<T>;
+      using uBBxC = ScalarOrVectorUnsignedType<T>;
 
-      f32 xAbs = Abs(x);
-      u32 xSignBit = std::bit_cast<u32>(x) & FloatTraits<f32>::SignBitMask;
+      MaskedResult<T> result;
 
-      f64 xRemainder = xAbs;
-      f64 yAbs = Abs(y);
-      f64 twiceYAbs = yAbs + yAbs;
+      if (result.SetResult(IsInf(x) || IsNaN(x) || IsNan(y) || y == T(0.0), T(std::numeric_limits<fBB>::quiet_NaN())))
+        { return result.Result(); }
 
-      while (xRemainder >= twiceYAbs)
+      T xAbs = Abs(x);
+      T xSign = std::bit_cast<T>(std::bit_cast<uBBxC>(x) ^ std::bit_cast<uBBxC>(xAbs));
+
+      if constexpr (std::same_as<fBB, f32>)
       {
-        // After performing the division, subtract 1 from the integer representation to guarantee that the division didn't round up
-        f64 quotient = Trunc(std::bit_cast<f64>(std::bit_cast<u64>(xRemainder / yAbs) - 1));
+        if constexpr (vector<T>)
+        {
+          static constexpr usz ElementCount = T::ElementCount;
 
-        // FNMAdd might add extra bits of precision but the subtraction will reduce the precision back to storable range
-        xRemainder = FNMAdd(quotient, yAbs, xRemainder);
-      }
+          T yAbs = Abs(y);
+          T xRemainder = Uninitialized;
+          if constexpr (IsSimdTypeSupported<f64, ElementCount>)
+          {
+            auto xAbsF64 = Vector<f64, ElementCount>(xAbs);
+            auto yAbsF64 = Vector<f64, ElementCount>(yAbs);
+            auto xRemainderF64 = FmodIterateF32(xAbsF64, yAbsF64);
+            xRemainder = T(xRemainderF64);
+          }
+          else
+          {
+            // f64 vector with same element count isn't supported so we have to split into two f64 vectors
+            auto [xAbsF64Lower, xAbsF64Upper] = xAbs.WidenAndSplit();
+            auto [yAbsF64Lower, yAbsF64Upper] = yAbs.WidenAndSplit();
+            auto xRemainderF64Lower = FmodIterateF32(xAbsF64Lower, yAbsF64Lower);
+            auto xRemainderF64Upper = FmodIterateF32(xAbsF64Upper, yAbsF64Upper);
+            xRemainder = T::NarrowAndCombine(xRemainderF64Lower, xRemainderF64Upper);
+          }
 
-      if (xRemainder >= yAbs)
-        { xRemainder -= yAbs; }
+          xRemainder &= std::bit_cast<T>(xRemainder < yAbs);
+          result.SetResult(CopySign(xRemainder, xSign));
+        }
+        else
+        {
+          f64 yAbs = Abs(y);
+          f64 xRemainder = xAbs;
+          while (xRemainder > yAbs)
+          {
+            // After performing the division, subtract 1 from the integer representation to guarantee that the division didn't round up
+            f64 quotient = Trunc(std::bit_cast<f64>(std::bit_cast<u64>(xRemainder / yAbs) - 1));
 
-      return std::bit_cast<f32>(std::bit_cast<u32>(f32(xRemainder)) | xSignBit);
-    }
+            // FNMAdd might add extra bits of precision but the subtraction will reduce the precision back to storable range
+            xRemainder = FNMAdd(quotient, yAbs, xRemainder);
+          }
 
-    template<usz ElementCount>
-    constexpr Vector<f32, ElementCount> Fmod(const Vector<f32, ElementCount>& x, const Vector<f32, ElementCount>& y)
-    {
-      using f64xC = Vector<f64, ElementCount>;
-      using s64xC = Vector<s64, ElementCount>;
-      using u64xC = Vector<u64, ElementCount>;
-
-      // The following math computes x - Trunc(x / y) * y. Note that the sign of y cancels out so we can ignore it.
-      MaskedResult<f64xC> result;
-
-      result.SetResult(IsInf(x) | IsNaN(x) | IsNaN(y) | y == Zero, f64xC(std::numeric_limits<f32>::quiet_NaN()));
-
-      f64xC xAbs = Abs(x);
-      f64xC xSignBit = x & f64xC(std::bit_cast<f32>(FloatTraits<f32>::SignBitMask));
-      f64xC yAbs = Abs(y);
-
-      f64xC xRemainder = Uninitialized;
-      if constexpr (IsSimdTypeSupported<f64, ElementCount>)
-      {
-        auto xAbsF64 = Vector<f64, ElementCount>(xAbs);
-        auto yAbsF64 = Vector<f64, ElementCount>(yAbs);
-        auto xRemainderF64 = FmodIterate(xAbsF64, yAbsF64);
-        xRemainder = f64xC(xRemainderF64);
+          xRemainder = (xRemainder < yAbs) ? xRemainder : 0.0;
+          result.SetResult(CopySign(f32(xRemainder), xSign));
+        }
       }
       else
       {
-        // f64 vector with same element count isn't supported so we have to split into two f64 vectors
-        auto [xAbsF64Lower, xAbsF64Upper] = xAbs.WidenAndSplit();
-        auto [yAbsF64Lower, yAbsF64Upper] = yAbs.WidenAndSplit();
-        auto xRemainderF64Lower = FmodIterate(xAbsF64Lower, yAbsF64Lower);
-        auto xRemainderF64Upper = FmodIterate(xAbsF64Upper, yAbsF64Upper);
-        xRemainder = f64xC::NarrowAndCombine(xRemainderF64Lower, xRemainderF64Upper);
+        // For the f64 version, we don't have quad types so we need to use tricks to maintain f64 precision and range
+        T yAbsOrig = Abs(y);
+        if (result.SetResult(xAbs < yAbsOrig, [&]() { return CopySign(xAbs, xSign); })
+          || result.SetResult(xAbs == yAbsOrig, xSign))
+          { return result.Result(); }
+
+        T xRemainderHigh = xAbs;
+
+        // Scale y up if its exponent is too low so we don't hit against denormals
+        T scale = Select(yAbsOrig < T(0x1p-800), T(0x1p400), T(1.0));
+        T yAbsOrigScaled = yAbsOrig * scale;
+
+        // This lets us split calculations up into "ranges" that are guaranteed not to overflow
+        auto SetMinExponent =
+          [&](s32 targetExponent)
+          {
+            T valueWithTargetExponent = std::bit_cast<T>(
+              (std::bit_cast<uBBxC>(yAbsOrigScaled) & uBBxC(FloatTraits<T>::MantissaMask))
+                | sBBxC((FloatTraits<T>::ExponentBias + targetExponent) << FloatTraits<T>::MantissaBitCount));
+            return Max(yAbsOrig, valueWithTargetExponent);
+          };
+
+        T yAbs = yAbsOrigScaled;
+
+        auto DoLoop =
+          [&]()
+          {
+            T xRemainderLow = T(0.0);
+            while (true)
+            {
+              auto mask = AndNot(result.Mask(), xRemainderHigh > yAbs);
+              if (TestMaskAllZeros(mask))
+                { break; }
+
+              // This is equivalent to Trunc(xRemainder / yAbs) but with enhanced precision
+              T q = (xRemainderHigh / yAbs) + (xRemainderLow / yAbs);
+              q = std::bit_cast<T>(std::bit_cast<uBBxC>(q) - uBBxC(1));
+              q = Trunc(q);
+
+              // This is equivalent to xRemainder -= q * yAbs but with enhanced precision
+              auto [productHigh, productLow] = ProductWithError(q, yAbs);
+              auto [subtractHigh, subtractLow] = FastDoubleSubtract(xRemainderHigh, xRemainderLow, productHigh, productLow);
+
+              if constexpr (vector<T>)
+              {
+                xRemainderHigh = std::bit_cast<T>(mask) & subtractHigh;
+                xRemainderLow = std::bit_cast<T>(mask) & subtractLow;
+              }
+              else
+              {
+                xRemainderHigh = subtractHigh;
+                xRemainderLow = subtractLow;
+              }
+            }
+
+            // Everything should resolve to double precision (not quad) so we expect the lower half to be 0
+            ASSERT(TestMaskAllOnes((xRemainderLow == T(0.0)) | result.Mask()));
+
+            if constexpr (vector<T>)
+              { xRemainderHigh &= std::bit_cast<T>(xRemainderHigh < yAbs); }
+            else
+              { xRemainderHigh = (xRemainderHigh < yAbs) ? xRemainderHigh : 0.0; }
+          };
+
+        if (TestMaskAllZeros(AndNot(result.Mask(), IsInf(xAbs / yAbsOrig))))
+        {
+          // Perf early-out, this branch can be omitted. It's testing that the values are close enough that only one pass is needed.
+          xRemainderHigh *= scale;
+          DoLoop();
+          result.SetResult(CopySign(xRemainderHigh / scale, xSign));
+        }
+        else
+        {
+          // The first pass clamps yAbs's exponent to 0 so xRemainder / yAbs avoids overflowing to infinity
+          yAbs = SetMinExponent(0);
+          DoLoop();
+
+          // The second pass handles subnormal values of yAbs
+          yAbs = SetMinExponent(-200);
+          DoLoop();
+
+          // One more pass where all values are scaled up so that we can still work with y if it's very small
+          yAbs = yAbsOrigScaled;
+          xRemainderHigh *= scale;
+          DoLoop();
+
+          // Scale back down before returning our final result
+          result.SetResult(xRemainderHigh / scale, xSign);
+        }
       }
 
-      result.SetResult(xRemainder | xSignBit);
-      return result;
-    }
-
-    constexpr f64 Fmod(f64 x, f64 y)
-    {
-      // The following math computes x - Trunc(x / y) * y. Note that the sign of y cancels out so we can ignore it.
-      if (IsInf(x) || IsNaN(x) || IsNaN(y) || y == 0.0)
-        { return std::numeric_limits<f64>::quiet_NaN(); }
-
-      // Detect 0, it causes problems below
-      if (x == 0.0)
-        { return x; }
-
-      u64 xSignBit = std::bit_cast<u64>(x) & FloatTraits<f64>::SignBitMask;
-
-      // Detect simple cases
-      f64 xAbs = Abs(x);
-      f64 yAbs = Abs(y);
-      if (xAbs < yAbs)
-        { return x; }
-      else if (xAbs == yAbs)
-        { return std::bit_cast<f64>(xSignBit); }
-
-      auto [xBiasedExponent, xMantissa] = DecomposeF64ForRemainder<128>(x);
-      auto [yBiasedExponent, yMantissa] = DecomposeF64ForRemainder<64>(y);
-
-      // Now perform long division (x / y), keeping track of the bits that remain
-      s32 remainingExponentDelta = xBiasedExponent - yBiasedExponent;
-      while (remainingExponentDelta > 0)
-      {
-        xMantissa = RemainderOf128By64(xMantissa >> 1, xMantissa << 63, yMantissa);
-
-        // If there's no remainder, we're done
-        if (xMantissa == 0)
-          { return std::bit_cast<f64>(xSignBit); }
-
-        // Shift the highest 1 bit back into position and adjust the exponent correspondingly
-        s32 shift = s32(CountLeadingZeros(xMantissa)) - FloatTraits<f64>::ExponentBitCount;
-        xMantissa <<= shift;
-        remainingExponentDelta -= shift + 63;
-      }
-
-      // Shift x's exponent to line up with the exponent of y
-      s32 finalShift = Max(0_s32, -remainingExponentDelta);
-
-      // If the final shift is more than 64, bring it down into range
-      s32 overshift = Max(0_s32, finalShift - 63);
-      xMantissa >>= overshift;
-      finalShift -= overshift;
-      ASSERT(finalShift <= 63);
-      if (finalShift == 63)
-        { xMantissa %= yMantissa; } // Special case - shifting by 64 is undefined
-      else
-        { xMantissa = RemainderOf128By64(xMantissa >> (1 + finalShift), xMantissa << (63 - finalShift), yMantissa); }
-
-      if (xMantissa == 0)
-        { return std::bit_cast<f64>(xSignBit); }
-
-      // Rearrange back into a floating point value
-      s32 shift = CountLeadingZeros(xMantissa - FloatTraits<f64>::ExponentBitCount);
-      xMantissa <<= shift;
-      s32 newXExponent = yBiasedExponent - shift;
-      return ComposeF64(xSignBit, newXExponent, xMantissa);
-    }
-
-    template<usz ElementCount>
-    constexpr Vector<f64, ElementCount> Fmod(const Vector<f64, ElementCount>& x, const Vector<f64, ElementCount>& y)
-    {
-      using f64xC = Vector<f64, ElementCount>;
-
-      // Currently, the fastest f64 implementation I know of is to just use scalar math because there is no good 64-bit integer remainder operation
-      // !!! update this to use Josh's new version
-      alignas(alignof(f64xC)) FixedArray<f64, ElementCount> xElements;
-      alignas(alignof(f64xC)) FixedArray<f64, ElementCount> yElements;
-      x.StoreAligned(xElements);
-      x.StoreAligned(yElements);
-      for (usz i = 0; i < ElementCount; i++)
-        { xElements[i] = Fmod(xElements[i], yElements[i]); }
-      return f64xC::LoadAligned(xElements);
+      return result.Result();
     }
   }
 }

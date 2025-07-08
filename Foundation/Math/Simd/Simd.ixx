@@ -188,5 +188,25 @@ namespace Chord
 
     template<scalar_or_vector T>
     using ScalarOrVectorUnsignedType = typename ScalarOrVectorTypeData<T>::UnsignedType;
+
+    // These are defined for scalar and vector compatibility
+    // !!! unify other spots?
+
+    inline constexpr bool AndNot(bool a, bool b)
+      { return !a && b; }
+
+    template<typename TReturn, signed_vector TCondition, callable_as<TReturn()> TTrueFunc, callable_as<TReturn()> TFalseFunc>
+    constexpr TReturn Select(const TCondition& condition, TTrueFunc&& trueFunc, TFalseFunc&& falseFunc)
+      { return Select(condition, trueFunc(), falseFunc()); }
+
+    template<typename TReturn, callable_as<TReturn()> TTrueFunc, callable_as<TReturn()> TFalseFunc>
+    constexpr TReturn Select(bool condition, TTrueFunc&& trueFunc, TFalseFunc&& falseFunc)
+      { return condition ? trueFunc() : falseFunc(); }
+
+    inline constexpr bool TestMaskAllZeros(bool mask)
+      { return !mask; }
+
+    inline constexpr bool TestMaskAllOnes(bool mask)
+      { return mask; }
   }
 }
