@@ -1,4 +1,4 @@
-module Chord.Test;
+module Chord.Tests;
 
 namespace Chord
 {

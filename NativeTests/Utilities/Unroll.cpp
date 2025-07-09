@@ -3,7 +3,7 @@ module Chord.Tests;
 import std;
 
 import Chord.Foundation;
-import Chord.Test;
+import :Test;
 
 namespace Chord
 {

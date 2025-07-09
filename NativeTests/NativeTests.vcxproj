@@ -160,6 +160,8 @@
   <ItemGroup>
     <ClCompile Include="ConsoleCommand.cpp" />
     <ClCompile Include="ConsoleCommand.ixx" />
+    <ClCompile Include="Core\Coerce.cpp" />
+    <ClCompile Include="Core\NullTerminatedString.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Test.cpp" />
     <ClCompile Include="Test.ixx" />

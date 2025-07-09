@@ -11,7 +11,7 @@ namespace Chord
   export
   {
     template<fixed_char TChar>
-    usz NullTerminatedStringLength(const TChar* str)
+    constexpr usz NullTerminatedStringLength(const TChar* str)
     {
       ASSERT(str != nullptr);
       usz length = 0;

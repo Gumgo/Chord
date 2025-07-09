@@ -1,4 +1,4 @@
-export module Chord.Test;
+export module Chord.Tests:Test;
 
 import std;
 

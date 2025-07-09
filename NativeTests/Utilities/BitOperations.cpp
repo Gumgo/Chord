@@ -1,7 +1,7 @@
 module Chord.Tests;
 
 import Chord.Foundation;
-import Chord.Test;
+import :Test;
 
 namespace Chord
 {

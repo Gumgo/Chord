@@ -1,7 +1,7 @@
 import std;
 
 import Chord.Foundation;
-import Chord.Test;
+import Chord.Tests;
 
 using namespace Chord;
 

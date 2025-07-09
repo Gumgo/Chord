@@ -1,4 +1,4 @@
-export module Chord.Test:ConsoleCommand;
+export module Chord.Tests:ConsoleCommand;
 
 import std;
 

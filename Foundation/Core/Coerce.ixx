@@ -18,7 +18,7 @@ namespace Chord
         { return CanCoerce<std::underlying_type_t<TTo>>(v); }
       else
       {
-        TTo result = v;
+        TTo result = TTo(v);
         if (TFrom(result) != v)
           { return false; }
 
