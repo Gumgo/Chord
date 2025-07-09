@@ -59,20 +59,21 @@ namespace Chord
       constexpr String(String&& other) noexcept;
       template<fixed_char TOtherChar> requires (!std::is_same_v<TChar, TOtherChar>)
       constexpr String(const String<TOtherChar>& other, TChar replacementCharacter = DefaultReplacementCharacter<TChar>);
-      constexpr String(TChar* pointer);
+      constexpr String(const TChar* pointer);
       template<fixed_char TOtherChar> requires (!std::is_same_v<TChar, TOtherChar>)
-      constexpr String(TOtherChar* pointer, TChar replacementCharacter = DefaultReplacementCharacter<TChar>);
-      constexpr String(TChar* pointer, usz length);
+      constexpr String(const TOtherChar* pointer, TChar replacementCharacter = DefaultReplacementCharacter<TChar>);
+      constexpr String(Span<const TChar> span);
       template<fixed_char TOtherChar> requires (!std::is_same_v<TChar, TOtherChar>)
-      constexpr String(TOtherChar* pointer, usz length, TChar replacementCharacter = DefaultReplacementCharacter<TChar>);
-      constexpr String(Unmanaged_t, TChar* pointer, usz length);
+      constexpr String(Span<const TOtherChar> span, TChar replacementCharacter = DefaultReplacementCharacter<TChar>);
+      constexpr String(Unmanaged_t, Span<const TChar> span);
 
       constexpr ~String() noexcept;
 
       constexpr String& operator=(const String& other);
       constexpr String& operator=(String&& other) noexcept;
 
-      constexpr Span<const TChar> AsSpan(basic_integral auto start = 0, subspan_count auto count = ToEnd) const;
+      constexpr Span<const TChar> AsSpan() const;
+      constexpr Span<const TChar> AsSpan(basic_integral auto start, subspan_count auto count = ToEnd) const;
 
       constexpr const TChar* CharPtr() const;
       constexpr operator const TChar* () const;
@@ -87,9 +88,9 @@ namespace Chord
       constexpr void Set(const TChar* pointer);
       template<fixed_char TOtherChar> requires (!std::is_same_v<TChar, TOtherChar>)
       constexpr void Set(const TOtherChar* pointer, TChar replacementCharacter = DefaultReplacementCharacter<TChar>);
-      constexpr void Set(const TChar* pointer, usz length);
+      constexpr void Set(Span<const TChar> span);
       template<fixed_char TOtherChar> requires (!std::is_same_v<TChar, TOtherChar>)
-      constexpr void Set(const TOtherChar* pointer, usz length, TChar replacementCharacter = DefaultReplacementCharacter<TChar>);
+      constexpr void Set(Span<const TOtherChar> span, TChar replacementCharacter = DefaultReplacementCharacter<TChar>);
 
       template<fixed_char TOtherChar> constexpr bool operator==(const String<TOtherChar>& other) const;
       template<fixed_char TOtherChar> constexpr bool operator==(const TOtherChar* other) const;
@@ -179,8 +180,8 @@ namespace Chord
 
     template<fixed_char TChar>
     constexpr String<TChar>::String(const String& other)
-      : m_pointer(std::exchange(other.m_pointer, nullptr))
-      , m_length(std::exchange(other.m_length, 0))
+      : m_pointer(other.m_pointer)
+      , m_length(other.m_length)
       { TryIncrementRefCount(); }
 
     template<fixed_char TChar>
@@ -192,31 +193,31 @@ namespace Chord
     template<fixed_char TChar>
     template<fixed_char TOtherChar> requires (!std::is_same_v<TChar, TOtherChar>)
     constexpr String<TChar>::String(const String<TOtherChar> &other, TChar replacementCharacter)
-      { Set(other.CharPtr(), other.Count(), replacementCharacter); }
+      { Set(Span(other.CharPtr(), other.Length()), replacementCharacter); }
 
     template<fixed_char TChar>
-    constexpr String<TChar>::String(TChar* pointer)
+    constexpr String<TChar>::String(const TChar* pointer)
       { Set(pointer); }
 
     template<fixed_char TChar>
     template<fixed_char TOtherChar> requires (!std::is_same_v<TChar, TOtherChar>)
-    constexpr String<TChar>::String(TOtherChar* pointer, TChar replacementCharacter)
+    constexpr String<TChar>::String(const TOtherChar* pointer, TChar replacementCharacter)
       { Set(pointer, replacementCharacter); }
 
     template<fixed_char TChar>
-    constexpr String<TChar>::String(TChar* pointer, usz length)
-      { Set(pointer, length); }
+    constexpr String<TChar>::String(Span<const TChar> span)
+      { Set(span); }
 
     template<fixed_char TChar>
     template<fixed_char TOtherChar> requires (!std::is_same_v<TChar, TOtherChar>)
-    constexpr String<TChar>::String(TOtherChar* pointer, usz length, TChar replacementCharacter)
-      { Set(pointer, length, replacementCharacter); }
+    constexpr String<TChar>::String(Span<const TOtherChar> span, TChar replacementCharacter)
+      { Set(span, replacementCharacter); }
 
 
     template<fixed_char TChar>
-    constexpr String<TChar>::String(Unmanaged_t, TChar* pointer, usz length)
-      : m_pointer(length == 0 ? nullptr : pointer)
-      , m_length(length)
+    constexpr String<TChar>::String(Unmanaged_t, Span<const TChar> span)
+      : m_pointer(span.IsEmpty() ? nullptr : const_cast<TChar*>(span.Elements()))
+      , m_length(span.Count())
       { }
 
     template<fixed_char TChar>
@@ -251,13 +252,17 @@ namespace Chord
     }
 
     template<fixed_char TChar>
+    constexpr Span<const TChar> String<TChar>::AsSpan() const
+      { return AsSpan(0, ToEnd); }
+
+    template<fixed_char TChar>
     constexpr Span<const TChar> String<TChar>::AsSpan(basic_integral auto start, subspan_count auto count) const
     {
       StringData<TChar>* stringData = TryGetStringData();
       auto [pointer, length] = (stringData == nullptr)
-        ? std::tie(reinterpret_cast<const TChar*>(m_pointer), m_length)
-        : std::tie(stringData->m_pointer, stringData->m_length);
-      auto span(pointer, length);
+        ? std::make_tuple(reinterpret_cast<const TChar*>(m_pointer), m_length)
+        : std::make_tuple(stringData->m_pointer, stringData->m_length);
+      auto span = Span(pointer, length);
       return Span(span, start, count);
     }
 
@@ -303,7 +308,7 @@ namespace Chord
     constexpr void String<TChar>::Set(const TChar* pointer)
     {
       ASSERT(pointer != nullptr);
-      Set(pointer, NullTerminatedStringLength(pointer));
+      Set(Span(pointer, NullTerminatedStringLength(pointer)));
     }
 
     template<fixed_char TChar>
@@ -311,55 +316,51 @@ namespace Chord
     constexpr void String<TChar>::Set(const TOtherChar* pointer, TChar replacementCharacter)
     {
       ASSERT(pointer != nullptr);
-      Set(pointer, NullTerminatedStringLength(pointer), replacementCharacter);
+      Set(Span(pointer, NullTerminatedStringLength(pointer)), replacementCharacter);
     }
 
     template<fixed_char TChar>
-    constexpr void String<TChar>::Set(const TChar* pointer, usz length)
+    constexpr void String<TChar>::Set(Span<const TChar> span)
     {
-      ASSERT(pointer != nullptr);
-
-      if (length == 0)
+      if (span.IsEmpty())
       {
         Clear();
         return;
       }
 
-      auto [modifyMode, stringData] = PrepareForModification(length);
+      auto [modifyMode, stringData] = PrepareForModification(span.Count());
 
-      Copy(stringData->m_pointer, pointer, length);
+      Copy(stringData->m_pointer, span.Elements(), span.Count());
       if (modifyMode == ModifyMode::Copy)
         { SetStringData(stringData); }
       else
       {
         ASSERT(modifyMode == ModifyMode::InPlace);
-        stringData->m_length = length;
+        stringData->m_length = span.Count();
       }
     }
 
     template<fixed_char TChar>
     template<fixed_char TOtherChar> requires (!std::is_same_v<TChar, TOtherChar>)
-    constexpr void String<TChar>::Set(const TOtherChar* pointer, usz length, TChar replacementCharacter)
+    constexpr void String<TChar>::Set(Span<const TOtherChar> span, TChar replacementCharacter)
     {
-      ASSERT(pointer != nullptr);
-
-      if (length == 0)
+      if (span.IsEmpty())
       {
         Clear();
         return;
       }
 
-      auto [modifyMode, stringData] = PrepareForModification(length);
+      auto [modifyMode, stringData] = PrepareForModification(span.Count());
 
-      for (usz i = 0; i < length; i++)
-        { stringData->m_pointer[i] = ConvertCharacter(pointer[i], replacementCharacter); }
+      for (usz i = 0; i < span.Count(); i++)
+        { stringData->m_pointer[i] = ConvertCharacter(span[i], replacementCharacter); }
 
       if (modifyMode == ModifyMode::Copy)
         { SetStringData(stringData); }
       else
       {
         ASSERT(modifyMode == ModifyMode::InPlace);
-        stringData->m_length = length;
+        stringData->m_length = span.Count();
       }
     }
 
@@ -422,8 +423,9 @@ namespace Chord
       auto thisSpan = AsSpan();
       for (usz i = 0; i < thisSpan.Count(); i++)
       {
-        if (c[thisSpan.Count() - i - 1] == c)
-          { return i; }
+        usz j = thisSpan.Count() - i - 1;
+        if (thisSpan[j] == c)
+          { return j; }
       }
 
       return std::nullopt;
@@ -507,7 +509,7 @@ namespace Chord
 
     template<fixed_char TChar>
     constexpr StringData<TChar>* String<TChar>::TryGetStringData() const
-      { return m_pointer != nullptr && m_length == 0 ? reinterpret_cast<StringData<TChar>>(m_pointer) : nullptr; }
+      { return m_pointer != nullptr && m_length == 0 ? reinterpret_cast<StringData<TChar>*>(m_pointer) : nullptr; }
 
     template<fixed_char TChar>
     constexpr void String<TChar>::SetStringData(StringData<TChar>* stringData)
@@ -549,9 +551,9 @@ namespace Chord
 
       // If we already have string data, we hold the only reference to it, and it has capacity to spare, we can do an in-place modification
       if (stringData != nullptr && stringData->m_refCount.load(std::memory_order_relaxed) == 1 && stringData->m_capacity >= newLength)
-        { return std::tie(ModifyMode::InPlace, stringData); }
+        { return std::make_tuple(ModifyMode::InPlace, stringData); }
 
-      return std::tie(
+      return std::make_tuple(
         ModifyMode::Copy,
         new StringData<TChar>
         {
@@ -596,12 +598,16 @@ namespace Chord
       if constexpr (std::same_as<TChar, TOtherChar>)
         { return otherChar; }
       else
-        { return std::less_equal(otherChar, std::numeric_limits<TChar>::max()) ? TChar(otherChar) : replacementCharacter; }
+      {
+        return std::make_unsigned_t<TOtherChar>(otherChar) <= std::numeric_limits<std::make_unsigned_t<TChar>>::max()
+          ? TChar(otherChar)
+          : replacementCharacter;
+      }
     }
 
-
     template<fixed_char TChar>
-    template<fixed_char TOtherChar> constexpr void String<TChar>::InsertInternal(
+    template<fixed_char TOtherChar>
+    constexpr void String<TChar>::InsertInternal(
       basic_integral auto index,
       Span<const TOtherChar> otherSpan,
       TChar replacementCharacter)
@@ -619,8 +625,8 @@ namespace Chord
       if (modifyMode == ModifyMode::Copy)
       {
         Copy(stringData->m_pointer, thisSpan.GetBuffer(0, evaluatedIndex), evaluatedIndex);
-        for (auto [i, c] : otherSpan)
-          { stringData->m_pointer[evaluatedIndex + i] = ConvertCharacter(c, replacementCharacter); }
+        for (usz i = 0; i < otherSpan.Count(); i++)
+          { stringData->m_pointer[evaluatedIndex + i] = ConvertCharacter(otherSpan[i], replacementCharacter); }
         Copy(&stringData->m_pointer[evaluatedIndex + otherSpan.Count()], thisSpan.GetBuffer(evaluatedIndex, afterInsertCount), afterInsertCount);
         SetStringData(stringData);
       }
@@ -630,20 +636,20 @@ namespace Chord
 
         // Make a space for insertion
         CopyOverlapping(&stringData->m_pointer[evaluatedIndex + otherSpan.Count()], &stringData->m_pointer[evaluatedIndex], afterInsertCount);
-        for (auto [i, c] : otherSpan)
-          { stringData->m_pointer[evaluatedIndex + i] = ConvertCharacter(c, replacementCharacter); }
+        for (usz i = 0; i < otherSpan.Count(); i++)
+          { stringData->m_pointer[evaluatedIndex + i] = ConvertCharacter(otherSpan[i], replacementCharacter); }
         stringData->m_length = newLength;
       }
     }
 
     template<fixed_char TChar>
     constexpr void String<TChar>::Append(TChar c)
-      { InsertInternal(Length(), Span(&c, 1), DefaultReplacementCharacter<TChar>); }
+      { InsertInternal(Length(), Span<const TChar>(&c, 1), DefaultReplacementCharacter<TChar>); }
 
     template<fixed_char TChar>
     template<fixed_char TOtherChar> requires (!std::is_same_v<TChar, TOtherChar>)
     constexpr void String<TChar>::Append(TOtherChar c, TChar replacementCharacter)
-      { InsertInternal(Length(), Span(&c, 1), replacementCharacter); }
+      { InsertInternal(Length(), Span<const TOtherChar>(&c, 1), replacementCharacter); }
 
     template<fixed_char TChar>
     constexpr void String<TChar>::Append(const String<TChar>& str)
@@ -656,21 +662,21 @@ namespace Chord
 
     template<fixed_char TChar>
     constexpr void String<TChar>::Append(const TChar* str)
-      { InsertInternal(Length(), Span(str.Elements(), NullTerminatedStringLength(str)), DefaultReplacementCharacter<TChar>); }
+      { InsertInternal(Length(), Span(str, NullTerminatedStringLength(str)), DefaultReplacementCharacter<TChar>); }
 
     template<fixed_char TChar>
     template<fixed_char TOtherChar> requires (!std::is_same_v<TChar, TOtherChar>)
     constexpr void String<TChar>::Append(const TOtherChar* str, TChar replacementCharacter)
-      { InsertInternal(Length(), Span(str.Elements(), NullTerminatedStringLength(str)), replacementCharacter); }
+      { InsertInternal(Length(), Span(str, NullTerminatedStringLength(str)), replacementCharacter); }
 
     template<fixed_char TChar>
     constexpr void String<TChar>::Insert(basic_integral auto index, TChar c)
-      { InsertInternal(index, Span(&c, 1), DefaultReplacementCharacter<TChar>); }
+      { InsertInternal(index, Span<const TChar>(&c, 1), DefaultReplacementCharacter<TChar>); }
 
     template<fixed_char TChar>
     template<fixed_char TOtherChar> requires (!std::is_same_v<TChar, TOtherChar>)
     constexpr void String<TChar>::Insert(basic_integral auto index, TOtherChar c, TChar replacementCharacter)
-      { InsertInternal(index, Span(&c, 1), replacementCharacter); }
+      { InsertInternal(index, Span<const TOtherChar>(&c, 1), replacementCharacter); }
 
     template<fixed_char TChar>
     constexpr void String<TChar>::Insert(basic_integral auto index, const String<TChar>& str)
@@ -683,12 +689,12 @@ namespace Chord
 
     template<fixed_char TChar>
     constexpr void String<TChar>::Insert(basic_integral auto index, const TChar* str)
-      { InsertInternal(index, Span(str.Elements(), NullTerminatedStringLength(str)), DefaultReplacementCharacter<TChar>); }
+      { InsertInternal(index, Span(str, NullTerminatedStringLength(str)), DefaultReplacementCharacter<TChar>); }
 
     template<fixed_char TChar>
     template<fixed_char TOtherChar> requires (!std::is_same_v<TChar, TOtherChar>)
     constexpr void String<TChar>::Insert(basic_integral auto index, const TOtherChar* str, TChar replacementCharacter)
-      { InsertInternal(index, Span(str.Elements(), NullTerminatedStringLength(str)), replacementCharacter); }
+      { InsertInternal(index, Span(str, NullTerminatedStringLength(str)), replacementCharacter); }
 
     template<fixed_char TChar>
     constexpr void String<TChar>::Remove(basic_integral auto start, subspan_count auto count)
@@ -728,10 +734,14 @@ namespace Chord
       usz evaluatedStart = thisSpan.EvaluateSubspanStart(start);
       usz evaluatedCount = thisSpan.EvaluateSubspanCount(evaluatedStart, count);
 
+      // Simply return a copy if the substring covers the whole string
+      if (evaluatedStart == 0 && evaluatedCount == thisSpan.Count())
+        { return *this; }
+
       // If this is an unmanaged string, we can directly return a substring
       return (m_pointer == nullptr || m_length > 0)
-        ? String(Unmanaged, thisSpan.GetBuffer(start, count), evaluatedCount)
-        : String(thisSpan.GetBuffer(start, count), evaluatedCount);
+        ? String(Unmanaged, Span(thisSpan, start, count))
+        : String(Span(thisSpan, start, count));
     }
 
     template<fixed_char TChar>
@@ -781,5 +791,8 @@ namespace Chord
       result += strB;
       return result;
     }
+
+    using AsciiString = String<char>;
+    using UnicodeString = String<char32_t>;
   }
 }

@@ -2,6 +2,10 @@ export module Chord.Foundation:Core.Concepts;
 
 import std;
 
+// $TODO one problem with these (and the standard library's concepts) is that they also include const/volatile variants of types. So for example, constraining
+// the String class to fixed_char also allows for String<const char>, which should be disallowed. One solution is to add additional concepts:
+//   template<typename T> unqualified = std::same_as<T, std::remove_cv_t<T>>;
+//   template<typename T> unqualified_floating_point = std::floating_point<T> && unqualified<T>;
 namespace Chord
 {
   template<typename T, typename TSignature>
