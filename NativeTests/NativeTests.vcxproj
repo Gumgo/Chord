@@ -160,12 +160,19 @@
   <ItemGroup>
     <ClCompile Include="ConsoleCommand.cpp" />
     <ClCompile Include="ConsoleCommand.ixx" />
+    <ClCompile Include="Containers\BoundedArray.cpp" />
+    <ClCompile Include="Containers\FixedArray.cpp" />
+    <ClCompile Include="Containers\UnboundedArray.cpp" />
+    <ClCompile Include="TestUtilities\ObjectWithConstructorArguments.ixx" />
+    <ClCompile Include="TestUtilities\ResizableArrayBaseTests.ixx" />
+    <ClCompile Include="Containers\Span.cpp" />
     <ClCompile Include="Core\Coerce.cpp" />
     <ClCompile Include="Core\NullTerminatedString.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="String\String.cpp" />
     <ClCompile Include="Test.cpp" />
     <ClCompile Include="Test.ixx" />
+    <ClCompile Include="TestUtilities\MovableObject.ixx" />
     <ClCompile Include="Utilities\Alignment.cpp" />
     <ClCompile Include="Tests.ixx" />
     <ClCompile Include="Utilities\BitOperations.cpp" />

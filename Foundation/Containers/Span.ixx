@@ -135,14 +135,14 @@ namespace Chord
       constexpr void CopyElementsFrom(this has_writable_elements auto&& self, Span<const TElement> other)
         requires (std::is_copy_assignable_v<TElement>);
 
-      constexpr void MoveElementsFrom(this has_writable_elements auto&& self, Span<const TElement> other)
-        requires (std::is_copy_assignable_v<TElement>);
+      constexpr void MoveElementsFrom(this has_writable_elements auto&& self, Span<TElement> other)
+        requires (std::is_move_assignable_v<TElement>);
 
       constexpr void CopyOverlappingElementsFrom(this has_writable_elements auto&& self, Span<const TElement> other)
         requires (std::is_copy_assignable_v<TElement>);
 
-      constexpr void MoveOverlappingElementsFrom(this has_writable_elements auto&& self, Span<const TElement> other)
-        requires (std::is_copy_assignable_v<TElement>);
+      constexpr void MoveOverlappingElementsFrom(this has_writable_elements auto&& self, Span<TElement> other)
+        requires (std::is_move_assignable_v<TElement>);
 
       void ZeroElements(this has_writable_elements auto&& self)
         requires (std::is_trivially_copyable_v<std::remove_const_t<TElement>>
@@ -245,8 +245,8 @@ namespace Chord
     }
 
     template<typename TElement>
-    constexpr void SpanBase<TElement>::MoveElementsFrom(this has_writable_elements auto&& self, Span<const TElement> other)
-      requires (std::is_copy_assignable_v<TElement>)
+    constexpr void SpanBase<TElement>::MoveElementsFrom(this has_writable_elements auto&& self, Span<TElement> other)
+      requires (std::is_move_assignable_v<TElement>)
     {
       ASSERT(self.Count() == other.Count());
       Move(self.Elements(), other.Elements(), other.Count());
@@ -261,8 +261,8 @@ namespace Chord
     }
 
     template<typename TElement>
-    constexpr void SpanBase<TElement>::MoveOverlappingElementsFrom(this has_writable_elements auto&& self, Span<const TElement> other)
-      requires (std::is_copy_assignable_v<TElement>)
+    constexpr void SpanBase<TElement>::MoveOverlappingElementsFrom(this has_writable_elements auto&& self, Span<TElement> other)
+      requires (std::is_move_assignable_v<TElement>)
     {
       ASSERT(self.Count() == other.Count());
       MoveOverlapping(self.Elements(), other.Elements(), other.Count());

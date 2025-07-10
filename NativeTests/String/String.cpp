@@ -754,7 +754,5 @@ namespace Chord
       SharedStringTests<char>::OperatorPlus();
       SharedStringTests<char32_t>::OperatorPlus();
     }
-
-    // !!! more
   };
 }

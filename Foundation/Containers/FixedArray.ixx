@@ -9,7 +9,7 @@ namespace Chord
 {
   export
   {
-    template<typename TElement, usz Length>
+    template<typename TElement, usz Length = 0>
     class FixedArray : public SpanBase<TElement>
     {
       using Super = SpanBase<TElement>;
@@ -37,13 +37,15 @@ namespace Chord
 
       constexpr FixedArray& operator=(const FixedArray& other) requires (std::is_copy_assignable_v<TElement>)
       {
-        CopyElementsFrom(other);
+        if (this != &other)
+          { this->CopyElementsFrom(other); }
         return *this;
       }
 
       constexpr FixedArray& operator=(FixedArray&& other) noexcept requires (std::is_move_assignable_v<TElement>)
       {
-        MoveElementsFrom(other);
+        ASSERT(this != &other);
+        this->MoveElementsFrom(other);
         return *this;
       }
 
@@ -96,8 +98,12 @@ namespace Chord
         : m_elements(std::allocator<TElement>().allocate(values.size()))
         , m_count(values.size())
       {
-        for (usz i = 0; i < m_count; i++)
-          { std::construct_at(&m_elements[i], values[i]); }
+        usz i = 0;
+        for (const TElement& value : values)
+        {
+          std::construct_at(&m_elements[i], value);
+          i++;
+        }
       }
 
       constexpr ~FixedArray() noexcept
@@ -110,7 +116,7 @@ namespace Chord
           if (m_count != other.m_count)
           {
             FreeElements();
-            m_elements = std::allocator().allocate(other.m_count);
+            m_elements = std::allocator<TElement>().allocate(other.m_count);
             m_count = other.m_count;
 
             for (usz i = 0; i < m_count; i++)
@@ -140,9 +146,9 @@ namespace Chord
       }
 
       constexpr auto* Elements(this auto&& self)
-        { return m_elements; }
+        { return self.m_elements; }
 
-      static constexpr usz Count()
+      constexpr usz Count() const
         { return m_count; }
 
     private:

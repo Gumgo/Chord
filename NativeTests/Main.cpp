@@ -35,9 +35,55 @@ static void TestExpectHandler(const char* message, std::source_location sourceLo
   s_currentTestContext->m_failures.push_back({ .m_message = message, .m_sourceLocation = sourceLocation });
 }
 
+struct Filter
+{
+  std::string m_testClass;
+  std::string m_testMethod;
+};
+
+static Filter BuildFilter(std::string filterString)
+{
+  usz dotIndex = filterString.find_first_of('.');
+  return (dotIndex == std::string::npos)
+    ? Filter { .m_testClass = filterString }
+    : Filter { .m_testClass = filterString.substr(0, dotIndex), .m_testMethod = filterString.substr(dotIndex + 1) };
+}
+
+static bool ShouldRunTestClass(const TestClassInfo* testClass, const std::vector<Filter>& filters)
+{
+  if (filters.empty())
+    { return true; }
+
+  for (const Filter& filter : filters)
+  {
+    if (filter.m_testClass == testClass->m_name)
+      { return true; }
+  }
+
+  return false;
+}
+
+static bool ShouldRunTestMethod(const TestClassInfo* testClass, TestMethodInfo* testMethod, const std::vector<Filter>& filters)
+{
+  if (filters.empty())
+    { return true; }
+
+  for (const Filter& filter : filters)
+  {
+    if (filter.m_testClass == testClass->m_name && (filter.m_testMethod.empty() || filter.m_testMethod == testMethod->m_name))
+      { return true; }
+  }
+
+  return false;
+}
+
 // $TODO add command line arguments to filter tests
 s32 main(s32 argc, char** argv)
 {
+  std::vector<Filter> filters;
+  for (s32 i = 1; i < argc; i++)
+    { filters.push_back(BuildFilter(argv[i])); }
+
   // !!! set up floating point and other thread things
 
   TestClassInfo* testClasses = FinalizeAndGetTests();
@@ -51,6 +97,12 @@ s32 main(s32 argc, char** argv)
   TestClassInfo* testClass = testClasses;
   while (testClass != nullptr)
   {
+    if (!ShouldRunTestClass(testClass, filters))
+    {
+      testClass = testClass->m_next;
+      continue;
+    }
+
     std::cout << "Running tests in " << ConsoleCommand::Bold << testClass->m_name << ConsoleCommand::Reset << ":\n";
 
     TestMethodInfo* testMethod = testClass->m_methods;
@@ -58,6 +110,12 @@ s32 main(s32 argc, char** argv)
     usz failureCount = 0;
     while (testMethod != nullptr)
     {
+      if (!ShouldRunTestMethod(testClass, testMethod, filters))
+      {
+        testMethod = testMethod->m_next;
+        continue;
+      }
+
       std::cout << "  " << ConsoleCommand::Bold << testMethod->m_name << ConsoleCommand::Reset << ": ";
 
       TestContext testContext;

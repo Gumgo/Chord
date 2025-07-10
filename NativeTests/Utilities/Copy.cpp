@@ -4,31 +4,10 @@ import std;
 
 import Chord.Foundation;
 import :Test;
+import :TestUtilities.MovableObject;
 
 namespace Chord
 {
-  class MovableObject
-  {
-  public:
-    MovableObject() = default;
-
-    MovableObject(s32 value)
-      : m_value(value)
-      { }
-
-    MovableObject(MovableObject&& other) noexcept
-      : m_value(std::exchange(other.m_value, -other.m_value))
-      { }
-
-    MovableObject& operator=(MovableObject&& other) noexcept
-    {
-      m_value = std::exchange(other.m_value, -other.m_value);
-      return *this;
-    }
-
-    s32 m_value = 0;
-  };
-
   TEST_CLASS(Copy)
   {
     TEST_METHOD(Copy)

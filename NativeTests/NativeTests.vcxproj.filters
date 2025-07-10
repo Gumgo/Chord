@@ -62,5 +62,26 @@
     <ClCompile Include="String\String.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Containers\Span.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Containers\BoundedArray.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Containers\FixedArray.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TestUtilities\MovableObject.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TestUtilities\ResizableArrayBaseTests.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TestUtilities\ObjectWithConstructorArguments.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Containers\UnboundedArray.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -7,13 +7,15 @@ import :Core;
 
 namespace Chord
 {
-  template<typename TElement> requires (!std::is_const_v<TElement>)
+  template<typename TElement>
+    requires (!std::is_const_v<TElement>)
   class ResizableArrayBase;
 
   template<typename TContainer>
   concept resizable_array_subclass = std::derived_from<TContainer, ResizableArrayBase<typename TContainer::Element>>
     && requires (TContainer& container, usz count)
     {
+      { container.Capacity() } -> std::same_as<usz>;
       { container.EnsureCapacity(count) } -> std::same_as<void>;
     };
 
@@ -23,14 +25,17 @@ namespace Chord
   export
   {
     // This requires non-const elements because various operations like Append, Insert, etc. require move constructors which take non-const rvalue references
-    template<typename TElement> requires (!std::is_const_v<TElement>)
+    template<typename TElement>
+      requires (!std::is_const_v<TElement>)
     class ResizableArrayBase : public SpanBase<TElement>
     {
       using Super = SpanBase<TElement>;
 
     public:
-      constexpr usz Count(this non_const_self auto& self)
+      constexpr usz Count(this auto& self)
         { return self.m_count; }
+      constexpr bool IsFull(this auto& self)
+        { return self.m_count == self.Capacity(); }
 
       constexpr void Clear(this non_const_self auto& self);
 
@@ -72,7 +77,11 @@ namespace Chord
       constexpr Span<TElement> InsertMultiple(this non_const_self auto& self, basic_integral auto index, TView&& view)
         requires (std::is_copy_constructible_v<TElement> && std::is_move_constructible_v<TElement>);
 
-      constexpr void RemoveByIndex(this non_const_self auto& self, basic_integral auto index, subspan_count auto count = 1)
+      constexpr void RemoveByIndex(this non_const_self auto& self, basic_integral auto index)
+        requires (std::is_move_constructible_v<TElement>);
+      constexpr void RemoveByIndex(this non_const_self auto& self, basic_integral auto index, subspan_count auto count)
+        requires (std::is_move_constructible_v<TElement>);
+      constexpr void RemoveByIndexUnordered(this non_const_self auto& self, basic_integral auto index)
         requires (std::is_move_constructible_v<TElement>);
       constexpr void RemoveByIndexUnordered(this non_const_self auto& self, basic_integral auto index, subspan_count auto count = 1)
         requires (std::is_move_constructible_v<TElement>);
@@ -96,26 +105,26 @@ namespace Chord
 
     template<typename TElement> requires (!std::is_const_v<TElement>)
     constexpr void ResizableArrayBase<TElement>::Clear(this non_const_self auto& self)
-      { SetCount(0); }
+      { self.SetCount(0); }
 
     template<typename TElement> requires (!std::is_const_v<TElement>)
     constexpr void ResizableArrayBase<TElement>::SetCount(this non_const_self auto& self, usz count)
       requires (std::is_default_constructible_v<TElement>)
     {
       self.EnsureCapacity(count);
-      if (m_count < count)
+      if (self.m_count < count)
       {
-        for (usz i = m_count; i < count; i++)
+        for (usz i = self.m_count; i < count; i++)
           { std::construct_at(&self.Elements()[i]); }
       }
       else
       {
-        usz removeCount = m_count - count;
+        usz removeCount = self.m_count - count;
         for (usz i = 0; i < removeCount; i++)
-          { std::destroy_at(&self.Elements()[m_count - i - 1]); }
+          { std::destroy_at(&self.Elements()[self.m_count - i - 1]); }
       }
 
-      m_count = count;
+      self.m_count = count;
     }
 
     template<typename TElement> requires (!std::is_const_v<TElement>)
@@ -123,19 +132,19 @@ namespace Chord
       requires (std::is_copy_constructible_v<TElement>)
     {
       self.EnsureCapacity(count);
-      if (m_count < count)
+      if (self.m_count < count)
       {
-        for (usz i = m_count; i < count; i++)
+        for (usz i = self.m_count; i < count; i++)
           { std::construct_at(&self.Elements()[i], fillValue); }
       }
       else
       {
-        usz removeCount = m_count - count;
+        usz removeCount = self.m_count - count;
         for (usz i = 0; i < removeCount; i++)
-          { std::destroy_at(&self.Elements()[m_count - i - 1]); }
+          { std::destroy_at(&self.Elements()[self.m_count - i - 1]); }
       }
 
-      m_count = count;
+      self.m_count = count;
     }
 
     template<typename TElement> requires (!std::is_const_v<TElement>)
@@ -157,7 +166,7 @@ namespace Chord
       usz oldCount = self.m_count;
       usz newCount = oldCount + 1;
       self.EnsureCapacity(newCount);
-      std::construct_at(&self.Elements()[oldCount], value);
+      std::construct_at(&self.Elements()[oldCount], std::move(value));
       self.m_count = newCount;
       return self.Elements()[oldCount];
     }
@@ -179,12 +188,12 @@ namespace Chord
     constexpr Span<TElement> ResizableArrayBase<TElement>::AppendFill(this non_const_self auto& self, usz count, const TElement& fillValue)
       requires (std::is_copy_constructible_v<TElement>)
     {
-      usz oldCount = m_count;
+      usz oldCount = self.m_count;
       usz newCount = oldCount + count;
       self.EnsureCapacity(newCount);
       for (usz i = oldCount; i < newCount; i++)
         { std::construct_at(&self.Elements()[i], fillValue); }
-      m_count = newCount;
+      self.m_count = newCount;
       return Span<TElement>(&self.Elements()[oldCount], count);
     }
 
@@ -208,8 +217,8 @@ namespace Chord
         else
           { count = view.Count(); }
 
-        self.EnsureCapacity(m_count + count);
-        usz oldCount = m_count;
+        self.EnsureCapacity(self.m_count + count);
+        usz oldCount = self.m_count;
         usz newCount = oldCount;
         for (auto&& item : view)
         {
@@ -217,7 +226,7 @@ namespace Chord
           newCount++;
         }
 
-        m_count = newCount;
+        self.m_count = newCount;
         return Span<TElement>(&self.Elements()[oldCount], count);
       }
       else
@@ -251,7 +260,7 @@ namespace Chord
       usz newCount = oldCount + 1;
       self.EnsureCapacity(newCount);
       self.ShiftElementsUp(evaluatedIndex, 1);
-      std::construct_at(&self.Elements()[evaluatedIndex], value);
+      std::construct_at(&self.Elements()[evaluatedIndex], std::move(value));
       self.m_count = newCount;
       return self.Elements()[evaluatedIndex];
     }
@@ -280,14 +289,14 @@ namespace Chord
       requires (std::is_copy_constructible_v<TElement>)
     {
       usz evaluatedIndex = self.EvaluateSubspanStart(index);
-      usz oldCount = m_count;
+      usz oldCount = self.m_count;
       usz newCount = oldCount + count;
       self.EnsureCapacity(newCount);
-      self.ShiftElementsUp(evaluatedIndex, 1);
+      self.ShiftElementsUp(evaluatedIndex, count);
       usz endIndex = evaluatedIndex + count;
       for (usz i = evaluatedIndex; i < endIndex; i++)
         { std::construct_at(&self.Elements()[i], fillValue); }
-      m_count = newCount;
+      self.m_count = newCount;
       return Span<TElement>(&self.Elements()[evaluatedIndex], count);
     }
 
@@ -315,8 +324,8 @@ namespace Chord
         else
           { count = view.Count(); }
 
-        usz oldCount = m_count;
-        usz newCount = oldCount;
+        usz oldCount = self.m_count;
+        usz newCount = oldCount + count;
         self.EnsureCapacity(newCount);
         self.ShiftElementsUp(evaluatedIndex, count);
 
@@ -327,7 +336,7 @@ namespace Chord
           constructIndex++;
         }
 
-        m_count = newCount;
+        self.m_count = newCount;
         return Span<TElement>(&self.Elements()[evaluatedIndex], count);
       }
       else
@@ -343,6 +352,11 @@ namespace Chord
           { std::ranges::rotate(&self.Elements()[evaluatedIndex], &self.Elements()[oldCount], &self.Elements()[self.m_count]); }
       }
     }
+
+    template<typename TElement> requires (!std::is_const_v<TElement>)
+    constexpr void ResizableArrayBase<TElement>::RemoveByIndex(this non_const_self auto& self, basic_integral auto index)
+      requires (std::is_move_constructible_v<TElement>)
+      { self.RemoveByIndex(index, 1); }
 
     template<typename TElement> requires (!std::is_const_v<TElement>)
     constexpr void ResizableArrayBase<TElement>::RemoveByIndex(this non_const_self auto& self, basic_integral auto index, subspan_count auto count)
@@ -365,6 +379,11 @@ namespace Chord
     }
 
     template<typename TElement> requires (!std::is_const_v<TElement>)
+    constexpr void ResizableArrayBase<TElement>::RemoveByIndexUnordered(this non_const_self auto& self, basic_integral auto index)
+      requires (std::is_move_constructible_v<TElement>)
+      { self.RemoveByIndexUnordered(index, 1); }
+
+    template<typename TElement> requires (!std::is_const_v<TElement>)
     constexpr void ResizableArrayBase<TElement>::RemoveByIndexUnordered(this non_const_self auto& self, basic_integral auto index, subspan_count auto count)
       requires (std::is_move_constructible_v<TElement>)
     {
@@ -373,13 +392,15 @@ namespace Chord
       usz endIndex = evaluatedIndex + evaluatedCount;
       for (usz i = evaluatedIndex; i < endIndex; i++)
       {
-        usz sourceIndex = self.m_count - evaluatedCount + i;
-        std::destroy_at(&self.Elements()[i]);
-        std::construct_at(&self.Elements()[i], std::move(self.Elements()[sourceIndex]));
-        std::destroy_at(&self.Elements()[sourceIndex]);
-      }
+        self.m_count--;
+        if (i != self.m_count)
+        {
+          std::destroy_at(&self.Elements()[i]);
+          std::construct_at(&self.Elements()[i], std::move(self.Elements()[self.m_count]));
+        }
 
-      self.m_count -= evaluatedCount;
+        std::destroy_at(&self.Elements()[self.m_count]);
+      }
     }
   }
 }

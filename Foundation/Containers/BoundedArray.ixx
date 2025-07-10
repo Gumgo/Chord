@@ -4,6 +4,8 @@ import std;
 
 import :Containers.ResizableArrayBase;
 import :Core;
+import :Utilities.BitOperations;
+import :Utilities.Bounds;
 
 namespace Chord
 {
@@ -75,19 +77,15 @@ namespace Chord
       constexpr static usz Capacity()
         { return FixedCapacity; }
 
-      constexpr bool IsFull() const
-        { return this->m_count == FixedCapacity; }
-
-    private:
-      friend class Super;
-
       constexpr void EnsureCapacity(usz capacity)
         { ASSERT(capacity <= FixedCapacity); }
 
+    private:
       alignas(TElement) u8 m_storage[sizeof(TElement) * FixedCapacity];
     };
 
     template<typename TElement>
+      requires (std::is_move_assignable_v<TElement>)
     class BoundedArray<TElement, 0> : public ResizableArrayBase<TElement>
     {
     public:
@@ -122,7 +120,7 @@ namespace Chord
           if (m_capacity != other.m_capacity)
           {
             FreeElements();
-            m_elements = std::allocator().allocate(other.m_count);
+            m_elements = std::allocator<TElement>().allocate(other.m_count);
             m_capacity = other.m_capacity;
             this->m_count = 0;
           }
@@ -144,18 +142,21 @@ namespace Chord
         FreeElements();
 
         m_elements = std::exchange(other.m_elements, nullptr);
-        m_capacity = std::exchange(other.m_capacity, nullptr);
+        m_capacity = std::exchange(other.m_capacity, 0);
         this->m_count = std::exchange(other.m_count, 0);
         return *this;
       }
 
       constexpr auto* Elements(this auto&& self)
-        { return m_elements; }
+        { return self.m_elements; }
 
-    private:
-      void EnsureCapacity(usz capacity)
+      constexpr usz Capacity() const
+        { return m_capacity; }
+
+      constexpr void EnsureCapacity(usz capacity)
         { ASSERT(capacity <= m_capacity); }
 
+    private:
       void FreeElements()
       {
         for (usz i = 0; i < this->m_count; i++)
