@@ -198,6 +198,162 @@ namespace Chord
           return __m128i { s64(v[0]), s64(v[1]) };
         #endif
       }
+
+      constexpr FixedArray<f32, 8> SimdUnderlyingTypeToEmulated(const __m256& v)
+      {
+        #if COMPILER_MSVC
+          return { v.m256_f32[0], v.m256_f32[1], v.m256_f32[2], v.m256_f32[3], v.m256_f32[4], v.m256_f32[5], v.m256_f32[6], v.m256_f32[7] };
+        #else
+          return { v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7] };
+        #endif
+      }
+
+      constexpr __m256 SimdUnderlyingTypeFromEmulated(const FixedArray<f32, 8>& v)
+      {
+        #if COMPILER_MSVC
+          return __m256 { .m256_f32 { v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7] } };
+        #else
+          return __m256 { v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7] };
+        #endif
+      }
+
+      constexpr FixedArray<f64, 4> SimdUnderlyingTypeToEmulated(const __m256d& v)
+      {
+        #if COMPILER_MSVC
+          return { v.m256d_f64[0], v.m256d_f64[1], v.m256d_f64[2], v.m256d_f64[3] };
+        #else
+          return { v[0], v[1], v[2], v[3] };
+        #endif
+      }
+
+      constexpr __m256d SimdUnderlyingTypeFromEmulated(const FixedArray<f64, 4>& v)
+      {
+        #if COMPILER_MSVC
+          return __m256d { .m256d_f64 { v[0], v[1], v[2], v[3] } };
+        #else
+          return __m256d { v[0], v[1], v[2], v[3] };
+        #endif
+      }
+
+      constexpr FixedArray<s32, 8> SimdUnderlyingTypeToEmulated(const __m256s32& v)
+      {
+        #if COMPILER_MSVC
+          return
+          {
+            v.m_value.m256i_i32[0],
+            v.m_value.m256i_i32[1],
+            v.m_value.m256i_i32[2],
+            v.m_value.m256i_i32[3],
+            v.m_value.m256i_i32[4],
+            v.m_value.m256i_i32[5],
+            v.m_value.m256i_i32[6],
+            v.m_value.m256i_i32[7],
+          };
+        #else
+          return
+          {
+            s32(v.m_value[0]),
+            s32(v.m_value[0] >> 32),
+            s32(v.m_value[1]),
+            s32(v.m_value[1] >> 32),
+            s32(v.m_value[2]),
+            s32(v.m_value[2] >> 32),
+            s32(v.m_value[3]),
+            s32(v.m_value[3] >> 32),
+          };
+        #endif
+      }
+
+      constexpr __m256s32 SimdUnderlyingTypeFromEmulated(const FixedArray<s32, 8>& v)
+      {
+        #if COMPILER_MSVC
+          return __m256i { .m256i_i32 { v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7] } };
+        #else
+          return __m256i
+          {
+            s64(u64(v[0]) | (u64(v[1]) << 32)),
+            s64(u64(v[2]) | (u64(v[3]) << 32)),
+            s64(u64(v[4]) | (u64(v[5]) << 32)),
+            s64(u64(v[6]) | (u64(v[7]) << 32)),
+          };
+        #endif
+      }
+
+      constexpr FixedArray<s64, 4> SimdUnderlyingTypeToEmulated(const __m256s64& v)
+      {
+        #if COMPILER_MSVC
+          return { v.m_value.m256i_i64[0], v.m_value.m256i_i64[1], v.m_value.m256i_i64[2], v.m_value.m256i_i64[3] };
+        #else
+          return { v.m_value[0], v.m_value[1], v.m_value[2], v.m_value[3] };
+        #endif
+      }
+
+      constexpr __m256s64 SimdUnderlyingTypeFromEmulated(const FixedArray<s64, 4>& v)
+      {
+        #if COMPILER_MSVC
+          return __m256i { .m256i_i64 { v[0], v[1], v[2], v[3] } };
+        #else
+          return __m256i { v[0], v[1], v[2], v[3] };
+        #endif
+      }
+
+      constexpr FixedArray<u32, 8> SimdUnderlyingTypeToEmulated(const __m256u32& v)
+      {
+        #if COMPILER_MSVC
+          return
+          {
+            v.m_value.m256i_u32[0],
+            v.m_value.m256i_u32[1],
+            v.m_value.m256i_u32[2],
+            v.m_value.m256i_u32[3],
+            v.m_value.m256i_u32[4],
+            v.m_value.m256i_u32[5],
+            v.m_value.m256i_u32[6],
+            v.m_value.m256i_u32[7],
+          };
+        #else
+          return
+          {
+            u32(v.m_value[0]), u32(v.m_value[0] >> 32),
+            u32(v.m_value[1]), u32(v.m_value[1] >> 32),
+            u32(v.m_value[2]), u32(v.m_value[2] >> 32),
+            u32(v.m_value[3]), u32(v.m_value[3] >> 32),
+          };
+        #endif
+      }
+
+      constexpr __m256u32 SimdUnderlyingTypeFromEmulated(const FixedArray<u32, 8>& v)
+      {
+        #if COMPILER_MSVC
+          return __m256i { .m256i_u32 { v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7] } };
+        #else
+          return __m256i
+          {
+            s64(u64(v[0]) | (u64(v[1]) << 32)),
+            s64(u64(v[2]) | (u64(v[3]) << 32)),
+            s64(u64(v[4]) | (u64(v[5]) << 32)),
+            s64(u64(v[6]) | (u64(v[7]) << 32)),
+          };
+        #endif
+      }
+
+      constexpr FixedArray<u64, 4> SimdUnderlyingTypeToEmulated(const __m256u64& v)
+      {
+        #if COMPILER_MSVC
+          return { v.m_value.m256i_u64[0], v.m_value.m256i_u64[1], v.m_value.m256i_u64[2], v.m_value.m256i_u64[3] };
+        #else
+          return { u64(v.m_value[0]), u64(v.m_value[1]), u64(v.m_value[2]), u64(v.m_value[3]) };
+        #endif
+      }
+
+      constexpr __m256u64 SimdUnderlyingTypeFromEmulated(const FixedArray<u64, 4>& v)
+      {
+        #if COMPILER_MSVC
+          return __m256i { .m256i_u64 { v[0], v[1], v[2], v[3] } };
+        #else
+          return __m256i { s64(v[0]), s64(v[1]), s64(v[2]), s64(v[3]) };
+        #endif
+      }
     #endif
   }
 }

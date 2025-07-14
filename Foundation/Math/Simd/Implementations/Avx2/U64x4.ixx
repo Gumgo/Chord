@@ -76,8 +76,8 @@ namespace Chord
       template<>
       struct SimdOperationImplementation<u64, 4, SimdOperation::GetElement> : public SupportedSimdOperationImplementation
       {
-        template<u64 Index>
-        static u64 Run(const __m256u64& v, std::integral_constant<u64, Index>)
+        template<usz Index>
+        static u64 Run(const __m256u64& v, std::integral_constant<usz, Index>)
         {
           if constexpr (Index == 0)
             { return _mm256_cvtsi256_si64(v); }
@@ -196,42 +196,42 @@ namespace Chord
       template<>
       struct SimdOperationImplementation<u64, 4, SimdOperation::Equal> : public SupportedSimdOperationImplementation
       {
-        static __m256u64 Run(const __m256u64& a, const __m256u64& b)
+        static __m256s64 Run(const __m256u64& a, const __m256u64& b)
           { return _mm256_cmpeq_epi64(a, b); }
       };
 
       template<>
       struct SimdOperationImplementation<u64, 4, SimdOperation::NotEqual> : public SupportedSimdOperationImplementation
       {
-        static __m256u64 Run(const __m256u64& a, const __m256u64& b)
+        static __m256s64 Run(const __m256u64& a, const __m256u64& b)
           { return _mm256_xor_si256(_mm256_cmpeq_epi64(a, b), Mm256SetAllBitsSi256()); }
       };
 
       template<>
       struct SimdOperationImplementation<u64, 4, SimdOperation::Greater> : public SupportedSimdOperationImplementation
       {
-        static __m256u64 Run(const __m256u64& a, const __m256u64& b)
+        static __m256s64 Run(const __m256u64& a, const __m256u64& b)
           { return Mm256CmpgtEpu64(a, b); }
       };
 
       template<>
       struct SimdOperationImplementation<u64, 4, SimdOperation::Less> : public SupportedSimdOperationImplementation
       {
-        static __m256u64 Run(const __m256u64& a, const __m256u64& b)
+        static __m256s64 Run(const __m256u64& a, const __m256u64& b)
           { return Mm256CmpltEpu64(a, b); }
       };
 
       template<>
       struct SimdOperationImplementation<u64, 4, SimdOperation::GreaterEqual> : public SupportedSimdOperationImplementation
       {
-        static __m256u64 Run(const __m256u64& a, const __m256u64& b)
+        static __m256s64 Run(const __m256u64& a, const __m256u64& b)
           { return _mm256_xor_si256(Mm256CmpltEpu64(a, b), Mm256SetAllBitsSi256()); }
       };
 
       template<>
       struct SimdOperationImplementation<u64, 4, SimdOperation::LessEqual> : public SupportedSimdOperationImplementation
       {
-        static __m256u64 Run(const __m256u64& a, const __m256u64& b)
+        static __m256s64 Run(const __m256u64& a, const __m256u64& b)
           { return _mm256_xor_si256(Mm256CmpgtEpu64(a, b), Mm256SetAllBitsSi256()); }
       };
 
@@ -299,11 +299,8 @@ namespace Chord
         { };
 
       template<>
-      struct SimdOperationImplementation<u64, 4, SimdOperation::NarrowAndCombine> : public SupportedSimdOperationImplementation
-      {
-        static __m256u32 Run(const __m256u64& a, const __m256u64& b)
-          { return _mm256_inserti128_si256(_mm256_castsi128_si256(Mm256CvtEpi64Epi32(a)), Mm256CvtEpi64Epi32(b), 1); }
-      };
+      struct SimdOperationImplementation<u64, 4, SimdOperation::NarrowAndCombine> : public UnsupportedSimdOperationImplementation
+        { };
 
       template<>
       struct SimdOperationImplementation<u64, 4, SimdOperation::Shuffle2> : public SupportedSimdOperationImplementation

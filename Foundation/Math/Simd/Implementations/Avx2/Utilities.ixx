@@ -352,7 +352,7 @@ namespace Chord
       inline __m128i Mm256CvtEpi64Epi32(const __m256i& v)
       {
         __m256 shuffled = _mm256_castsi256_ps(_mm256_shuffle_epi32(v, _MM_SHUFFLE(0, 0, 2, 0)));
-        return _mm_castps_si128(_mm_shuffle_ps(_mm256_castps256_ps128(shuffled), _mm256_extractf128_ps(shuffled, 1), _MM_SHUFFLE(2, 0, 2, 0)));
+        return _mm_castps_si128(_mm_shuffle_ps(_mm256_castps256_ps128(shuffled), _mm256_extractf128_ps(shuffled, 1), _MM_SHUFFLE(1, 0, 1, 0)));
       }
 
       inline __m128i MmLzcntEpi32(const __m128i& v)

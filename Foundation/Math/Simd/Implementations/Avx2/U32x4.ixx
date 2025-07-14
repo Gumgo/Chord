@@ -73,8 +73,8 @@ namespace Chord
       template<>
       struct SimdOperationImplementation<u32, 4, SimdOperation::GetElement> : public SupportedSimdOperationImplementation
       {
-        template<u32 Index>
-        static u32 Run(const __m128u32& v, std::integral_constant<u32, Index>)
+        template<usz Index>
+        static u32 Run(const __m128u32& v, std::integral_constant<usz, Index>)
         {
           if constexpr (Index == 0)
             { return _mm_cvtsi128_si32(v); }
@@ -193,50 +193,50 @@ namespace Chord
       template<>
       struct SimdOperationImplementation<u32, 4, SimdOperation::Equal> : public SupportedSimdOperationImplementation
       {
-        static __m128u32 Run(const __m128u32& a, const __m128u32& b)
+        static __m128s32 Run(const __m128u32& a, const __m128u32& b)
           { return _mm_cmpeq_epi32(a, b); }
       };
 
       template<>
       struct SimdOperationImplementation<u32, 4, SimdOperation::NotEqual> : public SupportedSimdOperationImplementation
       {
-        static __m128u32 Run(const __m128u32& a, const __m128u32& b)
+        static __m128s32 Run(const __m128u32& a, const __m128u32& b)
           { return _mm_xor_si128(_mm_cmpeq_epi32(a, b), MmSetAllBitsSi128()); }
       };
 
       template<>
       struct SimdOperationImplementation<u32, 4, SimdOperation::Greater> : public SupportedSimdOperationImplementation
       {
-        static __m128u32 Run(const __m128u32& a, const __m128u32& b)
+        static __m128s32 Run(const __m128u32& a, const __m128u32& b)
           { return MmCmpgtEpu32(a, b); }
       };
 
       template<>
       struct SimdOperationImplementation<u32, 4, SimdOperation::Less> : public SupportedSimdOperationImplementation
       {
-        static __m128u32 Run(const __m128u32& a, const __m128u32& b)
+        static __m128s32 Run(const __m128u32& a, const __m128u32& b)
           { return MmCmpltEpu32(a, b); }
       };
 
       template<>
       struct SimdOperationImplementation<u32, 4, SimdOperation::GreaterEqual> : public SupportedSimdOperationImplementation
       {
-        static __m128u32 Run(const __m128u32& a, const __m128u32& b)
+        static __m128s32 Run(const __m128u32& a, const __m128u32& b)
           { return _mm_xor_si128(MmCmpltEpu32(a, b), MmSetAllBitsSi128()); }
       };
 
       template<>
       struct SimdOperationImplementation<u32, 4, SimdOperation::LessEqual> : public SupportedSimdOperationImplementation
       {
-        static __m128u32 Run(const __m128u32& a, const __m128u32& b)
+        static __m128s32 Run(const __m128u32& a, const __m128u32& b)
           { return _mm_xor_si128(MmCmpgtEpu32(a, b), MmSetAllBitsSi128()); }
       };
 
       template<>
       struct SimdOperationImplementation<u32, 4, SimdOperation::ConvertS32> : public SupportedSimdOperationImplementation
       {
-        static __m128u32 Run(const __m128u32& v)
-          { return v; }
+        static __m128s32 Run(const __m128u32& v)
+          { return v.m_value; }
       };
 
       template<>
@@ -287,8 +287,17 @@ namespace Chord
       };
 
       template<>
-      struct SimdOperationImplementation<u32, 4, SimdOperation::NarrowAndCombine> : public UnsupportedSimdOperationImplementation
-        { };
+      struct SimdOperationImplementation<u32, 4, SimdOperation::NarrowAndCombine> : public SupportedSimdOperationImplementation
+      {
+        static __m128u32 Run(const __m128u64& a, const __m128u64& b)
+        {
+          return _mm_castps_si128(
+            _mm_shuffle_ps(
+              _mm_castsi128_ps(MmCvtEpi64Epi32(a)),
+              _mm_castsi128_ps(MmCvtEpi64Epi32(b)),
+              _MM_SHUFFLE(1, 0, 1, 0)));
+        }
+      };
 
       template<>
       struct SimdOperationImplementation<u32, 4, SimdOperation::Shuffle2> : public UnsupportedSimdOperationImplementation

@@ -13,7 +13,7 @@ namespace Chord
     {
       static constexpr usz Count = 5;
       usz v[Count] = { 0 };
-      Unroll<2, Count>([&](usz i) { v[i] = i + 2; });
+      Unroll<2, Count>([&](auto i) { v[i.value] = i.value + 2; });
 
       EXPECT(v[0] == 0);
       EXPECT(v[1] == 0);

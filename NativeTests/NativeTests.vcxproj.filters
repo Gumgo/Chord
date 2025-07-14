@@ -83,5 +83,11 @@
     <ClCompile Include="Containers\UnboundedArray.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="TestUtilities\SimdTest.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Math\Simd.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

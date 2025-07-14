@@ -14,9 +14,17 @@ namespace Chord
   {
     if consteval
     {
-      return SimdUnderlyingTypeFromEmulated(
-        EmulatedSimdOperationImplementation<TElement, ElementCount, Operation>::Run(
-          SimdUnderlyingTypeToEmulated(std::forward<TArgs>(args))...));
+      using Result = decltype(
+        EmulatedSimdOperationImplementation<TElement, ElementCount, Operation>::Run(SimdUnderlyingTypeToEmulated(std::forward<TArgs>(args))...));
+
+      if constexpr (std::same_as<Result, void>)
+        { EmulatedSimdOperationImplementation<TElement, ElementCount, Operation>::Run(SimdUnderlyingTypeToEmulated(std::forward<TArgs>(args))...); }
+      else
+      {
+        return SimdUnderlyingTypeFromEmulated(
+          EmulatedSimdOperationImplementation<TElement, ElementCount, Operation>::Run(
+            SimdUnderlyingTypeToEmulated(std::forward<TArgs>(args))...));
+      }
     }
     else
       { return SimdOperationImplementation<TElement, ElementCount, Operation>::Run(std::forward<TArgs>(args)...); }
@@ -30,9 +38,9 @@ namespace Chord
     {
     public:
       using Element = TElement;
-      using FloatVector = typename SimdRelatedTypes<TElement>::FloatElement;
-      using SignedVector = typename SimdRelatedTypes<TElement>::SignedElement;
-      using UnsignedVector = typename SimdRelatedTypes<TElement>::UnsignedElement;
+      using FloatVector = Vector<SimdRelatedFloatElement<TElement>, ElementCountParam>;
+      using SignedVector = Vector<SimdRelatedSignedElement<TElement>, ElementCountParam>;
+      using UnsignedVector = Vector<SimdRelatedUnsignedElement<TElement>, ElementCountParam>;
 
       static constexpr usz ElementCount = ElementCountParam;
 
@@ -57,49 +65,65 @@ namespace Chord
         : m_data(Run<SimdOperation::Set>(std::forward<TArgs>(v)...))
         { }
 
-      constexpr Vector(const Vector<TElement, ElementCount / 2>& lower, const Vector<TElement, ElementCount / 2>& upper)
+      constexpr Vector(const std::same_as<Vector<TElement, ElementCount / 2>>auto& lower, const std::same_as<Vector<TElement, ElementCount / 2>> auto& upper)
         requires Vector::template IsSupported<SimdOperation::Combine>
         : m_data(Run<SimdOperation::Combine>(lower.m_data, upper.m_data))
         { }
 
-      explicit constexpr Vector(const SimdUnderlyingType<TElement, ElementCount>::Type& data)
+      explicit constexpr Vector(const SimdUnderlyingType<TElement, ElementCount>& data)
         : m_data(data)
         { }
 
       static constexpr Vector NarrowAndCombine(
-        const Vector<Widen<TElement>, ElementCount / 2>& lower,
-        const Vector<Widen<TElement>, ElementCount / 2>& upper)
+        const std::same_as<Vector<Widen<TElement>, ElementCount / 2>> auto& lower,
+        const std::same_as<Vector<Widen<TElement>, ElementCount / 2>> auto& upper)
         requires Vector::template IsSupported<SimdOperation::NarrowAndCombine>
         { return Vector(Run<SimdOperation::NarrowAndCombine>(lower.m_data, upper.m_data)); }
 
       static constexpr Vector LoadAligned(const TElement* source)
       {
-        ASSERT(IsAlignedPointer(source, SimdUnderlyingTypeAlignment<TElement, ElementCount>));
+        // In consteval contexts, we can't convert between int and pointer, so skip this check
+        if !consteval
+          { ASSERT(IsAlignedPointer(source, SimdUnderlyingTypeAlignment<TElement, ElementCount>)); }
         return Vector(Run<SimdOperation::LoadAligned>(source));
       }
 
-      static constexpr Vector LoadAligned(Span<const TElement> source, basic_integral auto offset = 0)
+      static constexpr Vector LoadAligned(Span<const TElement> source)
+        { return LoadAligned(source.GetBuffer(0, ElementCount)); }
+
+      static constexpr Vector LoadAligned(Span<const TElement> source, basic_integral auto offset)
         { return LoadAligned(source.GetBuffer(offset, ElementCount)); }
 
       static constexpr Vector LoadUnaligned(const TElement* source)
         { return Vector(Run<SimdOperation::LoadUnaligned>(source)); }
 
-      static constexpr Vector LoadUnaligned(Span<const TElement> source, basic_integral auto offset = 0)
+      static constexpr Vector LoadUnaligned(Span<const TElement> source)
+        { return LoadUnaligned(source.GetBuffer(0, ElementCount)); }
+
+      static constexpr Vector LoadUnaligned(Span<const TElement> source, basic_integral auto offset)
         { return LoadUnaligned(source.GetBuffer(offset, ElementCount)); }
 
-      constexpr void StoreAligned(const TElement* destination)
+      constexpr void StoreAligned(TElement* destination) const
       {
-        ASSERT(IsAlignedPointer(destination, SimdUnderlyingTypeAlignment<TElement, ElementCount>));
+        // In consteval contexts, we can't convert between int and pointer, so skip this check
+        if !consteval
+          { ASSERT(IsAlignedPointer(destination, SimdUnderlyingTypeAlignment<TElement, ElementCount>)); }
         Run<SimdOperation::StoreAligned>(destination, m_data);
       }
 
-      constexpr void StoreAligned(Span<const TElement> destination, basic_integral auto offset = 0) const
+      constexpr void StoreAligned(Span<TElement> destination) const
+        { StoreAligned(destination.GetBuffer(0, ElementCount)); }
+
+      constexpr void StoreAligned(Span<TElement> destination, basic_integral auto offset) const
         { StoreAligned(destination.GetBuffer(offset, ElementCount)); }
 
-      constexpr void StoreUnaligned(const TElement* destination)
+      constexpr void StoreUnaligned(TElement* destination) const
         { Run<SimdOperation::StoreUnaligned>(destination, m_data); }
 
-      constexpr void StoreUnaligned(Span<const TElement> destination, basic_integral auto offset = 0) const
+      constexpr void StoreUnaligned(Span<TElement> destination) const
+        { return StoreUnaligned(destination.GetBuffer(0, ElementCount)); }
+
+      constexpr void StoreUnaligned(Span<TElement> destination, basic_integral auto offset) const
         { return StoreUnaligned(destination.GetBuffer(offset, ElementCount)); }
 
       template<usz Index>
@@ -172,53 +196,71 @@ namespace Chord
       constexpr SignedVector operator<=(const Vector& v) const requires Vector::template IsSupported<SimdOperation::LessEqual>
         { return SignedVector(Run<SimdOperation::LessEqual>(m_data, v.m_data)); }
 
-      constexpr operator Vector<s32, ElementCount>() const requires Vector::template IsSupported<SimdOperation::ConvertS32>
-        { return Vector<s32, ElementCount>(Run<SimdOperation::ConvertS32>(m_data)); }
+      template<typename TTo>
+      constexpr operator TTo() const
+      {
+        if constexpr (std::same_as<TTo, Vector<s32, ElementCount>>)
+        {
+          static_assert(IsSupported<SimdOperation::ConvertS32>);
+          return Vector<s32, ElementCount>(Run<SimdOperation::ConvertS32>(m_data));
+        }
+        else if constexpr (std::same_as<TTo, Vector<s64, ElementCount>>)
+        {
+          static_assert(IsSupported<SimdOperation::ConvertS64>);
+          return Vector<s64, ElementCount>(Run<SimdOperation::ConvertS64>(m_data));
+        }
+        else if constexpr (std::same_as<TTo, Vector<u32, ElementCount>>)
+        {
+          static_assert(IsSupported<SimdOperation::ConvertU32>);
+          return Vector<u32, ElementCount>(Run<SimdOperation::ConvertU32>(m_data));
+        }
+        else if constexpr (std::same_as<TTo, Vector<u64, ElementCount>>)
+        {
+          static_assert(IsSupported<SimdOperation::ConvertU64>);
+          return Vector<u64, ElementCount>(Run<SimdOperation::ConvertU64>(m_data));
+        }
+        else if constexpr (std::same_as<TTo, Vector<f32, ElementCount>>)
+        {
+          static_assert(IsSupported<SimdOperation::ConvertF32>);
+          return Vector<f32, ElementCount>(Run<SimdOperation::ConvertF32>(m_data));
+        }
+        else if constexpr (std::same_as<TTo, Vector<f64, ElementCount>>)
+        {
+          static_assert(IsSupported<SimdOperation::ConvertF64>);
+          return Vector<f64, ElementCount>(Run<SimdOperation::ConvertF64>(m_data));
+        }
+        else
+          { static_assert(AlwaysFalse<TTo>, "Unsupported conversion"); }
+      }
 
-      constexpr operator Vector<u32, ElementCount>() const requires Vector::template IsSupported<SimdOperation::ConvertU32>
-        { return Vector<u32, ElementCount>(Run<SimdOperation::ConvertU32>(m_data)); }
-
-      constexpr operator Vector<s64, ElementCount>() const requires Vector::template IsSupported<SimdOperation::ConvertS64>
-        { return Vector<s64, ElementCount>(Run<SimdOperation::ConvertS64>(m_data)); }
-
-      constexpr operator Vector<u64, ElementCount>() const requires Vector::template IsSupported<SimdOperation::ConvertU64>
-        { return Vector<u64, ElementCount>(Run<SimdOperation::ConvertU64>(m_data)); }
-
-      constexpr operator Vector<f32, ElementCount>() const requires Vector::template IsSupported<SimdOperation::ConvertF32>
-        { return Vector<f32, ElementCount>(Run<SimdOperation::ConvertF32>(m_data)); }
-
-      constexpr operator Vector<f64, ElementCount>() const requires Vector::template IsSupported<SimdOperation::ConvertF64>
-        { return Vector<f64, ElementCount>(Run<SimdOperation::ConvertF64>(m_data)); }
-
-      constexpr Vector<TElement, ElementCount / 2> LowerHalf() const requires Vector::template IsSupported<SimdOperation::LowerHalf>
+      constexpr auto LowerHalf() const requires Vector::template IsSupported<SimdOperation::LowerHalf>
         { return Vector<TElement, ElementCount / 2>(Run<SimdOperation::LowerHalf>(m_data)); }
 
-      constexpr Vector<TElement, ElementCount / 2> UpperHalf() const requires Vector::template IsSupported<SimdOperation::UpperHalf>
+      constexpr auto UpperHalf() const requires Vector::template IsSupported<SimdOperation::UpperHalf>
         { return Vector<TElement, ElementCount / 2>(Run<SimdOperation::LowerHalf>(m_data)); }
 
-      constexpr std::tuple<Vector<Widen<TElement>, ElementCount / 2>, Vector<Widen<TElement>, ElementCount / 2>> WidenAndSplit() const
-        requires Vector::template IsSupported<SimdOperation::WidenAndSplit>
+      constexpr auto WidenAndSplit() const requires Vector::template IsSupported<SimdOperation::WidenAndSplit>
       {
         auto result = Run<SimdOperation::WidenAndSplit>(m_data);
-        return { Vector<Widen<TElement>, ElementCount / 2>(std::get<0>(result)), Vector<Widen<TElement>, ElementCount / 2>(std::get<1>(result)) };
+        return std::make_tuple(Vector<Widen<TElement>, ElementCount / 2>(std::get<0>(result)), Vector<Widen<TElement>, ElementCount / 2>(std::get<1>(result)));
       }
 
       template<s32 A, s32 B>
-      constexpr Vector<TElement, 2> Shuffle() const requires Vector::template IsSupported<SimdOperation::Shuffle2>
+      constexpr auto Shuffle() const requires Vector::template IsSupported<SimdOperation::Shuffle2>
       {
         static constexpr u32 PackedIndices = PackIndices<ElementCount, A, B>();
         return Vector<TElement, 2>(Run<SimdOperation::Shuffle2>(m_data, std::integral_constant<u32, PackedIndices>()));
       }
 
       template<s32 A, s32 B, s32 C, s32 D>
-      constexpr Vector<TElement, 4> Shuffle() const requires Vector::template IsSupported<SimdOperation::Shuffle4>
+      constexpr auto Shuffle() const requires Vector::template IsSupported<SimdOperation::Shuffle4>
       {
         static constexpr u32 PackedIndices = PackIndices<ElementCount, A, B, C, D>();
         return Vector<TElement, 4>(Run<SimdOperation::Shuffle4>(m_data, std::integral_constant<u32, PackedIndices>()));
       }
 
       template<s32 A, s32 B, s32 C, s32 D, s32 E, s32 F, s32 G, s32 H>
-      constexpr Vector<TElement, 8> Shuffle() const requires Vector::template IsSupported<SimdOperation::Shuffle8>
+      constexpr auto Shuffle() const requires Vector::template IsSupported<SimdOperation::Shuffle8>
       {
         static constexpr u32 PackedIndices = PackIndices<ElementCount, A, B, C, D, E, F, G, H>();
         return Vector<TElement, 8>(Run<SimdOperation::Shuffle8>(m_data, std::integral_constant<u32, PackedIndices>()));
@@ -307,7 +349,7 @@ namespace Chord
       constexpr Vector operator||(const Vector& v) const requires Vector::template IsSupported<SimdOperation::BitwiseOr>
         { return Vector(Run<SimdOperation::BitwiseOr>(m_data, v.m_data)); }
 
-      SimdUnderlyingType<TElement, ElementCount>::Type m_data;
+      SimdUnderlyingType<TElement, ElementCount> m_data;
 
     private:
       template<SimdOperation Operation>
@@ -315,7 +357,7 @@ namespace Chord
 
       template<SimdOperation Operation, typename... TArgs>
       static constexpr auto Run(TArgs&&... args)
-        { RunSimdOperation<TElement, ElementCount, Operation>(std::forward<TArgs>(args)...); }
+        { return RunSimdOperation<TElement, ElementCount, Operation>(std::forward<TArgs>(args)...); }
     };
 
     template<basic_numeric TElement, usz ElementCount>

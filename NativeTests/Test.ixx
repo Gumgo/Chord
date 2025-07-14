@@ -13,7 +13,7 @@ namespace Chord
     class TestClassBase
     {
     public:
-      virtual ~TestClassBase() noexcept
+      virtual constexpr ~TestClassBase() noexcept
         { }
     };
 

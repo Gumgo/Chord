@@ -144,13 +144,18 @@ namespace Chord
       constexpr void MoveOverlappingElementsFrom(this has_writable_elements auto&& self, Span<TElement> other)
         requires (std::is_move_assignable_v<TElement>);
 
-      void ZeroElements(this has_writable_elements auto&& self)
+      constexpr void ZeroElements(this has_writable_elements auto&& self)
         requires (std::is_trivially_copyable_v<std::remove_const_t<TElement>>
           && std::is_trivially_destructible_v<std::remove_const_t<TElement>>
           && !std::is_polymorphic_v<std::remove_const_t<TElement>>)
-        { std::memset(self.Elements(), 0, self.Count() * sizeof(TElement)); }
+      {
+        if consteval
+          { self.Fill(TElement(0)); } // $TODO this will work for most common cases (s32, f32, etc.) but there are edge cases where it could fail
+        else
+          { std::memset(self.Elements(), 0, self.Count() * sizeof(TElement)); }
+      }
 
-      void Fill(this has_writable_elements auto&& self, const TElement& v)
+      constexpr void Fill(this has_writable_elements auto&& self, const TElement& v)
         requires (std::is_copy_assignable_v<TElement>)
         { std::ranges::fill(self, v); }
 

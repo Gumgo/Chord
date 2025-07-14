@@ -76,13 +76,13 @@ namespace Chord
     constexpr bool IsWidenable = WidenTypeData<TElement>::IsSupported;
 
     template<basic_numeric TElement>
-    using Widen = WidenTypeData<TElement>::Type;
+    using Widen = typename WidenTypeData<TElement>::Type;
 
     template<basic_numeric TElement>
     constexpr bool IsNarrowable = NarrowTypeData<TElement>::IsSupported;
 
     template<basic_numeric TElement>
-    using Narrow = NarrowTypeData<TElement>::Type;
+    using Narrow = typename NarrowTypeData<TElement>::Type;
 
     template<typename T>
     constexpr auto SimdUnderlyingTypeToEmulated(const T& v)

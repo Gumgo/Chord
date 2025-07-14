@@ -73,8 +73,8 @@ namespace Chord
       template<>
       struct SimdOperationImplementation<s32, 4, SimdOperation::GetElement> : public SupportedSimdOperationImplementation
       {
-        template<s32 Index>
-        static s32 Run(const __m128s32& v, std::integral_constant<s32, Index>)
+        template<usz Index>
+        static s32 Run(const __m128s32& v, std::integral_constant<usz, Index>)
         {
           if constexpr (Index == 0)
             { return _mm_cvtsi128_si32(v); }
@@ -287,8 +287,17 @@ namespace Chord
       };
 
       template<>
-      struct SimdOperationImplementation<s32, 4, SimdOperation::NarrowAndCombine> : public UnsupportedSimdOperationImplementation
-        { };
+      struct SimdOperationImplementation<s32, 4, SimdOperation::NarrowAndCombine> : public SupportedSimdOperationImplementation
+      {
+        static __m128s32 Run(const __m128s64& a, const __m128s64& b)
+        {
+          return _mm_castps_si128(
+            _mm_shuffle_ps(
+              _mm_castsi128_ps(MmCvtEpi64Epi32(a)),
+              _mm_castsi128_ps(MmCvtEpi64Epi32(b)),
+              _MM_SHUFFLE(1, 0, 1, 0)));
+        }
+      };
 
       template<>
       struct SimdOperationImplementation<s32, 4, SimdOperation::Shuffle2> : public UnsupportedSimdOperationImplementation

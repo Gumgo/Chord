@@ -163,6 +163,7 @@
     <ClCompile Include="Containers\BoundedArray.cpp" />
     <ClCompile Include="Containers\FixedArray.cpp" />
     <ClCompile Include="Containers\UnboundedArray.cpp" />
+    <ClCompile Include="Math\Simd.cpp" />
     <ClCompile Include="TestUtilities\ObjectWithConstructorArguments.ixx" />
     <ClCompile Include="TestUtilities\ResizableArrayBaseTests.ixx" />
     <ClCompile Include="Containers\Span.cpp" />
@@ -178,6 +179,7 @@
     <ClCompile Include="Utilities\BitOperations.cpp" />
     <ClCompile Include="Utilities\Bounds.cpp" />
     <ClCompile Include="Utilities\Copy.cpp" />
+    <ClCompile Include="TestUtilities\SimdTest.ixx" />
     <ClCompile Include="Utilities\Unroll.cpp" />
   </ItemGroup>
   <ItemGroup>

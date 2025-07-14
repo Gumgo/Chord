@@ -207,7 +207,7 @@ namespace Chord
     static constexpr usz CoefficientCount = std::same_as<fBB, f32> ? 7 : 12;
     T vSquared = v * v;
     T result = T(SinCoefficients<fBB>[CoefficientCount - 1]);
-    Unroll<1, CoefficientCount>([&](usz i) { result = FMAdd(result, vSquared, T(SinCoefficients<fBB>[CoefficientCount - i - 1])); });
+    Unroll<1, CoefficientCount>([&](auto i) { result = FMAdd(result, vSquared, T(SinCoefficients<fBB>[CoefficientCount - i.value - 1])); });
     return result * v;
   }
 
@@ -219,7 +219,7 @@ namespace Chord
     static constexpr usz CoefficientCount = AtanCoefficients<fBB>.Count();
     T vSquared = v * v;
     T result = T(AtanCoefficients<fBB>[CoefficientCount - 1]);
-    Unroll<1, CoefficientCount>([&](usz i) { result = FMAdd(result, vSquared, T(AtanCoefficients<fBB>[CoefficientCount - i - 1])); });
+    Unroll<1, CoefficientCount>([&](auto i) { result = FMAdd(result, vSquared, T(AtanCoefficients<fBB>[CoefficientCount - i.value - 1])); });
     return result * v;
   }
 
@@ -349,7 +349,7 @@ namespace Chord
           static constexpr usz CoefficientCount = AcosCoefficients<fBB>.Count();
           T polyResult = AcosCoefficients<fBB>[CoefficientCount - 1];
           Unroll<1, CoefficientCount>(
-            [&](usz i) { polyResult = FMAdd(polyResult, vAbs, T(AcosCoefficients<fBB>[CoefficientCount - i - 1])); });
+            [&](auto i) { polyResult = FMAdd(polyResult, vAbs, T(AcosCoefficients<fBB>[CoefficientCount - i.value - 1])); });
           return fBB(std::numbers::pi * 0.5) - polyResult * Sqrt(T(1.0) - vAbs);
         };
 
@@ -359,7 +359,7 @@ namespace Chord
           static constexpr usz CoefficientCount = AsinNearZeroCoefficients<fBB>.Count();
           T polyResult = AsinNearZeroCoefficients<fBB>[CoefficientCount - 1];
           Unroll<1, CoefficientCount>(
-            [&](usz i) { polyResult = FMAdd(polyResult, vAbs, T(AsinNearZeroCoefficients<fBB>[CoefficientCount - i - 1])); });
+            [&](auto i) { polyResult = FMAdd(polyResult, vAbs, T(AsinNearZeroCoefficients<fBB>[CoefficientCount - i.value - 1])); });
           return polyResult * vAbs;
         };
 
@@ -401,7 +401,7 @@ namespace Chord
       static constexpr usz CoefficientCount = AcosCoefficients<fBB>.Count();
       T polyResult = AcosCoefficients<fBB>[CoefficientCount - 1];
       Unroll<1, CoefficientCount>(
-        [&](usz i) { polyResult = FMAdd(polyResult, vAbs, T(AcosCoefficients<fBB>[CoefficientCount - i - 1])); });
+        [&](auto i) { polyResult = FMAdd(polyResult, vAbs, T(AcosCoefficients<fBB>[CoefficientCount - i.value - 1])); });
       polyResult *= Sqrt(T(1.0) - vAbs);
 
       // Mirror and offset the result to cover the range [-1, 0]

@@ -53,8 +53,8 @@ namespace Chord
       static constexpr FixedArray<TElement, ElementCount> Run(const FixedArray<TElement, ElementCount / 2>& a, const FixedArray<TElement, ElementCount / 2>& b)
       {
         FixedArray<TElement, ElementCount> result;
-        Span(result, 0, ElementCount / 2).CopyElementsFrom(a);
-        Span(result, ElementCount / 2, ElementCount / 2).CopyElementsFrom(b);
+        Span<TElement>(result, 0, ElementCount / 2).CopyElementsFrom(a);
+        Span<TElement>(result, ElementCount / 2, ElementCount / 2).CopyElementsFrom(b);
         return result;
       }
     };
@@ -98,8 +98,8 @@ namespace Chord
     template<basic_numeric TElement, usz ElementCount>
     struct EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::GetElement>
     {
-      template<s32 Index>
-      static constexpr TElement Run(const FixedArray<TElement, ElementCount>& v, std::integral_constant<s32, Index>)
+      template<usz Index>
+      static constexpr TElement Run(const FixedArray<TElement, ElementCount>& v, std::integral_constant<usz, Index>)
         { return v[Index]; }
     };
 
@@ -116,7 +116,7 @@ namespace Chord
       static constexpr FixedArray<TElement, ElementCount> Run(const FixedArray<TElement, ElementCount>& v)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = -v[i]; });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = -v[i.value]; });
         return result;
       }
     };
@@ -127,7 +127,7 @@ namespace Chord
       static constexpr FixedArray<TElement, ElementCount> Run(const FixedArray<TElement, ElementCount>& a, const FixedArray<TElement, ElementCount>& b)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = a[i] + b[i]; });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = a[i.value] + b[i.value]; });
         return result;
       }
     };
@@ -138,7 +138,7 @@ namespace Chord
       static constexpr FixedArray<TElement, ElementCount> Run(const FixedArray<TElement, ElementCount>& a, const FixedArray<TElement, ElementCount>& b)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = a[i] - b[i]; });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = a[i.value] - b[i.value]; });
         return result;
       }
     };
@@ -149,7 +149,7 @@ namespace Chord
       static constexpr FixedArray<TElement, ElementCount> Run(const FixedArray<TElement, ElementCount>& a, const FixedArray<TElement, ElementCount>& b)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = a[i] * b[i]; });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = a[i.value] * b[i.value]; });
         return result;
       }
     };
@@ -160,7 +160,7 @@ namespace Chord
       static constexpr FixedArray<TElement, ElementCount> Run(const FixedArray<TElement, ElementCount>& a, const FixedArray<TElement, ElementCount>& b)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = a[i] / b[i]; });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = a[i.value] / b[i.value]; });
         return result;
       }
     };
@@ -171,7 +171,7 @@ namespace Chord
       static constexpr FixedArray<TElement, ElementCount> Run(const FixedArray<TElement, ElementCount>& v)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = std::bit_cast<TElement>(~std::bit_cast<SimdRelatedSignedElement<TElement>>(v[i])); });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = std::bit_cast<TElement>(~std::bit_cast<SimdRelatedSignedElement<TElement>>(v[i.value])); });
         return result;
       }
     };
@@ -183,10 +183,10 @@ namespace Chord
       {
         FixedArray<TElement, ElementCount> result;
         Unroll<0, ElementCount>(
-          [&](usz i)
+          [&](auto i)
           {
-            result[i] =
-              std::bit_cast<TElement>(std::bit_cast<SimdRelatedSignedElement<TElement>>(a[i]) & std::bit_cast<SimdRelatedSignedElement<TElement>>(b[i]));
+            result[i.value] = std::bit_cast<TElement>(
+              std::bit_cast<SimdRelatedSignedElement<TElement>>(a[i.value]) & std::bit_cast<SimdRelatedSignedElement<TElement>>(b[i.value]));
           });
         return result;
       }
@@ -199,10 +199,10 @@ namespace Chord
       {
         FixedArray<TElement, ElementCount> result;
         Unroll<0, ElementCount>(
-          [&](usz i)
+          [&](auto i)
           {
-            result[i] =
-              std::bit_cast<TElement>(std::bit_cast<SimdRelatedSignedElement<TElement>>(a[i]) | std::bit_cast<SimdRelatedSignedElement<TElement>>(b[i]));
+            result[i.value] = std::bit_cast<TElement>(
+              std::bit_cast<SimdRelatedSignedElement<TElement>>(a[i.value]) | std::bit_cast<SimdRelatedSignedElement<TElement>>(b[i.value]));
           });
         return result;
       }
@@ -215,10 +215,10 @@ namespace Chord
       {
         FixedArray<TElement, ElementCount> result;
         Unroll<0, ElementCount>(
-          [&](usz i)
+          [&](auto i)
           {
-            result[i] =
-              std::bit_cast<TElement>(std::bit_cast<SimdRelatedSignedElement<TElement>>(a[i]) ^ std::bit_cast<SimdRelatedSignedElement<TElement>>(b[i]));
+            result[i.value] = std::bit_cast<TElement>(
+              std::bit_cast<SimdRelatedSignedElement<TElement>>(a[i.value]) ^ std::bit_cast<SimdRelatedSignedElement<TElement>>(b[i.value]));
           });
         return result;
       }
@@ -231,7 +231,7 @@ namespace Chord
         requires (basic_integral<TElement>)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = a[i] << b; });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = a[i.value] << b; });
         return result;
       }
     };
@@ -239,11 +239,13 @@ namespace Chord
     template<basic_numeric TElement, usz ElementCount>
     struct EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::ShiftLeftVector>
     {
-      static constexpr FixedArray<TElement, ElementCount> Run(const FixedArray<TElement, ElementCount>& a, const FixedArray<s32, ElementCount>& b)
+      static constexpr FixedArray<TElement, ElementCount> Run(
+        const FixedArray<TElement, ElementCount>& a,
+        const FixedArray<SimdRelatedSignedElement<TElement>, ElementCount>& b)
         requires (basic_integral<TElement>)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = a[i] << b[i]; });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = a[i.value] << b[i.value]; });
         return result;
       }
     };
@@ -255,7 +257,7 @@ namespace Chord
         requires (basic_integral<TElement>)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = a[i] >> b; });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = a[i.value] >> b; });
         return result;
       }
     };
@@ -263,11 +265,13 @@ namespace Chord
     template<basic_numeric TElement, usz ElementCount>
     struct EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::ShiftRightVector>
     {
-      static constexpr FixedArray<TElement, ElementCount> Run(const FixedArray<TElement, ElementCount>& a, const FixedArray<s32, ElementCount>& b)
+      static constexpr FixedArray<TElement, ElementCount> Run(
+        const FixedArray<TElement, ElementCount>& a,
+        const FixedArray<SimdRelatedSignedElement<TElement>, ElementCount>& b)
         requires (basic_integral<TElement>)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = a[i] >> b[i]; });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = a[i.value] >> b[i.value]; });
         return result;
       }
     };
@@ -279,8 +283,8 @@ namespace Chord
         const FixedArray<TElement, ElementCount>& a,
         const FixedArray<TElement, ElementCount>& b)
       {
-        FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = -SimdRelatedSignedElement<TElement>(a[i] == b[i]); });
+        FixedArray<SimdRelatedSignedElement<TElement>, ElementCount> result;
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = -SimdRelatedSignedElement<TElement>(a[i.value] == b[i.value]); });
         return result;
       }
     };
@@ -292,8 +296,8 @@ namespace Chord
         const FixedArray<TElement, ElementCount>& a,
         const FixedArray<TElement, ElementCount>& b)
       {
-        FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = -SimdRelatedSignedElement<TElement>(a[i] != b[i]); });
+        FixedArray<SimdRelatedSignedElement<TElement>, ElementCount> result;
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = -SimdRelatedSignedElement<TElement>(a[i.value] != b[i.value]); });
         return result;
       }
     };
@@ -305,8 +309,8 @@ namespace Chord
         const FixedArray<TElement, ElementCount>& a,
         const FixedArray<TElement, ElementCount>& b)
       {
-        FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = -SimdRelatedSignedElement<TElement>(a[i] > b[i]); });
+        FixedArray<SimdRelatedSignedElement<TElement>, ElementCount> result;
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = -SimdRelatedSignedElement<TElement>(a[i.value] > b[i.value]); });
         return result;
       }
     };
@@ -318,8 +322,8 @@ namespace Chord
         const FixedArray<TElement, ElementCount>& a,
         const FixedArray<TElement, ElementCount>& b)
       {
-        FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = -SimdRelatedSignedElement<TElement>(a[i] < b[i]); });
+        FixedArray<SimdRelatedSignedElement<TElement>, ElementCount> result;
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = -SimdRelatedSignedElement<TElement>(a[i.value] < b[i.value]); });
         return result;
       }
     };
@@ -331,8 +335,8 @@ namespace Chord
         const FixedArray<TElement, ElementCount>& a,
         const FixedArray<TElement, ElementCount>& b)
       {
-        FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = -SimdRelatedSignedElement<TElement>(a[i] >= b[i]); });
+        FixedArray<SimdRelatedSignedElement<TElement>, ElementCount> result;
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = -SimdRelatedSignedElement<TElement>(a[i.value] >= b[i.value]); });
         return result;
       }
     };
@@ -344,8 +348,8 @@ namespace Chord
         const FixedArray<TElement, ElementCount>& a,
         const FixedArray<TElement, ElementCount>& b)
       {
-        FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = -SimdRelatedSignedElement<TElement>(a[i] <= b[i]); });
+        FixedArray<SimdRelatedSignedElement<TElement>, ElementCount> result;
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = -SimdRelatedSignedElement<TElement>(a[i.value] <= b[i.value]); });
         return result;
       }
     };
@@ -356,7 +360,7 @@ namespace Chord
       static constexpr FixedArray<s32, ElementCount> Run(const FixedArray<TElement, ElementCount>& v)
       {
         FixedArray<s32, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = s32(v[i]); });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = s32(v[i.value]); });
         return result;
       }
     };
@@ -367,7 +371,7 @@ namespace Chord
       static constexpr FixedArray<u32, ElementCount> Run(const FixedArray<TElement, ElementCount>& v)
       {
         FixedArray<u32, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = u32(v[i]); });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = u32(v[i.value]); });
         return result;
       }
     };
@@ -378,7 +382,7 @@ namespace Chord
       static constexpr FixedArray<s64, ElementCount> Run(const FixedArray<TElement, ElementCount>& v)
       {
         FixedArray<s64, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = s64(v[i]); });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = s64(v[i.value]); });
         return result;
       }
     };
@@ -389,7 +393,7 @@ namespace Chord
       static constexpr FixedArray<u64, ElementCount> Run(const FixedArray<TElement, ElementCount>& v)
       {
         FixedArray<u64, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = u64(v[i]); });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = u64(v[i.value]); });
         return result;
       }
     };
@@ -400,7 +404,7 @@ namespace Chord
       static constexpr FixedArray<f32, ElementCount> Run(const FixedArray<TElement, ElementCount>& v)
       {
         FixedArray<f32, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = f32(v[i]); });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = f32(v[i.value]); });
         return result;
       }
     };
@@ -411,7 +415,7 @@ namespace Chord
       static constexpr FixedArray<f64, ElementCount> Run(const FixedArray<TElement, ElementCount>& v)
       {
         FixedArray<f64, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = f64(v[i]); });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = f64(v[i.value]); });
         return result;
       }
     };
@@ -449,8 +453,8 @@ namespace Chord
       {
         FixedArray<Widen<TElement>, ElementCount / 2> resultLower;
         FixedArray<Widen<TElement>, ElementCount / 2> resultUpper;
-        Unroll<0, ElementCount / 2>([&](usz i) { resultLower[i] = Widen<TElement>(v[i]); });
-        Unroll<0, ElementCount / 2>([&](usz i) { resultUpper[i] = Widen<TElement>(v[ElementCount / 2 + i]); });
+        Unroll<0, ElementCount / 2>([&](auto i) { resultLower[i.value] = Widen<TElement>(v[i.value]); });
+        Unroll<0, ElementCount / 2>([&](auto i) { resultUpper[i.value] = Widen<TElement>(v[ElementCount / 2 + i]); });
         return { resultLower, resultUpper };
       }
     };
@@ -458,13 +462,14 @@ namespace Chord
     template<basic_numeric TElement, usz ElementCount>
     struct EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::NarrowAndCombine>
     {
-      static constexpr FixedArray<Narrow<TElement>, ElementCount * 2> Run(
-        const FixedArray<TElement, ElementCount>& a, const FixedArray<TElement, ElementCount>& b)
-        requires (IsNarrowable<TElement>)
+      static constexpr FixedArray<TElement, ElementCount> Run(
+        const FixedArray<Widen<TElement>, ElementCount / 2>& a,
+        const FixedArray<Widen<TElement>, ElementCount / 2>& b)
+        requires (IsWidenable<TElement>)
       {
-        FixedArray<Narrow<TElement>, ElementCount * 2> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = Narrow<TElement>(a[i]); });
-        Unroll<0, ElementCount>([&](usz i) { result[ElementCount + i] = Narrow<TElement>(b[i]); });
+        FixedArray<TElement, ElementCount> result;
+        Unroll<0, ElementCount / 2>([&](auto i) { result[i.value] = TElement(a[i.value]); });
+        Unroll<0, ElementCount / 2>([&](auto i) { result[ElementCount / 2 + i] = TElement(b[i.value]); });
         return result;
       }
     };
@@ -524,20 +529,20 @@ namespace Chord
       {
         FixedArray<TElement, ElementCount> result;
         Unroll<0, ElementCount>(
-          [&](usz i)
+          [&](auto i)
           {
             if consteval
             {
               if constexpr (std::floating_point<TElement>)
               {
-                result[i] = std::bit_cast<TElement>(
-                  std::bit_cast<SimdRelatedSignedElement<TElement>>(v[i]) & ~std::bit_cast<SimdRelatedSignedElement<TElement>>(TElement(-0.0)));
+                result[i.value] = std::bit_cast<TElement>(
+                  std::bit_cast<SimdRelatedSignedElement<TElement>>(v[i.value]) & ~std::bit_cast<SimdRelatedSignedElement<TElement>>(TElement(-0.0)));
               }
               else
-                { result[i] = v[i] < 0 ? -v[i] : v[i]; }
+                { result[i.value] = v[i.value] < 0 ? -v[i.value] : v[i.value]; }
             }
             else
-              { result[i] = std::abs(v[i]); }
+              { result[i.value] = std::abs(v[i.value]); }
           });
         return result;
       }
@@ -550,7 +555,7 @@ namespace Chord
       static constexpr FixedArray<TElement, ElementCount> Run(const FixedArray<TElement, ElementCount>& v)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = Floor(v[i]); });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = Floor(v[i.value]); });
         return result;
       }
     };
@@ -562,7 +567,7 @@ namespace Chord
       static constexpr FixedArray<TElement, ElementCount> Run(const FixedArray<TElement, ElementCount>& v)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = Ceil(v[i]); });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = Ceil(v[i.value]); });
         return result;
       }
     };
@@ -574,7 +579,7 @@ namespace Chord
       static constexpr FixedArray<TElement, ElementCount> Run(const FixedArray<TElement, ElementCount>& v)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = Round(v[i]); });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = Round(v[i.value]); });
         return result;
       }
     };
@@ -585,7 +590,7 @@ namespace Chord
       static constexpr FixedArray<TElement, ElementCount> Run(const FixedArray<TElement, ElementCount>& a, const FixedArray<TElement, ElementCount>& b)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = std::min(a[i], b[i]); });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = std::min(a[i.value], b[i.value]); });
         return result;
       }
     };
@@ -596,7 +601,7 @@ namespace Chord
       static constexpr FixedArray<TElement, ElementCount> Run(const FixedArray<TElement, ElementCount>& a, const FixedArray<TElement, ElementCount>& b)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = std::max(a[i], b[i]); });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = std::max(a[i.value], b[i.value]); });
         return result;
       }
     };
@@ -608,7 +613,7 @@ namespace Chord
       static constexpr FixedArray<TElement, ElementCount> Run(const FixedArray<TElement, ElementCount>& v)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = TElement(1) / v[i]; });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = TElement(1) / v[i.value]; });
         return result;
       }
     };
@@ -620,7 +625,7 @@ namespace Chord
       static constexpr FixedArray<TElement, ElementCount> Run(const FixedArray<TElement, ElementCount>& v)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = TElement(1) / Sqrt(v); });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = TElement(1) / Sqrt(v); });
         return result;
       }
     };
@@ -632,7 +637,7 @@ namespace Chord
       static constexpr FixedArray<TElement, ElementCount> Run(const FixedArray<TElement, ElementCount>& v)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = Sqrt(v); });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = Sqrt(v); });
         return result;
       }
     };
@@ -644,10 +649,10 @@ namespace Chord
       {
         FixedArray<TElement, ElementCount> result;
         Unroll<0, ElementCount>(
-          [&](usz i)
+          [&](auto i)
           {
-            result[i] =
-              std::bit_cast<TElement>(~std::bit_cast<SimdRelatedSignedElement<TElement>>(a[i]) & std::bit_cast<SimdRelatedSignedElement<TElement>>(b[i]));
+            result[i.value] = std::bit_cast<TElement>(
+              ~std::bit_cast<SimdRelatedSignedElement<TElement>>(a[i.value]) & std::bit_cast<SimdRelatedSignedElement<TElement>>(b[i.value]));
           });
         return result;
       }
@@ -660,7 +665,7 @@ namespace Chord
       static constexpr FixedArray<SimdRelatedSignedElement<TElement>, ElementCount> Run(const FixedArray<TElement, ElementCount>& v)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = CountLeadingZeros(SimdRelatedUnsignedElement<TElement>(v[i])); });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = CountLeadingZeros(SimdRelatedUnsignedElement<TElement>(v[i.value])); });
         return result;
       }
     };
@@ -671,7 +676,7 @@ namespace Chord
       static constexpr FixedArray<TElement, ElementCount> Run(const FixedArray<TElement, ElementCount>& v)
       {
         TElement sum = TElement(0);
-        Unroll<0, ElementCount>([&](usz i) { sum += v[i]; });
+        Unroll<0, ElementCount>([&](auto i) { sum += v[i.value]; });
         FixedArray<TElement, ElementCount> result;
         result.Fill(sum);
         return result;
@@ -688,7 +693,7 @@ namespace Chord
         const FixedArray<TElement, ElementCount>& c)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = FMAdd(a, b, c); });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = FMAdd(a[i.value], b[i.value], c[i.value]); });
         return result;
       }
     };
@@ -703,7 +708,7 @@ namespace Chord
         const FixedArray<TElement, ElementCount>& c)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = FMAdd(a, b, -c); });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = FMAdd(a[i.value], b[i.value], -c[i.value]); });
         return result;
       }
     };
@@ -718,7 +723,7 @@ namespace Chord
         const FixedArray<TElement, ElementCount>& c)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = FMAdd(a, b, i % 2 == 0 ? -c : c); });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = FMAdd(a[i.value], b[i.value], i.value % 2 == 0 ? -c[i.value] : c[i.value]); });
         return result;
       }
     };
@@ -733,7 +738,7 @@ namespace Chord
         const FixedArray<TElement, ElementCount>& c)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = FMAdd(a, b, i % 2 == 0 ? c : -c); });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = FMAdd(a[i.value], b[i.value], i.value % 2 == 0 ? c[i.value] : -c[i.value]); });
         return result;
       }
     };
@@ -748,7 +753,7 @@ namespace Chord
         const FixedArray<TElement, ElementCount>& c)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = FMAdd(-a, b, c); });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = FMAdd(-a[i.value], b[i.value], c[i.value]); });
         return result;
       }
     };
@@ -763,7 +768,7 @@ namespace Chord
         const FixedArray<TElement, ElementCount>& c)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = FMAdd(-a, b, -c); });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = FMAdd(-a[i.value], b[i.value], -c[i.value]); });
         return result;
       }
     };
@@ -778,7 +783,7 @@ namespace Chord
         const FixedArray<TElement, ElementCount>& c)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = FMAdd(-a, b, i % 2 == 0 ? -c : c); });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = FMAdd(-a[i.value], b[i.value], i.value % 2 == 0 ? -c[i.value] : c[i.value]); });
         return result;
       }
     };
@@ -793,7 +798,7 @@ namespace Chord
         const FixedArray<TElement, ElementCount>& c)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = FMAdd(-a, b, i % 2 == 0 ? c : -c); });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = FMAdd(-a[i.value], b[i.value], i.value % 2 == 0 ? c[i.value] : -c[i.value]); });
         return result;
       }
     };
@@ -805,7 +810,7 @@ namespace Chord
       static constexpr FixedArray<TElement, ElementCount> Run(const FixedArray<TElement, ElementCount>& a, const FixedArray<TElement, ElementCount>& b)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = i % 2 == 0 ? a - b : a + b; });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = i.value % 2 == 0 ? a[i.value] - b[i.value] : a[i.value] + b[i.value]; });
         return result;
       }
     };
@@ -817,7 +822,7 @@ namespace Chord
       static constexpr FixedArray<TElement, ElementCount> Run(const FixedArray<TElement, ElementCount>& a, const FixedArray<TElement, ElementCount>& b)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = i % 2 == 0 ? a + b : a - b; });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = i.value % 2 == 0 ? a[i.value] + b[i.value] : a[i.value] - b[i.value]; });
         return result;
       }
     };
@@ -831,7 +836,7 @@ namespace Chord
         const FixedArray<TElement, ElementCount>& falseValue)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](usz i) { result[i] = condition[i] != 0 ? trueValue[i] : falseValue[i]; });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = condition[i.value] != 0 ? trueValue[i.value] : falseValue[i.value]; });
         return result;
       }
     };

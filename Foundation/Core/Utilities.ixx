@@ -33,6 +33,13 @@ namespace Chord
 
     template<typename T>
     constexpr bool AlwaysTrue = true;
+
+    consteval auto Consteval(auto v)
+      { return v; }
+
+    template<typename T, usz Length>
+    constexpr usz ArrayLength(T (&v)[Length])
+      { return Length; }
   }
 
   template<typename... TTypes>
