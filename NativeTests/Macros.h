@@ -16,10 +16,7 @@
   \
   class TestClass__ ## name : public TestClass<TestClass__ ## name>
 
-#define TEST_METHOD(name) \
-  static void InvokeTestMethod__ ## name(void* testClassInstance) \
-    { return static_cast<ThisClass*>(testClassInstance)->TestMethod__ ## name(); } \
-  \
+#define REGISTER_TEST_METHOD_(name) \
   static inline TestMethodInfo s_testMethodInfo__ ## name = \
     [&]() \
     { \
@@ -30,7 +27,13 @@
       }; \
     }(); \
   \
-  static inline s32 s_testMethodInfoRegistration__ ## name = RegisterTestMethod(&s_testMethodInfo__ ## name); \
+  static inline s32 s_testMethodInfoRegistration__ ## name = RegisterTestMethod(&s_testMethodInfo__ ## name);
+
+#define TEST_METHOD(name) \
+  static void InvokeTestMethod__ ## name(void* testClassInstance) \
+    { return static_cast<ThisClass*>(testClassInstance)->TestMethod__ ## name(); } \
+  \
+  REGISTER_TEST_METHOD_(name) \
   \
   void TestMethod__ ## name()
 
@@ -48,17 +51,7 @@
     return static_cast<ThisClass*>(testClassInstance)->TestMethod__ ## name(); \
   } \
   \
-  static inline TestMethodInfo s_testMethodInfo__ ## name = \
-    [&]() \
-    { \
-      return TestMethodInfo \
-      { \
-        .m_name = #name, \
-        .m_testMethod = InvokeTestMethod__ ## name, \
-      }; \
-    }(); \
-  \
-  static inline s32 s_testMethodInfoRegistration__ ## name = RegisterTestMethod(&s_testMethodInfo__ ## name); \
+  REGISTER_TEST_METHOD_(name) \
   \
   constexpr void TestMethod__ ## name()
 
