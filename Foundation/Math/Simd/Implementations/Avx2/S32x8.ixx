@@ -236,19 +236,19 @@ namespace Chord
       };
 
       template<>
-      struct SimdOperationImplementation<s32, 8, SimdOperation::ConvertS32> : public SupportedSimdOperationImplementation
-      {
-        static __m256s32 Run(const __m256s32& v)
-          { return v; }
-      };
-
-      template<>
-      struct SimdOperationImplementation<s32, 8, SimdOperation::ConvertU32> : public UnsupportedSimdOperationImplementation
+      struct SimdOperationImplementation<s32, 8, SimdOperation::ConvertS32> : public UnsupportedSimdOperationImplementation
         { };
 
       template<>
       struct SimdOperationImplementation<s32, 8, SimdOperation::ConvertS64> : public UnsupportedSimdOperationImplementation
         { };
+
+      template<>
+      struct SimdOperationImplementation<s32, 8, SimdOperation::ConvertU32> : public SupportedSimdOperationImplementation
+      {
+        static __m256u32 Run(const __m256s32& v)
+          { return v.m_value; }
+      };
 
       template<>
       struct SimdOperationImplementation<s32, 8, SimdOperation::ConvertU64> : public UnsupportedSimdOperationImplementation

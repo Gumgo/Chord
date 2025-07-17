@@ -185,17 +185,28 @@ namespace Chord
         const std::initializer_list<std::tuple<TArgs...>>& tests)
         { TestAgainstScalar<ElementCount>(std::forward<TFunc>(func), std::forward<TFunc>(func), tests); }
 
+      template<usz ElementCount, typename TFunc, basic_numeric... TArgs>
+      static constexpr void TestAgainstScalar(
+        TFunc&& func,
+        Span<const std::tuple<TArgs...>> tests)
+        { TestAgainstScalar<ElementCount>(std::forward<TFunc>(func), std::forward<TFunc>(func), tests); }
+
       template<usz ElementCount, typename TScalarFunc, typename TVectorFunc, basic_numeric... TArgs>
       static constexpr void TestAgainstScalar(
         TScalarFunc&& scalarFunc,
         TVectorFunc&& vectorFunc,
         const std::initializer_list<std::tuple<TArgs...>>& tests)
+        { TestAgainstScalar<ElementCount>(std::forward<TScalarFunc>(scalarFunc), std::forward<TVectorFunc>(vectorFunc), Span(tests.begin(), tests.size())); }
+
+      template<usz ElementCount, typename TScalarFunc, typename TVectorFunc, basic_numeric... TArgs>
+      static constexpr void TestAgainstScalar(
+        TScalarFunc&& scalarFunc,
+        TVectorFunc&& vectorFunc,
+        Span<const std::tuple<TArgs...>> tests)
       {
         if constexpr ((IsSimdTypeSupported<TArgs, ElementCount> && ...))
         {
-          auto testsSpan = Span(tests.begin(), tests.size());
-
-          for (usz testIndex = 0; testIndex < testsSpan.Count(); testIndex++)
+          for (usz testIndex = 0; testIndex < tests.Count(); testIndex++)
           {
             auto elements = std::make_tuple(Elements<TArgs, ElementCount>()...);
             auto argVectors = std::make_tuple(Vector<TArgs, ElementCount>(Zero)...);
@@ -208,7 +219,7 @@ namespace Chord
 
                 // Load N consecutive test values. This way, we can test having different values in each lane.
                 for (usz elementIndex = 0; elementIndex < ElementCount; elementIndex++)
-                  { std::get<ArgIndex>(elements).m_elements[elementIndex] = std::get<ArgIndex>(testsSpan[(testIndex + elementIndex) % testsSpan.Count()]); }
+                  { std::get<ArgIndex>(elements).m_elements[elementIndex] = std::get<ArgIndex>(tests[(testIndex + elementIndex) % tests.Count()]); }
                 std::get<ArgIndex>(argVectors) = VectorType::LoadAligned(std::get<ArgIndex>(elements).m_elements);
               });
 
@@ -225,7 +236,7 @@ namespace Chord
                 [&](auto i)
                 {
                   static constexpr usz ArgIndex = decltype(i)::value;
-                  std::get<ArgIndex>(argScalars) = std::get<ArgIndex>(testsSpan[(testIndex + elementIndex) % testsSpan.Count()]);
+                  std::get<ArgIndex>(argScalars) = std::get<ArgIndex>(tests[(testIndex + elementIndex) % tests.Count()]);
                 });
 
               auto resultScalar = std::apply(std::forward<TScalarFunc>(scalarFunc), argScalars);

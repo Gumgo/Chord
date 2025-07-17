@@ -65,7 +65,7 @@ namespace Chord
   {
     template<basic_integral T>
     inline constexpr s32 CountLeadingZeros(T v)
-      { return std::make_unsigned_t<T>(std::countl_zero(v)); }
+      { return std::countl_zero(std::make_unsigned_t<T>(v)); }
 
     template<basic_numeric T>
       requires (!std::is_unsigned_v<T>)

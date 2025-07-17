@@ -180,14 +180,14 @@ namespace Chord
       struct SimdOperationImplementation<s64, 2, SimdOperation::ShiftRightScalar> : public SupportedSimdOperationImplementation
       {
         static __m128s64 Run(const __m128s64& a, s32 b)
-          { return _mm_srai_epi64(a, b); }
+          { return MmSraiEpi64(a, b); }
       };
 
       template<>
       struct SimdOperationImplementation<s64, 2, SimdOperation::ShiftRightVector> : public SupportedSimdOperationImplementation
       {
         static __m128s64 Run(const __m128s64& a, const __m128s64& b)
-          { return _mm_srav_epi64(a, b); }
+          { return MmSravEpi64(a, b); }
       };
 
       template<>
@@ -237,18 +237,18 @@ namespace Chord
         { };
 
       template<>
-      struct SimdOperationImplementation<s64, 2, SimdOperation::ConvertU32> : public UnsupportedSimdOperationImplementation
+      struct SimdOperationImplementation<s64, 2, SimdOperation::ConvertS64> : public UnsupportedSimdOperationImplementation
         { };
 
       template<>
-      struct SimdOperationImplementation<s64, 2, SimdOperation::ConvertS64> : public UnsupportedSimdOperationImplementation
+      struct SimdOperationImplementation<s64, 2, SimdOperation::ConvertU32> : public UnsupportedSimdOperationImplementation
         { };
 
       template<>
       struct SimdOperationImplementation<s64, 2, SimdOperation::ConvertU64> : public SupportedSimdOperationImplementation
       {
-        static __m128s64 Run(const __m128s64& v)
-          { return v; }
+        static __m128u64 Run(const __m128s64& v)
+          { return v.m_value; }
       };
 
       template<>
@@ -317,7 +317,7 @@ namespace Chord
       struct SimdOperationImplementation<s64, 2, SimdOperation::Abs> : public SupportedSimdOperationImplementation
       {
         static __m128s64 Run(const __m128s64& v)
-          { return _mm_abs_epi64(v); }
+          { return MmAbsEpi64(v); }
       };
 
       template<>
@@ -340,14 +340,14 @@ namespace Chord
       struct SimdOperationImplementation<s64, 2, SimdOperation::Min> : public SupportedSimdOperationImplementation
       {
         static __m128s64 Run(const __m128s64& a, const __m128s64& b)
-          { return _mm_castpd_si128(_mm_blendv_pd(_mm_castsi128_pd(_mm_cmpgt_epi64(a, b)), _mm_castsi128_pd(b), _mm_castsi128_pd(a))); }
+          { return MmMinEpi64(a, b); }
       };
 
       template<>
       struct SimdOperationImplementation<s64, 2, SimdOperation::Max> : public SupportedSimdOperationImplementation
       {
         static __m128s64 Run(const __m128s64& a, const __m128s64& b)
-          { return _mm_castpd_si128(_mm_blendv_pd(_mm_castsi128_pd(_mm_cmpgt_epi64(a, b)), _mm_castsi128_pd(a), _mm_castsi128_pd(b))); }
+          { return MmMaxEpi64(a, b); }
       };
 
       template<>

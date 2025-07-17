@@ -199,32 +199,32 @@ namespace Chord
       template<typename TTo>
       constexpr operator TTo() const
       {
-        if constexpr (std::same_as<TTo, Vector<s32, ElementCount>>)
+        if constexpr (IsVectorOfType<TTo, s32, ElementCount>())
         {
           static_assert(IsSupported<SimdOperation::ConvertS32>);
           return Vector<s32, ElementCount>(Run<SimdOperation::ConvertS32>(m_data));
         }
-        else if constexpr (std::same_as<TTo, Vector<s64, ElementCount>>)
+        else if constexpr (IsVectorOfType<TTo, s64, ElementCount>())
         {
           static_assert(IsSupported<SimdOperation::ConvertS64>);
           return Vector<s64, ElementCount>(Run<SimdOperation::ConvertS64>(m_data));
         }
-        else if constexpr (std::same_as<TTo, Vector<u32, ElementCount>>)
+        else if constexpr (IsVectorOfType<TTo, u32, ElementCount>())
         {
           static_assert(IsSupported<SimdOperation::ConvertU32>);
           return Vector<u32, ElementCount>(Run<SimdOperation::ConvertU32>(m_data));
         }
-        else if constexpr (std::same_as<TTo, Vector<u64, ElementCount>>)
+        else if constexpr (IsVectorOfType<TTo, u64, ElementCount>())
         {
           static_assert(IsSupported<SimdOperation::ConvertU64>);
           return Vector<u64, ElementCount>(Run<SimdOperation::ConvertU64>(m_data));
         }
-        else if constexpr (std::same_as<TTo, Vector<f32, ElementCount>>)
+        else if constexpr (IsVectorOfType<TTo, f32, ElementCount>())
         {
           static_assert(IsSupported<SimdOperation::ConvertF32>);
           return Vector<f32, ElementCount>(Run<SimdOperation::ConvertF32>(m_data));
         }
-        else if constexpr (std::same_as<TTo, Vector<f64, ElementCount>>)
+        else if constexpr (IsVectorOfType<TTo, f64, ElementCount>())
         {
           static_assert(IsSupported<SimdOperation::ConvertF64>);
           return Vector<f64, ElementCount>(Run<SimdOperation::ConvertF64>(m_data));
@@ -358,6 +358,15 @@ namespace Chord
       template<SimdOperation Operation, typename... TArgs>
       static constexpr auto Run(TArgs&&... args)
         { return RunSimdOperation<TElement, ElementCount, Operation>(std::forward<TArgs>(args)...); }
+
+      template<typename T, basic_numeric TElement, usz ElementCount>
+      static constexpr bool IsVectorOfType()
+      {
+        if constexpr (!IsSimdTypeSupported<TElement, ElementCount>)
+          { return false; }
+        else
+          { return std::same_as<T, Vector<TElement, ElementCount>>; }
+      }
     };
 
     template<basic_numeric TElement, usz ElementCount>

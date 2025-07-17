@@ -183,14 +183,14 @@ namespace Chord
       struct SimdOperationImplementation<s64, 4, SimdOperation::ShiftRightScalar> : public SupportedSimdOperationImplementation
       {
         static __m256s64 Run(const __m256s64& a, s32 b)
-          { return _mm256_srai_epi64(a, b); }
+          { return Mm256SraiEpi64(a, b); }
       };
 
       template<>
       struct SimdOperationImplementation<s64, 4, SimdOperation::ShiftRightVector> : public SupportedSimdOperationImplementation
       {
         static __m256s64 Run(const __m256s64& a, const __m256s64& b)
-          { return _mm256_srav_epi64(a, b); }
+          { return Mm256SravEpi64(a, b); }
       };
 
       template<>
@@ -239,14 +239,7 @@ namespace Chord
       struct SimdOperationImplementation<s64, 4, SimdOperation::ConvertS32> : public SupportedSimdOperationImplementation
       {
         static __m128s32 Run(const __m256s64& v)
-          { return _mm256_cvtepi64_epi32(v); }
-      };
-
-      template<>
-      struct SimdOperationImplementation<s64, 4, SimdOperation::ConvertU32> : public SupportedSimdOperationImplementation
-      {
-        static __m128s32 Run(const __m256s64& v)
-          { return _mm256_cvtepi64_epi32(v); }
+          { return Mm256CvtEpi64Epi32(v); }
       };
 
       template<>
@@ -254,10 +247,17 @@ namespace Chord
         { };
 
       template<>
+      struct SimdOperationImplementation<s64, 4, SimdOperation::ConvertU32> : public SupportedSimdOperationImplementation
+      {
+        static __m128u32 Run(const __m256s64& v)
+          { return Mm256CvtEpi64Epi32(v); }
+      };
+
+      template<>
       struct SimdOperationImplementation<s64, 4, SimdOperation::ConvertU64> : public SupportedSimdOperationImplementation
       {
-        static __m256s64 Run(const __m256s64& v)
-          { return v; }
+        static __m256u64 Run(const __m256s64& v)
+          { return v.m_value; }
       };
 
       template<>
@@ -354,7 +354,7 @@ namespace Chord
       struct SimdOperationImplementation<s64, 4, SimdOperation::Abs> : public SupportedSimdOperationImplementation
       {
         static __m256s64 Run(const __m256s64& v)
-          { return _mm256_abs_epi64(v); }
+          { return Mm256AbsEpi64(v); }
       };
 
       template<>
@@ -377,14 +377,14 @@ namespace Chord
       struct SimdOperationImplementation<s64, 4, SimdOperation::Min> : public SupportedSimdOperationImplementation
       {
         static __m256s64 Run(const __m256s64& a, const __m256s64& b)
-          { return _mm256_castpd_si256(_mm256_blendv_pd(_mm256_castsi256_pd(_mm256_cmpgt_epi64(a, b)), _mm256_castsi256_pd(b), _mm256_castsi256_pd(a))); }
+          { return Mm256MinEpi64(a, b); }
       };
 
       template<>
       struct SimdOperationImplementation<s64, 4, SimdOperation::Max> : public SupportedSimdOperationImplementation
       {
         static __m256s64 Run(const __m256s64& a, const __m256s64& b)
-          { return _mm256_castpd_si256(_mm256_blendv_pd(_mm256_castsi256_pd(_mm256_cmpgt_epi64(a, b)), _mm256_castsi256_pd(a), _mm256_castsi256_pd(b))); }
+          { return Mm256MaxEpi64(a, b); }
       };
 
       template<>

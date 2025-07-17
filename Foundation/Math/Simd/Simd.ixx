@@ -88,9 +88,9 @@ namespace Chord
     using s32x8 = SimdVector8Alias<s32>;
     using s64x2 = SimdVector2Alias<s64>;
     using s64x4 = SimdVector4Alias<s64>;
-    using u32x4 = SimdVector4Alias<s32>;
+    using u32x4 = SimdVector4Alias<u32>;
     using u32x8 = SimdVector8Alias<u32>;
-    using u64x2 = SimdVector2Alias<s64>;
+    using u64x2 = SimdVector2Alias<u64>;
     using u64x4 = SimdVector4Alias<u64>;
 
     using f32xM = SimdVectorMaxAlias<f32>;

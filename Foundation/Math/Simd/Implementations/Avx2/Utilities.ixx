@@ -10,6 +10,7 @@ import std;
 
 import :Containers.FixedArray;
 import :Core;
+import :Utilities.Bounds;
 
 namespace Chord
 {
@@ -100,6 +101,58 @@ namespace Chord
         return _mm256_add_epi64(lowLow, lowHighHighLow);
       }
 
+      inline __m128i MmLzcntEpi32(const __m128i& v)
+      {
+        // See https://stackoverflow.com/questions/58823140/count-leading-zero-bits-for-each-element-in-avx2-vector-emulate-mm256-lzcnt-ep for details
+        __m128i value = _mm_andnot_si128(_mm_srli_epi32(v, 8), v);
+        value = _mm_castps_si128(_mm_cvtepi32_ps(value));
+        value = _mm_srli_epi32(value, FloatTraits<f32>::MantissaBitCount);
+        value = _mm_subs_epu16(_mm_set1_epi32(FloatTraits<f32>::ExponentBias + 32), value);
+        return _mm_min_epi16(value, _mm_set1_epi32(32));
+      }
+
+      inline __m256i Mm256LzcntEpi32(const __m256i& v)
+      {
+        // See https://stackoverflow.com/questions/58823140/count-leading-zero-bits-for-each-element-in-avx2-vector-emulate-mm256-lzcnt-ep for details
+        __m256i value = _mm256_andnot_si256(_mm256_srli_epi32(v, 8), v);
+        value = _mm256_castps_si256(_mm256_cvtepi32_ps(value));
+        value = _mm256_srli_epi32(value, FloatTraits<f32>::MantissaBitCount);
+        value = _mm256_subs_epu16(_mm256_set1_epi32(FloatTraits<f32>::ExponentBias + 32), value);
+        return _mm256_min_epi16(value, _mm256_set1_epi32(32));
+      }
+
+      inline __m128i MmLzcntEpi64(const __m128i& v)
+      {
+        // There are a few annoying limitations doing this directly on 64-bit words so we're going to run on 32-bit words and combine the results. Ignoring odd
+        // 32-bit lanes, running the 32-bit version and swapping even/odd lanes will stack the low and high 32-bit word results on top of each other.
+        __m128i low32 = MmLzcntEpi32(v);
+        __m128i high32 = _mm_shuffle_epi32(low32, _MM_SHUFFLE(2, 3, 0, 1));
+
+        // If the low word result is less than 32, it means there's a 1 in the low word, so use that result directly. Otherwise, the first 1 occurs in the high
+        // word so add the low word result (32) to the high word result.
+        __m128i lowIsAllZero = _mm_cmpeq_epi32(low32, _mm_set1_epi32(32));
+        __m128i combined = _mm_add_epi32(low32, _mm_and_epi32(lowIsAllZero, high32));
+
+        // Clear out the upper 32 bits of each 64-bit result
+        return _mm_blend_epi32(combined, _mm_setzero_si128(), 0b0101);
+      }
+
+      inline __m256i Mm256LzcntEpi64(const __m256i& v)
+      {
+        // There are a few annoying limitations doing this directly on 64-bit words so we're going to run on 32-bit words and combine the results. Ignoring odd
+        // 32-bit lanes, running the 32-bit version and swapping even/odd lanes will stack the low and high 32-bit word results on top of each other.
+        __m256i low32 = Mm256LzcntEpi32(v);
+        __m256i high32 = _mm256_shuffle_epi32(low32, _MM_SHUFFLE(2, 3, 0, 1));
+
+        // If the low word result is less than 32, it means there's a 1 in the low word, so use that result directly. Otherwise, the first 1 occurs in the high
+        // word so add the low word result (32) to the high word result.
+        __m256i lowIsAllZero = _mm256_cmpeq_epi32(low32, _mm256_set1_epi32(32));
+        __m256i combined = _mm256_add_epi32(low32, _mm256_and_epi32(lowIsAllZero, high32));
+
+        // Clear out the upper 32 bits of each 64-bit result
+        return _mm256_blend_epi32(combined, _mm256_setzero_si256(), 0b01010101);
+      }
+
       inline __m128i MmCmpltEpu32(const __m128i &a, const __m128i &b)
       {
         // Bias so that 0 becomes the smallest signed 32-bit integer value
@@ -138,7 +191,7 @@ namespace Chord
       inline __m128i MmCmpgtEpu64(const __m128i& a, const __m128i& b)
       {
         // Bias so that 0 becomes the smallest signed 64-bit integer value
-        __m128i bias = _mm_set1_epi64x(0x80000000);
+        __m128i bias = _mm_set1_epi64x(0x8000000000000000);
         return _mm_cmpgt_epi64(_mm_add_epi64(a, bias), _mm_add_epi64(b, bias));
       }
 
@@ -152,8 +205,96 @@ namespace Chord
       inline __m256i Mm256CmpgtEpu64(const __m256i& a, const __m256i& b)
       {
         // Bias so that 0 becomes the smallest signed 64-bit integer value
-        __m256i bias = _mm256_set1_epi64x(0x80000000);
+        __m256i bias = _mm256_set1_epi64x(0x8000000000000000);
         return _mm256_cmpgt_epi64(_mm256_add_epi64(a, bias), _mm256_add_epi64(b, bias));
+      }
+
+      inline __m128i MmAbsEpi64(const __m128i& v)
+      {
+        // No 64-bit shift so extend the sign bit to 32 bits and then copy it
+        __m128i negativeMask = _mm_shuffle_epi32(_mm_srai_epi32(v, 31), _MM_SHUFFLE(2, 2, 0, 0));
+        return _mm_blendv_epi8(negativeMask, _mm_sub_epi64(_mm_setzero_si128(), v), v);
+      }
+
+      inline __m256i Mm256AbsEpi64(const __m256i& v)
+      {
+        // No 64-bit shift so extend the sign bit to 32 bits and then copy it
+        __m256i negativeMask = _mm256_shuffle_epi32(_mm256_srai_epi32(v, 31), _MM_SHUFFLE(2, 2, 0, 0));
+        return _mm256_blendv_epi8(negativeMask, _mm256_sub_epi64(_mm256_setzero_si256(), v), v);
+      }
+
+      inline __m128i MmMinEpi64(const __m128i& a, const __m128i& b)
+        { return _mm_blendv_epi8(_mm_cmpgt_epi64(a, b), b, a); }
+
+      inline __m256i Mm256MinEpi64(const __m256i& a, const __m256i& b)
+        { return _mm256_blendv_epi8(_mm256_cmpgt_epi64(a, b), b, a); }
+
+      inline __m128i MmMaxEpi64(const __m128i& a, const __m128i& b)
+        { return _mm_blendv_epi8(_mm_cmpgt_epi64(a, b), a, b); }
+
+      inline __m256i Mm256MaxEpi64(const __m256i& a, const __m256i& b)
+        { return _mm256_blendv_epi8(_mm256_cmpgt_epi64(a, b), a, b); }
+
+      inline __m128i MmMinEpu64(const __m128i& a, const __m128i& b)
+        { return _mm_blendv_epi8(MmCmpgtEpu64(a, b), b, a); }
+
+      inline __m256i Mm256MinEpu64(const __m256i& a, const __m256i& b)
+        { return _mm256_blendv_epi8(Mm256CmpgtEpu64(a, b), b, a); }
+
+      inline __m128i MmMaxEpu64(const __m128i& a, const __m128i& b)
+        { return _mm_blendv_epi8(MmCmpgtEpu64(a, b), a, b); }
+
+      inline __m256i Mm256MaxEpu64(const __m256i& a, const __m256i& b)
+        { return _mm256_blendv_epi8(Mm256CmpgtEpu64(a, b), a, b); }
+
+      inline __m128i MmSraiEpi64(const __m128i& v, s32 shift)
+      {
+        shift = Min(shift, 64);
+        __m128i zeroExtended = _mm_srli_epi64(v, shift);
+
+        s32 invShift = 64 - shift;
+        __m128i signExtensionMask = _mm_cmpgt_epi64(_mm_setzero_si128(), v);
+        __m128i signExtensionBits = _mm_slli_epi64(signExtensionMask, invShift);
+
+        return _mm_or_si128(zeroExtended, signExtensionBits);
+      }
+
+      inline __m256i Mm256SraiEpi64(const __m256i& v, s32 shift)
+      {
+        shift = Min(shift, 64);
+        __m256i zeroExtended = _mm256_srli_epi64(v, shift);
+
+        s32 invShift = 64 - shift;
+        __m256i signExtensionMask = _mm256_cmpgt_epi64(_mm256_setzero_si256(), v);
+        __m256i signExtensionBits = _mm256_slli_epi64(signExtensionMask, invShift);
+
+        return _mm256_or_si256(zeroExtended, signExtensionBits);
+      }
+
+      inline __m128i MmSravEpi64(const __m128i& v, const __m128i& shift)
+      {
+        __m128i maxShift = _mm_set1_epi64x(64);
+        __m128i clampedShift = MmMinEpi64(shift, maxShift);
+        __m128i zeroExtended = _mm_srlv_epi64(v, clampedShift);
+
+        __m128i invShift = _mm_sub_epi64(maxShift, shift);
+        __m128i signExtensionMask = _mm_cmpgt_epi64(_mm_setzero_si128(), v);
+        __m128i signExtensionBits = _mm_sllv_epi64(signExtensionMask, invShift);
+
+        return _mm_or_si128(zeroExtended, signExtensionBits);
+      }
+
+      inline __m256i Mm256SravEpi64(const __m256i& v, const __m256i& shift)
+      {
+        __m256i maxShift = _mm256_set1_epi64x(64);
+        __m256i clampedShift = Mm256MinEpi64(shift, maxShift);
+        __m256i zeroExtended = _mm256_srlv_epi64(v, clampedShift);
+
+        __m256i invShift = _mm256_sub_epi64(maxShift, shift);
+        __m256i signExtensionMask = _mm256_cmpgt_epi64(_mm256_setzero_si256(), v);
+        __m256i signExtensionBits = _mm256_sllv_epi64(signExtensionMask, invShift);
+
+        return _mm256_or_si256(zeroExtended, signExtensionBits);
       }
 
       // $TODO I haven't figured out all of these conversion functions using pure SSE/AVX, some go through memory
@@ -206,17 +347,17 @@ namespace Chord
         alignas(alignof(__m128i)) FixedArray<u64, 2> valuesU64;
         _mm_store_pd(valuesF64.Elements(), v);
         for (usz i = 0; i < 2; i++)
-          { valuesU64[i] = s64(valuesF64[i]); }
+          { valuesU64[i] = u64(valuesF64[i]); }
         return _mm_load_si128(reinterpret_cast<const __m128i*>(valuesU64.Elements()));
       }
 
       inline __m128i Mm256CvttPdEpu32(const __m256d& v)
       {
         // _mm256_cvttpd_epu32 is AVX-512 so we go through memory to perform this conversion. I have an emulated SSE version but it uses a lot of instructions.
-        alignas(alignof(__m256d)) FixedArray<f64, 2> valuesF64;
-        alignas(alignof(__m256i)) FixedArray<u32, 2> valuesU32;
+        alignas(alignof(__m256d)) FixedArray<f64, 4> valuesF64;
+        alignas(alignof(__m256i)) FixedArray<u32, 4> valuesU32;
         _mm256_store_pd(valuesF64.Elements(), v);
-        for (usz i = 0; i < 2; i++)
+        for (usz i = 0; i < 4; i++)
           { valuesU32[i] = u32(valuesF64[i]); }
         return _mm_load_si128(reinterpret_cast<const __m128i*>(valuesU32.Elements()));
       }
@@ -227,7 +368,7 @@ namespace Chord
         alignas(alignof(__m256d)) FixedArray<f64, 4> valuesF64;
         alignas(alignof(__m256i)) FixedArray<s64, 4> valuesS64;
         _mm256_store_pd(valuesF64.Elements(), v);
-        for (usz i = 0; i < 2; i++)
+        for (usz i = 0; i < 4; i++)
           { valuesS64[i] = s64(valuesF64[i]); }
         return _mm256_load_si256(reinterpret_cast<const __m256i*>(valuesS64.Elements()));
       }
@@ -235,11 +376,11 @@ namespace Chord
       inline __m256i Mm256CvttPdEpu64(const __m256d& v)
       {
         // _mm256_cvttpd_epu64 is AVX-512 so we go through memory to perform this conversion. I have an emulated SSE version but it uses a lot of instructions.
-        alignas(alignof(__m256d)) FixedArray<f64, 2> valuesF64;
-        alignas(alignof(__m256i)) FixedArray<u64, 2> valuesU64;
+        alignas(alignof(__m256d)) FixedArray<f64, 4> valuesF64;
+        alignas(alignof(__m256i)) FixedArray<u64, 4> valuesU64;
         _mm256_store_pd(valuesF64.Elements(), v);
-        for (usz i = 0; i < 2; i++)
-          { valuesU64[i] = s64(valuesF64[i]); }
+        for (usz i = 0; i < 4; i++)
+          { valuesU64[i] = u64(valuesF64[i]); }
         return _mm256_load_si256(reinterpret_cast<const __m256i*>(valuesU64.Elements()));
       }
 
@@ -280,7 +421,15 @@ namespace Chord
       }
 
       inline __m128 Mm256CvtEpi64Ps(const __m256i& v)
-        { return _mm256_cvtpd_ps(Mm256CvtEpi64Pd(v)); }
+      {
+        // _mm256_cvtepi64_ps is AVX-512 so we go through memory to perform this conversion. I have an emulated SSE version but it uses a lot of instructions.
+        alignas(alignof(__m256i)) FixedArray<s64, 4> valuesS64;
+        alignas(alignof(__m128)) FixedArray<f32, 4> valuesF32;
+        _mm256_store_si256(reinterpret_cast<__m256i*>(valuesS64.Elements()), v);
+        for (usz i = 0; i < 4; i++)
+          { valuesF32[i] = f32(valuesS64[i]); }
+        return _mm_load_ps(valuesF32.Elements());
+      }
 
       inline __m128 MmCvtEpu32Ps(const __m128i& v)
       {
@@ -351,60 +500,8 @@ namespace Chord
 
       inline __m128i Mm256CvtEpi64Epi32(const __m256i& v)
       {
-        __m256 shuffled = _mm256_castsi256_ps(_mm256_shuffle_epi32(v, _MM_SHUFFLE(0, 0, 2, 0)));
-        return _mm_castps_si128(_mm_shuffle_ps(_mm256_castps256_ps128(shuffled), _mm256_extractf128_ps(shuffled, 1), _MM_SHUFFLE(1, 0, 1, 0)));
-      }
-
-      inline __m128i MmLzcntEpi32(const __m128i& v)
-      {
-        // See https://stackoverflow.com/questions/58823140/count-leading-zero-bits-for-each-element-in-avx2-vector-emulate-mm256-lzcnt-ep for details
-        __m128i value = _mm_andnot_si128(_mm_srli_epi32(v, 8), v);
-        value = _mm_castps_si128(_mm_cvtepi32_ps(value));
-        value = _mm_srli_epi32(value, FloatTraits<f32>::MantissaBitCount);
-        value = _mm_subs_epu16(_mm_set1_epi32(FloatTraits<f32>::ExponentBias + 32), value);
-        return _mm_min_epi16(value, _mm_set1_epi32(32));
-      }
-
-      inline __m256i Mm256LzcntEpi32(const __m256i& v)
-      {
-        // See https://stackoverflow.com/questions/58823140/count-leading-zero-bits-for-each-element-in-avx2-vector-emulate-mm256-lzcnt-ep for details
-        __m256i value = _mm256_andnot_si256(_mm256_srli_epi32(v, 8), v);
-        value = _mm256_castps_si256(_mm256_cvtepi32_ps(value));
-        value = _mm256_srli_epi32(value, FloatTraits<f32>::MantissaBitCount);
-        value = _mm256_subs_epu16(_mm256_set1_epi32(FloatTraits<f32>::ExponentBias + 32), value);
-        return _mm256_min_epi16(value, _mm256_set1_epi32(32));
-      }
-
-      inline __m128i MmLzcntEpi64(const __m128i& v)
-      {
-        // There are a few annoying limitations doing this directly on 64-bit words so we're going to run on 32-bit words and combine the results. Ignoring odd
-        // 32-bit lanes, running the 32-bit version and swapping even/odd lanes will stack the low and high 32-bit word results on top of each other.
-        __m128i low32 = MmLzcntEpi32(v);
-        __m128i high32 = _mm_shuffle_epi32(low32, _MM_SHUFFLE(2, 3, 0, 1));
-
-        // If the low word result is less than 32, it means there's a 1 in the low word, so use that result directly. Otherwise, the first 1 occurs in the high
-        // word so add the low word result (32) to the high word result.
-        __m128i lowIsAllZero = _mm_cmpeq_epi32(low32, _mm_set1_epi32(32));
-        __m128i combined = _mm_add_epi32(low32, _mm_and_epi32(lowIsAllZero, high32));
-
-        // Clear out the upper 32 bits of each 64-bit result
-        return _mm_blend_epi32(combined, _mm_setzero_si128(), 0b0101);
-      }
-
-      inline __m256i Mm256LzcntEpi64(const __m256i& v)
-      {
-        // There are a few annoying limitations doing this directly on 64-bit words so we're going to run on 32-bit words and combine the results. Ignoring odd
-        // 32-bit lanes, running the 32-bit version and swapping even/odd lanes will stack the low and high 32-bit word results on top of each other.
-        __m256i low32 = Mm256LzcntEpi32(v);
-        __m256i high32 = _mm256_shuffle_epi32(low32, _MM_SHUFFLE(2, 3, 0, 1));
-
-        // If the low word result is less than 32, it means there's a 1 in the low word, so use that result directly. Otherwise, the first 1 occurs in the high
-        // word so add the low word result (32) to the high word result.
-        __m256i lowIsAllZero = _mm256_cmpeq_epi32(low32, _mm256_set1_epi32(32));
-        __m256i combined = _mm256_add_epi32(low32, _mm256_and_epi32(lowIsAllZero, high32));
-
-        // Clear out the upper 32 bits of each 64-bit result
-        return _mm256_blend_epi32(combined, _mm256_setzero_si256(), 0b01010101);
+        __m256 valueCast = _mm256_castsi256_ps(v);
+        return _mm_castps_si128(_mm_shuffle_ps(_mm256_castps256_ps128(valueCast), _mm256_extractf128_ps(valueCast, 1), _MM_SHUFFLE(2, 0, 2, 0)));
       }
     #endif
   }

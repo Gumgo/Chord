@@ -243,11 +243,11 @@ namespace Chord
       };
 
       template<>
-      struct SimdOperationImplementation<u32, 8, SimdOperation::ConvertU32> : public UnsupportedSimdOperationImplementation
+      struct SimdOperationImplementation<u32, 8, SimdOperation::ConvertS64> : public UnsupportedSimdOperationImplementation
         { };
 
       template<>
-      struct SimdOperationImplementation<u32, 8, SimdOperation::ConvertS64> : public UnsupportedSimdOperationImplementation
+      struct SimdOperationImplementation<u32, 8, SimdOperation::ConvertU32> : public UnsupportedSimdOperationImplementation
         { };
 
       template<>

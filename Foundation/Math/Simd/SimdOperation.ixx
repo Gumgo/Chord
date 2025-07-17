@@ -50,8 +50,8 @@ namespace Chord
       LessEqual,
 
       ConvertS32,
-      ConvertU32,
       ConvertS64,
+      ConvertU32,
       ConvertU64,
       ConvertF32,
       ConvertF64,

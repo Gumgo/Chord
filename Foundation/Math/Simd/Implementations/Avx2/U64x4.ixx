@@ -246,20 +246,17 @@ namespace Chord
       };
 
       template<>
-      struct SimdOperationImplementation<u64, 4, SimdOperation::ConvertU32> : public SupportedSimdOperationImplementation
+      struct SimdOperationImplementation<u64, 4, SimdOperation::ConvertS64> : public SupportedSimdOperationImplementation
       {
-        static __m128u32 Run(const __m256u64& v)
-        {
-          __m256 valueCast = _mm256_castsi256_ps(v);
-          return _mm_castps_si128(_mm_shuffle_ps(_mm256_castps256_ps128(valueCast), _mm256_extractf128_ps(valueCast, 1), _MM_SHUFFLE(2, 0, 2, 0)));
-        }
+        static __m256s64 Run(const __m256u64& v)
+          { return v.m_value; }
       };
 
       template<>
-      struct SimdOperationImplementation<u64, 4, SimdOperation::ConvertS64> : public SupportedSimdOperationImplementation
+      struct SimdOperationImplementation<u64, 4, SimdOperation::ConvertU32> : public SupportedSimdOperationImplementation
       {
-        static __m256s64 Run(const __m256s64& v)
-          { return v; }
+        static __m128u32 Run(const __m256u64& v)
+          { return Mm256CvtEpi64Epi32(v); }
       };
 
       template<>
@@ -357,11 +354,8 @@ namespace Chord
         { };
 
       template<>
-      struct SimdOperationImplementation<u64, 4, SimdOperation::Abs> : public SupportedSimdOperationImplementation
-      {
-        static __m256u64 Run(const __m256u64& v)
-          { return _mm256_abs_epi64(v); }
-      };
+      struct SimdOperationImplementation<u64, 4, SimdOperation::Abs> : public UnsupportedSimdOperationImplementation
+        { };
 
       template<>
       struct SimdOperationImplementation<u64, 4, SimdOperation::Floor> : public UnsupportedSimdOperationImplementation
@@ -383,14 +377,14 @@ namespace Chord
       struct SimdOperationImplementation<u64, 4, SimdOperation::Min> : public SupportedSimdOperationImplementation
       {
         static __m256u64 Run(const __m256u64& a, const __m256u64& b)
-          { return _mm256_castpd_si256(_mm256_blendv_pd(_mm256_castsi256_pd(Mm256CmpgtEpu64(a, b)), _mm256_castsi256_pd(b), _mm256_castsi256_pd(a))); }
+          { return Mm256MinEpu64(a, b); }
       };
 
       template<>
       struct SimdOperationImplementation<u64, 4, SimdOperation::Max> : public SupportedSimdOperationImplementation
       {
         static __m256u64 Run(const __m256u64& a, const __m256u64& b)
-          { return _mm256_castpd_si256(_mm256_blendv_pd(_mm256_castsi256_pd(Mm256CmpgtEpu64(a, b)), _mm256_castsi256_pd(a), _mm256_castsi256_pd(b))); }
+          { return Mm256MaxEpu64(a, b); }
       };
 
       template<>

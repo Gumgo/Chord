@@ -223,8 +223,8 @@ namespace Chord
     template<typename TThreadData, std::floating_point T, typename TGetValue, typename TGetReferenceValue>
       requires requires (TThreadData &threadData, T input, TGetValue&& getValue, TGetReferenceValue&& getReferenceValue)
       {
-        { getValue(threadData, input) } -> std::same_as<T>;
-        { getReferenceValue(threadData, input) } -> std::same_as<T>;
+        { getValue(threadData, input) };
+        { getReferenceValue(threadData, input) };
       }
     void TestPrecision(
       TGetValue&& getValue,
@@ -261,7 +261,9 @@ namespace Chord
             : s32(100.0 * f64(completedTestCount) / f64(totalInputCount));
           if (percent != lastPercent)
           {
-            std::cout << "\033[1G" << percent << "%    ";
+            char str[256];
+            std::snprintf(str, ArrayLength(str), "%d%%    \033[1G", percent);
+            std::cout << str;
             lastPercent = percent;
           }
         };
@@ -285,35 +287,54 @@ namespace Chord
             {
               T input = std::bit_cast<T>(inputBits);
 
-              T value = getValue(threadData, input);
-              T referenceValue = getReferenceValue(threadData, input);
+              auto value = getValue(threadData, input);
+              auto referenceValue = getReferenceValue(threadData, input);
 
-              if (std::bit_cast<uBB>(value) != std::bit_cast<uBB>(referenceValue))
+              using Result = decltype(value);
+              using ResultUnsigned = std::conditional_t<sizeof(Result) == 4, u32, u64>;
+              static_assert(std::same_as<Result, decltype(referenceValue)>);
+              static_assert(std::floating_point<Result> || std::integral<Result>);
+
+              if (std::bit_cast<ResultUnsigned>(value) != std::bit_cast<ResultUnsigned>(referenceValue))
               {
-                bool ignoreMismatch = (!settings.m_detectNanBinaryMismatches && IsNaN(value) && IsNaN(referenceValue))
-                  || (settings.m_ignoreZeroSignMismatches && value == T(0) && referenceValue == T(0));
+                bool ignoreMismatch;
+                if constexpr (std::floating_point<Result>)
+                {
+                  ignoreMismatch = (!settings.m_detectNanBinaryMismatches && IsNaN(value) && IsNaN(referenceValue))
+                    || (settings.m_ignoreZeroSignMismatches && value == T(0) && referenceValue == T(0));
+                }
+                else
+                  { ignoreMismatch = false; }
 
                 if (!ignoreMismatch)
                 {
                   threadResult->m_mismatchCount++;
-                  if (std::isfinite(value) && !std::isfinite(referenceValue))
-                    { threadResult->m_falseFiniteCount++; }
-                  else if (std::isnan(value) && !std::isnan(referenceValue))
-                    { threadResult->m_falseNanCount++; }
-                  else if (std::isinf(value) && !std::isinf(referenceValue))
-                    { threadResult->m_falseInfCount++; }
-                  else if (std::isfinite(value) && std::isfinite(referenceValue))
+                  if constexpr (std::floating_point<Result>)
                   {
-                    f64 error = std::max(value, referenceValue) - std::min(value, referenceValue);
-                    threadResult->m_maxError = std::max(threadResult->m_maxError, error);
+                    if (std::isfinite(value) && !std::isfinite(referenceValue))
+                      { threadResult->m_falseFiniteCount++; }
+                    else if (std::isnan(value) && !std::isnan(referenceValue))
+                      { threadResult->m_falseNanCount++; }
+                    else if (std::isinf(value) && !std::isinf(referenceValue))
+                      { threadResult->m_falseInfCount++; }
+                    else if (std::isfinite(value) && std::isfinite(referenceValue))
+                    {
+                      f64 error = std::max(value, referenceValue) - std::min(value, referenceValue);
+                      threadResult->m_maxError = std::max(threadResult->m_maxError, error);
 
-                    uBB a = std::bit_cast<uBB>(std::abs(value));
-                    uBB b = std::bit_cast<uBB>(std::abs(referenceValue));
+                      ResultUnsigned a = std::bit_cast<ResultUnsigned>(std::abs(value));
+                      ResultUnsigned b = std::bit_cast<ResultUnsigned>(std::abs(referenceValue));
 
-                    // If both values have the same sign, measure ulps directly as integer difference. Otherwise, sum the integer distance to 0 of both values.
-                    u64 errorUlps = (std::signbit(value) == std::signbit(referenceValue))
-                      ? std::max(a, b) - std::min(a, b)
-                      : a + b;
+                      // If both values have the same sign, measure ulps directly as integer difference. Otherwise, sum the integer distance to 0 of both values.
+                      u64 errorUlps = (std::signbit(value) == std::signbit(referenceValue))
+                        ? std::max(a, b) - std::min(a, b)
+                        : a + b;
+                      threadResult->m_maxErrorUlps = std::max(threadResult->m_maxErrorUlps, errorUlps);
+                    }
+                  }
+                  else
+                  {
+                    u64 errorUlps = u64(std::max(value, referenceValue) - std::min(value, referenceValue));
                     threadResult->m_maxErrorUlps = std::max(threadResult->m_maxErrorUlps, errorUlps);
                   }
                 }
@@ -399,7 +420,7 @@ namespace Chord
       else
         { ThreadMain(0, nullptr, nullptr, &result); }
 
-      std::cout << "\033[1G";
+      std::cout << "    \033[1G";
 
       std::cout << "Results:\n";
       std::cout << "  Mismatch count:     " << result.m_mismatchCount << "\n";

@@ -237,15 +237,15 @@ namespace Chord
         { };
 
       template<>
-      struct SimdOperationImplementation<u64, 2, SimdOperation::ConvertU32> : public UnsupportedSimdOperationImplementation
-        { };
-
-      template<>
       struct SimdOperationImplementation<u64, 2, SimdOperation::ConvertS64> : public SupportedSimdOperationImplementation
       {
-        static __m128s64 Run(const __m128s64& v)
-          { return v; }
+        static __m128s64 Run(const __m128u64& v)
+          { return v.m_value; }
       };
+
+      template<>
+      struct SimdOperationImplementation<u64, 2, SimdOperation::ConvertU32> : public UnsupportedSimdOperationImplementation
+        { };
 
       template<>
       struct SimdOperationImplementation<u64, 2, SimdOperation::ConvertU64> : public UnsupportedSimdOperationImplementation
@@ -314,11 +314,8 @@ namespace Chord
         { };
 
       template<>
-      struct SimdOperationImplementation<u64, 2, SimdOperation::Abs> : public SupportedSimdOperationImplementation
-      {
-        static __m128u64 Run(const __m128u64& v)
-          { return _mm_abs_epi64(v); }
-      };
+      struct SimdOperationImplementation<u64, 2, SimdOperation::Abs> : public UnsupportedSimdOperationImplementation
+        { };
 
       template<>
       struct SimdOperationImplementation<u64, 2, SimdOperation::Floor> : public UnsupportedSimdOperationImplementation
@@ -340,14 +337,14 @@ namespace Chord
       struct SimdOperationImplementation<u64, 2, SimdOperation::Min> : public SupportedSimdOperationImplementation
       {
         static __m128u64 Run(const __m128u64& a, const __m128u64& b)
-          { return _mm_castpd_si128(_mm_blendv_pd(_mm_castsi128_pd(MmCmpgtEpu64(a, b)), _mm_castsi128_pd(b), _mm_castsi128_pd(a))); }
+          { return MmMinEpu64(a, b); }
       };
 
       template<>
       struct SimdOperationImplementation<u64, 2, SimdOperation::Max> : public SupportedSimdOperationImplementation
       {
         static __m128u64 Run(const __m128u64& a, const __m128u64& b)
-          { return _mm_castpd_si128(_mm_blendv_pd(_mm_castsi128_pd(MmCmpgtEpu64(a, b)), _mm_castsi128_pd(a), _mm_castsi128_pd(b))); }
+          { return MmMaxEpu64(a, b); }
       };
 
       template<>

@@ -222,15 +222,15 @@ namespace Chord
       };
 
       template<>
+      struct SimdOperationImplementation<f32, 8, SimdOperation::ConvertS64> : public UnsupportedSimdOperationImplementation
+        { };
+
+      template<>
       struct SimdOperationImplementation<f32, 8, SimdOperation::ConvertU32> : public SupportedSimdOperationImplementation
       {
         static __m256u32 Run(const __m256& v)
           { return Mm256CvttPsEpu32(v); }
       };
-
-      template<>
-      struct SimdOperationImplementation<f32, 8, SimdOperation::ConvertS64> : public UnsupportedSimdOperationImplementation
-        { };
 
       template<>
       struct SimdOperationImplementation<f32, 8, SimdOperation::ConvertU64> : public UnsupportedSimdOperationImplementation
