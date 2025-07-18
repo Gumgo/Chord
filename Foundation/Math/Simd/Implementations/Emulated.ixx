@@ -427,7 +427,7 @@ namespace Chord
         requires (ElementCount > 1)
       {
         FixedArray<TElement, ElementCount / 2> result;
-        result.CopyElementsFrom(Span(v, 0, ElementCount / 2));
+        result.CopyElementsFrom(Span<const TElement>(v, 0, ElementCount / 2));
         return result;
       }
     };
@@ -439,7 +439,7 @@ namespace Chord
         requires (ElementCount > 1)
       {
         FixedArray<TElement, ElementCount / 2> result;
-        result.CopyElementsFrom(Span(v, ElementCount / 2, ElementCount / 2));
+        result.CopyElementsFrom(Span<const TElement>(v, ElementCount / 2, ElementCount / 2));
         return result;
       }
     };
@@ -478,7 +478,7 @@ namespace Chord
     struct EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::Shuffle2>
     {
       template<u32 PackedIndices>
-      static constexpr FixedArray<TElement, 2> Run(const FixedArray<TElement, ElementCount>& v)
+      static constexpr FixedArray<TElement, 2> Run(const FixedArray<TElement, ElementCount>& v, std::integral_constant<u32, PackedIndices>)
       {
         FixedArray<TElement, 2> result;
         result[0] = v[UnpackIndex<ElementCount, PackedIndices, 0>()];
@@ -491,7 +491,7 @@ namespace Chord
     struct EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::Shuffle4>
     {
       template<u32 PackedIndices>
-      static constexpr FixedArray<TElement, 4> Run(const FixedArray<TElement, ElementCount>& v)
+      static constexpr FixedArray<TElement, 4> Run(const FixedArray<TElement, ElementCount>& v, std::integral_constant<u32, PackedIndices>)
       {
         FixedArray<TElement, 4> result;
         result[0] = v[UnpackIndex<ElementCount, PackedIndices, 0>()];
@@ -506,7 +506,7 @@ namespace Chord
     struct EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::Shuffle8>
     {
       template<u32 PackedIndices>
-      static constexpr FixedArray<TElement, 8> Run(const FixedArray<TElement, ElementCount>& v)
+      static constexpr FixedArray<TElement, 8> Run(const FixedArray<TElement, ElementCount>& v, std::integral_constant<u32, PackedIndices>)
       {
         FixedArray<TElement, 8> result;
         result[0] = v[UnpackIndex<ElementCount, PackedIndices, 0>()];

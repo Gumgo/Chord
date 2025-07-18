@@ -17,6 +17,9 @@ namespace Chord
   export
   {
     #if SIMD_AVX2
+      inline constexpr s32 MmShuffle1Bit(s32 i3, s32 i2, s32 i1, s32 i0)
+        { return (i3 << 3) | (i2 << 2) | (i1 << 1) | i0; }
+
       inline __m128 MmSetAllBitsPs()
       {
         __m128i undefined = _mm_undefined_si128();
@@ -213,39 +216,39 @@ namespace Chord
       {
         // No 64-bit shift so extend the sign bit to 32 bits and then copy it
         __m128i negativeMask = _mm_shuffle_epi32(_mm_srai_epi32(v, 31), _MM_SHUFFLE(2, 2, 0, 0));
-        return _mm_blendv_epi8(negativeMask, _mm_sub_epi64(_mm_setzero_si128(), v), v);
+        return _mm_blendv_epi8(v, _mm_sub_epi64(_mm_setzero_si128(), v), negativeMask);
       }
 
       inline __m256i Mm256AbsEpi64(const __m256i& v)
       {
         // No 64-bit shift so extend the sign bit to 32 bits and then copy it
         __m256i negativeMask = _mm256_shuffle_epi32(_mm256_srai_epi32(v, 31), _MM_SHUFFLE(2, 2, 0, 0));
-        return _mm256_blendv_epi8(negativeMask, _mm256_sub_epi64(_mm256_setzero_si256(), v), v);
+        return _mm256_blendv_epi8(v, _mm256_sub_epi64(_mm256_setzero_si256(), v), negativeMask);
       }
 
       inline __m128i MmMinEpi64(const __m128i& a, const __m128i& b)
-        { return _mm_blendv_epi8(_mm_cmpgt_epi64(a, b), b, a); }
+        { return _mm_blendv_epi8(a, b, _mm_cmpgt_epi64(a, b)); }
 
       inline __m256i Mm256MinEpi64(const __m256i& a, const __m256i& b)
-        { return _mm256_blendv_epi8(_mm256_cmpgt_epi64(a, b), b, a); }
+        { return _mm256_blendv_epi8(a, b, _mm256_cmpgt_epi64(a, b)); }
 
       inline __m128i MmMaxEpi64(const __m128i& a, const __m128i& b)
-        { return _mm_blendv_epi8(_mm_cmpgt_epi64(a, b), a, b); }
+        { return _mm_blendv_epi8(b, a, _mm_cmpgt_epi64(a, b)); }
 
       inline __m256i Mm256MaxEpi64(const __m256i& a, const __m256i& b)
-        { return _mm256_blendv_epi8(_mm256_cmpgt_epi64(a, b), a, b); }
+        { return _mm256_blendv_epi8(b, a, _mm256_cmpgt_epi64(a, b)); }
 
       inline __m128i MmMinEpu64(const __m128i& a, const __m128i& b)
-        { return _mm_blendv_epi8(MmCmpgtEpu64(a, b), b, a); }
+        { return _mm_blendv_epi8(a, b, MmCmpgtEpu64(a, b)); }
 
       inline __m256i Mm256MinEpu64(const __m256i& a, const __m256i& b)
-        { return _mm256_blendv_epi8(Mm256CmpgtEpu64(a, b), b, a); }
+        { return _mm256_blendv_epi8(a, b, Mm256CmpgtEpu64(a, b)); }
 
       inline __m128i MmMaxEpu64(const __m128i& a, const __m128i& b)
-        { return _mm_blendv_epi8(MmCmpgtEpu64(a, b), a, b); }
+        { return _mm_blendv_epi8(b, a, MmCmpgtEpu64(a, b)); }
 
       inline __m256i Mm256MaxEpu64(const __m256i& a, const __m256i& b)
-        { return _mm256_blendv_epi8(Mm256CmpgtEpu64(a, b), a, b); }
+        { return _mm256_blendv_epi8(b, a, Mm256CmpgtEpu64(a, b)); }
 
       inline __m128i MmSraiEpi64(const __m128i& v, s32 shift)
       {
@@ -413,7 +416,7 @@ namespace Chord
         __m256i magicS64All = _mm256_set1_epi64x(0x4530000080100000); // 2^84 + 2^63 + 2^52 encoded as floating-point
         __m256d magicF64All = _mm256_castsi256_pd(magicS64All);
 
-        __m256i low = _mm256_blend_epi32(magicS64Low, v, 0b0101); // Blend the 32 lowest significant bits of v with magicS64Low
+        __m256i low = _mm256_blend_epi32(magicS64Low, v, 0b01010101); // Blend the 32 lowest significant bits of v with magicS64Low
         __m256i high = _mm256_srli_epi64(v, 32); // Extract the 32 most significant bits of v
         high = _mm256_xor_si256(high, magicS64High32); // Flip the msb of high and blend with 0x45300000
         __m256d highF64 = _mm256_sub_pd(_mm256_castsi256_pd(high), magicF64All); // Compute in double precision
@@ -493,7 +496,15 @@ namespace Chord
       }
 
       inline __m128 Mm256CvtEpu64Ps(const __m256i& v)
-        { return _mm256_cvtpd_ps(Mm256CvtEpu64Pd(v)); }
+      {
+        // _mm256_cvtepu64_ps is AVX-512 so we go through memory to perform this conversion. I have an emulated SSE version but it uses a lot of instructions.
+        alignas(alignof(__m256i)) FixedArray<u64, 4> valuesU64;
+        alignas(alignof(__m128)) FixedArray<f32, 4> valuesF32;
+        _mm256_store_si256(reinterpret_cast<__m256i*>(valuesU64.Elements()), v);
+        for (usz i = 0; i < 4; i++)
+          { valuesF32[i] = f32(valuesU64[i]); }
+        return _mm_load_ps(valuesF32.Elements());
+      }
 
       inline __m128i MmCvtEpi64Epi32(const __m128i& v)
         { return _mm_shuffle_epi32(v, _MM_SHUFFLE(0, 0, 2, 0)); }

@@ -303,7 +303,7 @@ namespace Chord
       struct SimdOperationImplementation<u64, 4, SimdOperation::Shuffle2> : public SupportedSimdOperationImplementation
       {
         template<u32 PackedIndices>
-        static __m256u64 Run(const __m256u64& v, std::integral_constant<u32, PackedIndices>)
+        static __m128u64 Run(const __m256u64& v, std::integral_constant<u32, PackedIndices>)
         {
           static constexpr s32 Index0 = UnpackIndex<4, PackedIndices, 0>();
           static constexpr s32 Index1 = UnpackIndex<4, PackedIndices, 1>();
@@ -342,8 +342,8 @@ namespace Chord
 
           if constexpr (Index0 == 0 && Index1 == 1 && Index2 == 2 && Index3 == 3)
             { return v; }
-          else if constexpr (Index0 + 2 == Index2 && Index1 + 2 == Index3)
-            { return _mm256_castpd_si256(_mm_permute_pd(_mm256_castsi256_pd(v), _MM_SHUFFLE2(Index1, Index0))); }
+          else if constexpr (Index0 < 2 && Index1 < 2 && Index2 >= 2 && Index3 >= 2)
+            { return _mm256_castpd_si256(_mm256_permute_pd(_mm256_castsi256_pd(v), MmShuffle1Bit(Index3 - 2, Index2 - 2, Index1, Index0))); }
           else
             { return _mm256_permute4x64_epi64(v, _MM_SHUFFLE(Index3, Index2, Index1, Index0)); }
         }

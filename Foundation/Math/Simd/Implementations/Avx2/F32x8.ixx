@@ -328,7 +328,7 @@ namespace Chord
           else if constexpr (Index0 + 4 == Index4 && Index1 + 4 == Index5 && Index2 + 4 == Index6 && Index3 + 4 == Index7)
             { return _mm256_permute_ps(v, _MM_SHUFFLE(Index3, Index2, Index1, Index0)); }
           else
-            { return _mm256_castps256_ps128(_mm256_permutevar8x32_ps(v, _mm256_set_epi32(Index7, Index6, Index5, Index4, Index3, Index2, Index1, Index0))); }
+            { return _mm256_permutevar8x32_ps(v, _mm256_set_epi32(Index7, Index6, Index5, Index4, Index3, Index2, Index1, Index0)); }
         }
       };
 

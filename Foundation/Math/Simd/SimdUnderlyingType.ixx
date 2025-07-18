@@ -91,5 +91,13 @@ namespace Chord
     template<typename T>
     constexpr auto SimdUnderlyingTypeFromEmulated(const T& v)
       { return v; }
+
+    template<typename... TArgs>
+    constexpr auto SimdUnderlyingTypeToEmulated(const std::tuple<TArgs...>& v)
+      { return std::apply([](const TArgs&... args) { return std::make_tuple(SimdUnderlyingTypeToEmulated(args)...); }, v); }
+
+    template<typename... TArgs>
+    constexpr auto SimdUnderlyingTypeFromEmulated(const std::tuple<TArgs...>& v)
+      { return std::apply([](const TArgs&... args) { return std::make_tuple(SimdUnderlyingTypeFromEmulated(args)...); }, v); }
   }
 }

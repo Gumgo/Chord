@@ -123,7 +123,7 @@ namespace Chord
     {
       static_assert(ElementCount <= (1 << PackedIndicesIndexBitCount));
       static_assert((IsInRangeArray(Indices, ElementCount) && ...));
-      static constexpr s32 IndicesArray[] = { (Indices, ...) };
+      static constexpr s32 IndicesArray[] = { Indices... };
 
       u32 result = 0;
       for (usz i = 0; i < sizeof...(Indices); i++)

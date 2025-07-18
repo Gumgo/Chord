@@ -840,6 +840,24 @@ namespace Chord
         });
     }
 
+    TEST_METHOD_CONSTEXPR(LowerHalf)
+      { ForEachSimdType([](auto t, auto c) { SimdTest::LowerHalf<typename decltype(t)::type, decltype(c)::value>(); }); }
+
+    TEST_METHOD_CONSTEXPR(UpperHalf)
+      { ForEachSimdType([](auto t, auto c) { SimdTest::UpperHalf<typename decltype(t)::type, decltype(c)::value>(); }); }
+
+    TEST_METHOD_CONSTEXPR(WidenAndSplit)
+      { ForEachSimdType([](auto t, auto c) { SimdTest::WidenAndSplit<typename decltype(t)::type, decltype(c)::value>(); }); }
+
+    TEST_METHOD_CONSTEXPR(Shuffle2)
+      { ForEachSimdType([](auto t, auto c) { SimdTest::Shuffle2<typename decltype(t)::type, decltype(c)::value>(); }); }
+
+    TEST_METHOD_CONSTEXPR(Shuffle4)
+      { ForEachSimdType([](auto t, auto c) { SimdTest::Shuffle4<typename decltype(t)::type, decltype(c)::value>(); }); }
+
+    TEST_METHOD_CONSTEXPR(Shuffle8)
+      { ForEachSimdType([](auto t, auto c) { SimdTest::Shuffle8<typename decltype(t)::type, decltype(c)::value>(); }); }
+
     // !!! continue
   };
 }

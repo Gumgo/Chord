@@ -276,7 +276,7 @@ namespace Chord
         { };
 
       template<>
-      struct SimdOperationImplementation<f64, 2, SimdOperation::Shuffle2> : public SupportedSimdOperationImplementation
+      struct SimdOperationImplementation<f64, 4, SimdOperation::Shuffle2> : public SupportedSimdOperationImplementation
       {
         template<u32 PackedIndices>
         static __m128d Run(const __m256d& v, std::integral_constant<u32, PackedIndices>)
@@ -318,8 +318,8 @@ namespace Chord
 
           if constexpr (Index0 == 0 && Index1 == 1 && Index2 == 2 && Index3 == 3)
             { return v; }
-          else if constexpr (Index0 + 2 == Index2 && Index1 + 2 == Index3)
-            { return _mm256_permute_pd(v, _MM_SHUFFLE2(Index1, Index0)); }
+          else if constexpr (Index0 < 2 && Index1 < 2 && Index2 >= 2 && Index3 >= 2)
+            { return _mm256_permute_pd(v, MmShuffle1Bit(Index3 - 2, Index2 - 2, Index1, Index0)); }
           else
             { return _mm256_permute4x64_pd(v, _MM_SHUFFLE(Index3, Index2, Index1, Index0)); }
         }

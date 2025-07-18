@@ -237,7 +237,7 @@ namespace Chord
         { return Vector<TElement, ElementCount / 2>(Run<SimdOperation::LowerHalf>(m_data)); }
 
       constexpr auto UpperHalf() const requires Vector::template IsSupported<SimdOperation::UpperHalf>
-        { return Vector<TElement, ElementCount / 2>(Run<SimdOperation::LowerHalf>(m_data)); }
+        { return Vector<TElement, ElementCount / 2>(Run<SimdOperation::UpperHalf>(m_data)); }
 
       constexpr auto WidenAndSplit() const requires Vector::template IsSupported<SimdOperation::WidenAndSplit>
       {

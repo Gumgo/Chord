@@ -285,5 +285,68 @@ s32 main(s32 argc, char** argv)
       TestPrecisionInputs<f64>().AddFullRange().MakeSparse(1000000000));
   }
 
+  if (false)
+  {
+    std::cout << "MmCvtEpu32Ps\n";
+    TestPrecision<ThreadTestData>(
+      [](ThreadTestData& d, f32 v) { return f32x4(u32x4(std::bit_cast<u32>(v))).FirstElement(); },
+      [](ThreadTestData& d, f32 v) { return f32(std::bit_cast<u32>(v)); },
+      TestPrecisionInputs<f32>().AddFullRange());
+  }
+
+  if (false)
+  {
+    std::cout << "Mm256CvtEpu32Pd\n";
+    TestPrecision<ThreadTestData>(
+      [](ThreadTestData& d, f32 v) { return f64x4(u32x4(std::bit_cast<u32>(v))).FirstElement(); },
+      [](ThreadTestData& d, f32 v) { return f64(std::bit_cast<u32>(v)); },
+      TestPrecisionInputs<f32>().AddFullRange());
+  }
+
+  if (false)
+  {
+    std::cout << "Mm256CvtEpu32Ps\n";
+    TestPrecision<ThreadTestData>(
+      [](ThreadTestData& d, f32 v) { return f32x4(u32x4(std::bit_cast<u32>(v))).FirstElement(); },
+      [](ThreadTestData& d, f32 v) { return f32(std::bit_cast<u32>(v)); },
+      TestPrecisionInputs<f32>().AddFullRange());
+  }
+
+  if (false)
+  {
+    std::cout << "MmCvtEpu64Pd\n";
+    TestPrecision<ThreadTestData>(
+      [](ThreadTestData& d, f64 v) { return f64x2(u64x2(std::bit_cast<u64>(v))).FirstElement(); },
+      [](ThreadTestData& d, f64 v) { return f64(std::bit_cast<u64>(v)); },
+      TestPrecisionInputs<f64>().AddFullRange().MakeSparse(1000000000));
+  }
+
+  if (false)
+  {
+    std::cout << "Mm256CvtEpu64Pd\n";
+    TestPrecision<ThreadTestData>(
+      [](ThreadTestData& d, f64 v) { return f64x4(u64x4(std::bit_cast<u64>(v))).FirstElement(); },
+      [](ThreadTestData& d, f64 v) { return f64(std::bit_cast<u64>(v)); },
+      TestPrecisionInputs<f64>().AddFullRange().MakeSparse(1000000000));
+  }
+
+  if (false)
+  {
+    std::cout << "Mm256CvtEpu64Ps\n";
+    TestPrecision<ThreadTestData>(
+      [](ThreadTestData& d, f64 v) { return f32x4(u64x4(std::bit_cast<u64>(v))).FirstElement(); },
+      [](ThreadTestData& d, f64 v) { return f32(std::bit_cast<u64>(v)); },
+      TestPrecisionInputs<f64>().AddFullRange().MakeSparse(1000000000));
+  }
+
+  if (false)
+  {
+    std::cout << "Mm256CvtEpi64Epi32\n";
+    TestPrecision<ThreadTestData>(
+      [](ThreadTestData& d, f64 v) { return s32x4(s64x4(std::bit_cast<s64>(v))).FirstElement(); },
+      [](ThreadTestData& d, f64 v) { return s32(std::bit_cast<s64>(v)); },
+      TestPrecisionInputs<f64>().AddFullRange().MakeSparse(1000000000));
+  }
+
   return 0;
 }
