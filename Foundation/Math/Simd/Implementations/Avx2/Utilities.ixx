@@ -110,7 +110,7 @@ namespace Chord
         __m128i value = _mm_andnot_si128(_mm_srli_epi32(v, 8), v);
         value = _mm_castps_si128(_mm_cvtepi32_ps(value));
         value = _mm_srli_epi32(value, FloatTraits<f32>::MantissaBitCount);
-        value = _mm_subs_epu16(_mm_set1_epi32(FloatTraits<f32>::ExponentBias + 32), value);
+        value = _mm_subs_epu16(_mm_set1_epi32(FloatTraits<f32>::ExponentBias + 31), value);
         return _mm_min_epi16(value, _mm_set1_epi32(32));
       }
 
@@ -120,7 +120,7 @@ namespace Chord
         __m256i value = _mm256_andnot_si256(_mm256_srli_epi32(v, 8), v);
         value = _mm256_castps_si256(_mm256_cvtepi32_ps(value));
         value = _mm256_srli_epi32(value, FloatTraits<f32>::MantissaBitCount);
-        value = _mm256_subs_epu16(_mm256_set1_epi32(FloatTraits<f32>::ExponentBias + 32), value);
+        value = _mm256_subs_epu16(_mm256_set1_epi32(FloatTraits<f32>::ExponentBias + 31), value);
         return _mm256_min_epi16(value, _mm256_set1_epi32(32));
       }
 
@@ -131,13 +131,13 @@ namespace Chord
         __m128i low32 = MmLzcntEpi32(v);
         __m128i high32 = _mm_shuffle_epi32(low32, _MM_SHUFFLE(2, 3, 0, 1));
 
-        // If the low word result is less than 32, it means there's a 1 in the low word, so use that result directly. Otherwise, the first 1 occurs in the high
-        // word so add the low word result (32) to the high word result.
-        __m128i lowIsAllZero = _mm_cmpeq_epi32(low32, _mm_set1_epi32(32));
-        __m128i combined = _mm_add_epi32(low32, _mm_and_epi32(lowIsAllZero, high32));
+        // If the high word result is less than 32, it means there's a 1 in the high word, so use that result directly. Otherwise, the first 1 occurs in the low
+        // word so add the high word result (32) to the low word result.
+        __m128i highIsAllZero = _mm_cmpeq_epi32(high32, _mm_set1_epi32(32));
+        __m128i combined = _mm_add_epi32(high32, _mm_and_epi32(highIsAllZero, low32));
 
         // Clear out the upper 32 bits of each 64-bit result
-        return _mm_blend_epi32(combined, _mm_setzero_si128(), 0b0101);
+        return _mm_blend_epi32(_mm_setzero_si128(), combined, 0b0101);
       }
 
       inline __m256i Mm256LzcntEpi64(const __m256i& v)
@@ -147,13 +147,13 @@ namespace Chord
         __m256i low32 = Mm256LzcntEpi32(v);
         __m256i high32 = _mm256_shuffle_epi32(low32, _MM_SHUFFLE(2, 3, 0, 1));
 
-        // If the low word result is less than 32, it means there's a 1 in the low word, so use that result directly. Otherwise, the first 1 occurs in the high
-        // word so add the low word result (32) to the high word result.
-        __m256i lowIsAllZero = _mm256_cmpeq_epi32(low32, _mm256_set1_epi32(32));
-        __m256i combined = _mm256_add_epi32(low32, _mm256_and_epi32(lowIsAllZero, high32));
+        // If the high word result is less than 32, it means there's a 1 in the high word, so use that result directly. Otherwise, the first 1 occurs in the low
+        // word so add the high word result (32) to the low word result.
+        __m256i highIsAllZero = _mm256_cmpeq_epi32(high32, _mm256_set1_epi32(32));
+        __m256i combined = _mm256_add_epi32(high32, _mm256_and_epi32(highIsAllZero, low32));
 
         // Clear out the upper 32 bits of each 64-bit result
-        return _mm256_blend_epi32(combined, _mm256_setzero_si256(), 0b01010101);
+        return _mm256_blend_epi32(_mm256_setzero_si256(), combined, 0b01010101);
       }
 
       inline __m128i MmCmpltEpu32(const __m128i &a, const __m128i &b)

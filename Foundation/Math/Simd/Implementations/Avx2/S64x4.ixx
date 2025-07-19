@@ -476,7 +476,7 @@ namespace Chord
       struct SimdOperationImplementation<s64, 4, SimdOperation::GetMask> : public SupportedSimdOperationImplementation
       {
         static s32 Run(const __m256s64& v)
-          { return _mm256_movemask_ps(_mm256_castsi256_ps(v)); }
+          { return _mm256_movemask_pd(_mm256_castsi256_pd(v)); }
       };
     #endif
   }

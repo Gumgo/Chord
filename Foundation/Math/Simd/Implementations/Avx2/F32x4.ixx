@@ -331,7 +331,7 @@ namespace Chord
       struct SimdOperationImplementation<f32, 4, SimdOperation::Abs> : public SupportedSimdOperationImplementation
       {
         static __m128 Run(const __m128& v)
-          { return _mm_and_ps(v, _mm_set1_ps(std::bit_cast<f32>(0x80000000))); }
+          { return _mm_and_ps(v, _mm_set1_ps(std::bit_cast<f32>(~FloatTraits<f32>::SignBitMask))); }
       };
 
       template<>
@@ -467,36 +467,28 @@ namespace Chord
       struct SimdOperationImplementation<f32, 4, SimdOperation::FNMAddSub> : public SupportedSimdOperationImplementation
       {
         static __m128 Run(const __m128& a, const __m128& b, const __m128& c)
-        {
-          // Flip the sign of every even element to perform negation
-          __m128 negationMask = _mm_castsi128_ps(_mm_set1_epi64x(0x80000000'00000000_s64));
-          return _mm_fnmadd_ps(a, b, _mm_xor_ps(c, negationMask));
-        }
+          { return _mm_fmaddsub_ps(_mm_sub_ps(_mm_setzero_ps(), a), b, c); }
       };
 
       template<>
       struct SimdOperationImplementation<f32, 4, SimdOperation::FNMSubAdd> : public SupportedSimdOperationImplementation
       {
         static __m128 Run(const __m128& a, const __m128& b, const __m128& c)
-        {
-          // Flip the sign of every odd element to perform negation
-          __m128 negationMask = _mm_castsi128_ps(_mm_set1_epi64x(0x00000000'80000000_s64));
-          return _mm_fnmadd_ps(a, b, _mm_xor_ps(c, negationMask));
-        }
+          { return _mm_fmsubadd_ps(_mm_sub_ps(_mm_setzero_ps(), a), b, c); }
       };
 
       template<>
       struct SimdOperationImplementation<f32, 4, SimdOperation::AddSub> : public SupportedSimdOperationImplementation
       {
         static __m128 Run(const __m128& a, const __m128& b)
-          { return _mm_addsub_ps(a, _mm_sub_ps(_mm_setzero_ps(), b)); }
+          { return _mm_addsub_ps(a, b); }
       };
 
       template<>
       struct SimdOperationImplementation<f32, 4, SimdOperation::SubAdd> : public SupportedSimdOperationImplementation
       {
         static __m128 Run(const __m128& a, const __m128& b)
-          { return _mm_addsub_ps(a, b); }
+          { return _mm_addsub_ps(a, _mm_sub_ps(_mm_setzero_ps(), b)); }
       };
 
       template<>

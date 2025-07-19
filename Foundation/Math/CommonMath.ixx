@@ -73,7 +73,7 @@ namespace Chord
     {
       if consteval
       {
-        if (std::floating_point<T>)
+        if constexpr (std::floating_point<T>)
           { return std::bit_cast<T>(std::bit_cast<typename FloatTraits<T>::SignedType>(v) & ~FloatTraits<T>::SignBitMask); }
         else
           { return v < 0 ? -v : v; }

@@ -196,6 +196,10 @@ namespace Chord
     inline constexpr bool AndNot(bool a, bool b)
       { return !a && b; }
 
+    template<basic_integral T>
+    inline constexpr T AndNot(T a, T b)
+      { return ~a & b; }
+
     template<signed_vector TCondition, callable_as<void()> TTrueFunc, callable_as<void()> TFalseFunc>
     constexpr auto Select(const TCondition& condition, TTrueFunc&& trueFunc, TFalseFunc&& falseFunc)
       { return Select(condition, trueFunc(), falseFunc()); }

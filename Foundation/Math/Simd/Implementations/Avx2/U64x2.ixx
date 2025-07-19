@@ -369,7 +369,7 @@ namespace Chord
       template<>
       struct SimdOperationImplementation<u64, 2, SimdOperation::CountLeadingZeros> : public SupportedSimdOperationImplementation
       {
-        static __m128u64 Run(const __m128u64& v)
+        static __m128s64 Run(const __m128u64& v)
           { return MmLzcntEpi64(v); }
       };
 

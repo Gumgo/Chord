@@ -336,7 +336,7 @@ namespace Chord
       struct SimdOperationImplementation<f32, 8, SimdOperation::Abs> : public SupportedSimdOperationImplementation
       {
         static __m256 Run(const __m256& v)
-          { return _mm256_and_ps(v, _mm256_set1_ps(std::bit_cast<f32>(0x80000000))); }
+          { return _mm256_and_ps(v, _mm256_set1_ps(std::bit_cast<f32>(~FloatTraits<f32>::SignBitMask))); }
       };
 
       template<>
@@ -475,36 +475,28 @@ namespace Chord
       struct SimdOperationImplementation<f32, 8, SimdOperation::FNMAddSub> : public SupportedSimdOperationImplementation
       {
         static __m256 Run(const __m256& a, const __m256& b, const __m256& c)
-        {
-          // Flip the sign of every even element to perform negation
-          __m256 negationMask = _mm256_castsi256_ps(_mm256_set1_epi64x(0x80000000'00000000_s64));
-          return _mm256_fnmadd_ps(a, b, _mm256_xor_ps(c, negationMask));
-        }
+          { return _mm256_fmaddsub_ps(_mm256_sub_ps(_mm256_setzero_ps(), a), b, c); }
       };
 
       template<>
       struct SimdOperationImplementation<f32, 8, SimdOperation::FNMSubAdd> : public SupportedSimdOperationImplementation
       {
         static __m256 Run(const __m256& a, const __m256& b, const __m256& c)
-        {
-          // Flip the sign of every odd element to perform negation
-          __m256 negationMask = _mm256_castsi256_ps(_mm256_set1_epi64x(0x00000000'80000000_s64));
-          return _mm256_fnmadd_ps(a, b, _mm256_xor_ps(c, negationMask));
-        }
+          { return _mm256_fmsubadd_ps(_mm256_sub_ps(_mm256_setzero_ps(), a), b, c); }
       };
 
       template<>
       struct SimdOperationImplementation<f32, 8, SimdOperation::AddSub> : public SupportedSimdOperationImplementation
       {
         static __m256 Run(const __m256& a, const __m256& b)
-          { return _mm256_addsub_ps(a, _mm256_sub_ps(_mm256_setzero_ps(), b)); }
+          { return _mm256_addsub_ps(a, b); }
       };
 
       template<>
       struct SimdOperationImplementation<f32, 8, SimdOperation::SubAdd> : public SupportedSimdOperationImplementation
       {
         static __m256 Run(const __m256& a, const __m256& b)
-          { return _mm256_addsub_ps(a, b); }
+          { return _mm256_addsub_ps(a, _mm256_sub_ps(_mm256_setzero_ps(), b)); }
       };
 
       template<>

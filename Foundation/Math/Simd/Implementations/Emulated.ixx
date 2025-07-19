@@ -528,22 +528,7 @@ namespace Chord
       static constexpr FixedArray<TElement, ElementCount> Run(const FixedArray<TElement, ElementCount>& v)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>(
-          [&](auto i)
-          {
-            if consteval
-            {
-              if constexpr (std::floating_point<TElement>)
-              {
-                result[i.value] = std::bit_cast<TElement>(
-                  std::bit_cast<SimdRelatedSignedElement<TElement>>(v[i.value]) & ~std::bit_cast<SimdRelatedSignedElement<TElement>>(TElement(-0.0)));
-              }
-              else
-                { result[i.value] = v[i.value] < 0 ? -v[i.value] : v[i.value]; }
-            }
-            else
-              { result[i.value] = std::abs(v[i.value]); }
-          });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = Abs(v[i.value]); });
         return result;
       }
     };
@@ -585,12 +570,24 @@ namespace Chord
     };
 
     template<basic_numeric TElement, usz ElementCount>
+      requires (std::floating_point<TElement>)
+    struct EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::Trunc>
+    {
+      static constexpr FixedArray<TElement, ElementCount> Run(const FixedArray<TElement, ElementCount>& v)
+      {
+        FixedArray<TElement, ElementCount> result;
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = Trunc(v[i.value]); });
+        return result;
+      }
+    };
+
+    template<basic_numeric TElement, usz ElementCount>
     struct EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::Min>
     {
       static constexpr FixedArray<TElement, ElementCount> Run(const FixedArray<TElement, ElementCount>& a, const FixedArray<TElement, ElementCount>& b)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](auto i) { result[i.value] = std::min(a[i.value], b[i.value]); });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = Min(a[i.value], b[i.value]); });
         return result;
       }
     };
@@ -601,7 +598,7 @@ namespace Chord
       static constexpr FixedArray<TElement, ElementCount> Run(const FixedArray<TElement, ElementCount>& a, const FixedArray<TElement, ElementCount>& b)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](auto i) { result[i.value] = std::max(a[i.value], b[i.value]); });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = Max(a[i.value], b[i.value]); });
         return result;
       }
     };
@@ -637,7 +634,7 @@ namespace Chord
       static constexpr FixedArray<TElement, ElementCount> Run(const FixedArray<TElement, ElementCount>& v)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](auto i) { result[i.value] = Sqrt(v); });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = Sqrt(v[i.value]); });
         return result;
       }
     };
@@ -664,8 +661,9 @@ namespace Chord
     {
       static constexpr FixedArray<SimdRelatedSignedElement<TElement>, ElementCount> Run(const FixedArray<TElement, ElementCount>& v)
       {
-        FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](auto i) { result[i.value] = CountLeadingZeros(SimdRelatedUnsignedElement<TElement>(v[i.value])); });
+        FixedArray<SimdRelatedSignedElement<TElement>, ElementCount> result;
+        Unroll<0, ElementCount>(
+          [&](auto i) { result[i.value] = SimdRelatedSignedElement<TElement>(CountLeadingZeros(SimdRelatedUnsignedElement<TElement>(v[i.value]))); });
         return result;
       }
     };
@@ -837,6 +835,17 @@ namespace Chord
       {
         FixedArray<TElement, ElementCount> result;
         Unroll<0, ElementCount>([&](auto i) { result[i.value] = condition[i.value] != 0 ? trueValue[i.value] : falseValue[i.value]; });
+        return result;
+      }
+    };
+
+    template<basic_numeric TElement, usz ElementCount>
+    struct EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::GetMask>
+    {
+      static constexpr s32 Run(const FixedArray<TElement, ElementCount>& v)
+      {
+        s32 result = 0;
+        Unroll<0, ElementCount>([&](auto i) { result |= (std::bit_cast<SimdRelatedSignedElement<TElement>>(v[i.value]) != 0) << i.value; });
         return result;
       }
     };

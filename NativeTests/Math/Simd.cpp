@@ -113,6 +113,68 @@ namespace Chord
   template<basic_numeric T>
   static constexpr auto RandomValues = RandomValuesData<T>::Values;
 
+  template<basic_numeric T>
+  constexpr auto GetUnsignedComparisonTests()
+  {
+    return FixedArray<std::tuple<T, T>, 11>
+    {
+      std::make_tuple(T(0), T(0)),
+      std::make_tuple(T(1), T(1)),
+      std::make_tuple(T(1), T(3)),
+      std::make_tuple(T(3), T(1)),
+      std::make_tuple(T(123), T(123)),
+      std::make_tuple(T(123), T(124)),
+      std::make_tuple(T(124), T(123)),
+      std::make_tuple(RandomValues<T>[0], RandomValues<T>[0]),
+      std::make_tuple(RandomValues<T>[1], RandomValues<T>[1]),
+      std::make_tuple(RandomValues<T>[0], RandomValues<T>[1]),
+      std::make_tuple(RandomValues<T>[1], RandomValues<T>[0]),
+    };
+  }
+
+  template<basic_numeric T>
+  constexpr auto GetSignedComparisonTests()
+  {
+    return FixedArray<std::tuple<T, T>, 11>
+    {
+      std::make_tuple(T(-1), T(-1)),
+      std::make_tuple(T(1), T(-1)),
+      std::make_tuple(T(-1), T(1)),
+      std::make_tuple(T(100), T(-101)),
+      std::make_tuple(T(100), T(101)),
+      std::make_tuple(T(-100), T(101)),
+      std::make_tuple(T(-100), T(-101)),
+      std::make_tuple(T(101), T(-100)),
+      std::make_tuple(T(101), T(100)),
+      std::make_tuple(T(-101), T(100)),
+      std::make_tuple(T(-101), T(-100)),
+    };
+  }
+
+  template<std::floating_point T>
+  constexpr auto GetFMAddTests()
+  {
+    return FixedArray<std::tuple<T, T, T>, 16>
+    {
+      std::make_tuple(T(3), T(4), T(5)),
+      std::make_tuple(T(13), T(17), T(37)),
+      std::make_tuple(T(-3), T(4), T(5)),
+      std::make_tuple(T(-13), T(17), T(37)),
+      std::make_tuple(T(3), T(-4), T(5)),
+      std::make_tuple(T(13), T(-17), T(37)),
+      std::make_tuple(T(-3), T(-4), T(5)),
+      std::make_tuple(T(-13), T(-17), T(37)),
+      std::make_tuple(T(3), T(4), T(-5)),
+      std::make_tuple(T(13), T(17), T(-37)),
+      std::make_tuple(T(-3), T(4), T(-5)),
+      std::make_tuple(T(-13), T(17), T(-37)),
+      std::make_tuple(T(3), T(-4), T(-5)),
+      std::make_tuple(T(13), T(-17), T(-37)),
+      std::make_tuple(T(-3), T(-4), T(-5)),
+      std::make_tuple(T(-13), T(-17), T(-37)),
+    };
+  }
+
   template<typename TFunc>
   constexpr void ForEachSimdType(TFunc&& func)
   {
@@ -498,18 +560,7 @@ namespace Chord
           using Element = typename decltype(t)::type;
           SimdTest::TestAgainstScalar<decltype(c)::value>(
             [](auto a, auto b) { return a == b; },
-            {
-              std::make_tuple(Element(0), Element(0)),
-              std::make_tuple(Element(1), Element(1)),
-              std::make_tuple(Element(1), Element(3)),
-              std::make_tuple(Element(3), Element(1)),
-              std::make_tuple(Element(123), Element(123)),
-              std::make_tuple(Element(123), Element(124)),
-              std::make_tuple(RandomValues<Element>[0], RandomValues<Element>[0]),
-              std::make_tuple(RandomValues<Element>[1], RandomValues<Element>[1]),
-              std::make_tuple(RandomValues<Element>[0], RandomValues<Element>[1]),
-              std::make_tuple(RandomValues<Element>[1], RandomValues<Element>[0]),
-            });
+            Span<const std::tuple<Element, Element>>(GetUnsignedComparisonTests<Element>()));
         });
     }
 
@@ -521,18 +572,7 @@ namespace Chord
           using Element = typename decltype(t)::type;
           SimdTest::TestAgainstScalar<decltype(c)::value>(
             [](auto a, auto b) { return a != b; },
-            {
-              std::make_tuple(Element(0), Element(0)),
-              std::make_tuple(Element(1), Element(1)),
-              std::make_tuple(Element(1), Element(3)),
-              std::make_tuple(Element(3), Element(1)),
-              std::make_tuple(Element(123), Element(123)),
-              std::make_tuple(Element(123), Element(124)),
-              std::make_tuple(RandomValues<Element>[0], RandomValues<Element>[0]),
-              std::make_tuple(RandomValues<Element>[1], RandomValues<Element>[1]),
-              std::make_tuple(RandomValues<Element>[0], RandomValues<Element>[1]),
-              std::make_tuple(RandomValues<Element>[1], RandomValues<Element>[0]),
-            });
+            Span<const std::tuple<Element, Element>>(GetUnsignedComparisonTests<Element>()));
         });
     }
 
@@ -544,37 +584,13 @@ namespace Chord
           using Element = typename decltype(t)::type;
           SimdTest::TestAgainstScalar<decltype(c)::value>(
             [](auto a, auto b) { return a > b; },
-            {
-              std::make_tuple(Element(0), Element(0)),
-              std::make_tuple(Element(1), Element(1)),
-              std::make_tuple(Element(1), Element(3)),
-              std::make_tuple(Element(3), Element(1)),
-              std::make_tuple(Element(123), Element(123)),
-              std::make_tuple(Element(123), Element(124)),
-              std::make_tuple(Element(124), Element(123)),
-              std::make_tuple(RandomValues<Element>[0], RandomValues<Element>[0]),
-              std::make_tuple(RandomValues<Element>[1], RandomValues<Element>[1]),
-              std::make_tuple(RandomValues<Element>[0], RandomValues<Element>[1]),
-              std::make_tuple(RandomValues<Element>[1], RandomValues<Element>[0]),
-            });
+            Span<const std::tuple<Element, Element>>(GetUnsignedComparisonTests<Element>()));
 
           if constexpr (!std::unsigned_integral<Element>)
           {
             SimdTest::TestAgainstScalar<decltype(c)::value>(
               [](auto a, auto b) { return a > b; },
-              {
-                std::make_tuple(Element(-1), Element(-1)),
-                std::make_tuple(Element(1), Element(-1)),
-                std::make_tuple(Element(-1), Element(1)),
-                std::make_tuple(Element(100), Element(-101)),
-                std::make_tuple(Element(100), Element(101)),
-                std::make_tuple(Element(-100), Element(101)),
-                std::make_tuple(Element(-100), Element(-101)),
-                std::make_tuple(Element(101), Element(-100)),
-                std::make_tuple(Element(101), Element(100)),
-                std::make_tuple(Element(-101), Element(100)),
-                std::make_tuple(Element(-101), Element(-100)),
-              });
+              Span<const std::tuple<Element, Element>>(GetSignedComparisonTests<Element>()));
           }
         });
     }
@@ -587,37 +603,13 @@ namespace Chord
           using Element = typename decltype(t)::type;
           SimdTest::TestAgainstScalar<decltype(c)::value>(
             [](auto a, auto b) { return a < b; },
-            {
-              std::make_tuple(Element(0), Element(0)),
-              std::make_tuple(Element(1), Element(1)),
-              std::make_tuple(Element(1), Element(3)),
-              std::make_tuple(Element(3), Element(1)),
-              std::make_tuple(Element(123), Element(123)),
-              std::make_tuple(Element(123), Element(124)),
-              std::make_tuple(Element(124), Element(123)),
-              std::make_tuple(RandomValues<Element>[0], RandomValues<Element>[0]),
-              std::make_tuple(RandomValues<Element>[1], RandomValues<Element>[1]),
-              std::make_tuple(RandomValues<Element>[0], RandomValues<Element>[1]),
-              std::make_tuple(RandomValues<Element>[1], RandomValues<Element>[0]),
-            });
+            Span<const std::tuple<Element, Element>>(GetUnsignedComparisonTests<Element>()));
 
           if constexpr (!std::unsigned_integral<Element>)
           {
             SimdTest::TestAgainstScalar<decltype(c)::value>(
               [](auto a, auto b) { return a < b; },
-              {
-                std::make_tuple(Element(-1), Element(-1)),
-                std::make_tuple(Element(1), Element(-1)),
-                std::make_tuple(Element(-1), Element(1)),
-                std::make_tuple(Element(100), Element(-101)),
-                std::make_tuple(Element(100), Element(101)),
-                std::make_tuple(Element(-100), Element(101)),
-                std::make_tuple(Element(-100), Element(-101)),
-                std::make_tuple(Element(101), Element(-100)),
-                std::make_tuple(Element(101), Element(100)),
-                std::make_tuple(Element(-101), Element(100)),
-                std::make_tuple(Element(-101), Element(-100)),
-              });
+              Span<const std::tuple<Element, Element>>(GetSignedComparisonTests<Element>()));
           }
         });
     }
@@ -630,37 +622,13 @@ namespace Chord
           using Element = typename decltype(t)::type;
           SimdTest::TestAgainstScalar<decltype(c)::value>(
             [](auto a, auto b) { return a >= b; },
-            {
-              std::make_tuple(Element(0), Element(0)),
-              std::make_tuple(Element(1), Element(1)),
-              std::make_tuple(Element(1), Element(3)),
-              std::make_tuple(Element(3), Element(1)),
-              std::make_tuple(Element(123), Element(123)),
-              std::make_tuple(Element(123), Element(124)),
-              std::make_tuple(Element(124), Element(123)),
-              std::make_tuple(RandomValues<Element>[0], RandomValues<Element>[0]),
-              std::make_tuple(RandomValues<Element>[1], RandomValues<Element>[1]),
-              std::make_tuple(RandomValues<Element>[0], RandomValues<Element>[1]),
-              std::make_tuple(RandomValues<Element>[1], RandomValues<Element>[0]),
-            });
+            Span<const std::tuple<Element, Element>>(GetUnsignedComparisonTests<Element>()));
 
           if constexpr (!std::unsigned_integral<Element>)
           {
             SimdTest::TestAgainstScalar<decltype(c)::value>(
               [](auto a, auto b) { return a >= b; },
-              {
-                std::make_tuple(Element(-1), Element(-1)),
-                std::make_tuple(Element(1), Element(-1)),
-                std::make_tuple(Element(-1), Element(1)),
-                std::make_tuple(Element(100), Element(-101)),
-                std::make_tuple(Element(100), Element(101)),
-                std::make_tuple(Element(-100), Element(101)),
-                std::make_tuple(Element(-100), Element(-101)),
-                std::make_tuple(Element(101), Element(-100)),
-                std::make_tuple(Element(101), Element(100)),
-                std::make_tuple(Element(-101), Element(100)),
-                std::make_tuple(Element(-101), Element(-100)),
-              });
+              Span<const std::tuple<Element, Element>>(GetSignedComparisonTests<Element>()));
           }
         });
     }
@@ -673,37 +641,13 @@ namespace Chord
           using Element = typename decltype(t)::type;
           SimdTest::TestAgainstScalar<decltype(c)::value>(
             [](auto a, auto b) { return a <= b; },
-            {
-              std::make_tuple(Element(0), Element(0)),
-              std::make_tuple(Element(1), Element(1)),
-              std::make_tuple(Element(1), Element(3)),
-              std::make_tuple(Element(3), Element(1)),
-              std::make_tuple(Element(123), Element(123)),
-              std::make_tuple(Element(123), Element(124)),
-              std::make_tuple(Element(124), Element(123)),
-              std::make_tuple(RandomValues<Element>[0], RandomValues<Element>[0]),
-              std::make_tuple(RandomValues<Element>[1], RandomValues<Element>[1]),
-              std::make_tuple(RandomValues<Element>[0], RandomValues<Element>[1]),
-              std::make_tuple(RandomValues<Element>[1], RandomValues<Element>[0]),
-            });
+            Span<const std::tuple<Element, Element>>(GetUnsignedComparisonTests<Element>()));
 
           if constexpr (!std::unsigned_integral<Element>)
           {
             SimdTest::TestAgainstScalar<decltype(c)::value>(
               [](auto a, auto b) { return a <= b; },
-              {
-                std::make_tuple(Element(-1), Element(-1)),
-                std::make_tuple(Element(1), Element(-1)),
-                std::make_tuple(Element(-1), Element(1)),
-                std::make_tuple(Element(100), Element(-101)),
-                std::make_tuple(Element(100), Element(101)),
-                std::make_tuple(Element(-100), Element(101)),
-                std::make_tuple(Element(-100), Element(-101)),
-                std::make_tuple(Element(101), Element(-100)),
-                std::make_tuple(Element(101), Element(100)),
-                std::make_tuple(Element(-101), Element(100)),
-                std::make_tuple(Element(-101), Element(-100)),
-              });
+              Span<const std::tuple<Element, Element>>(GetSignedComparisonTests<Element>()));
           }
         });
     }
@@ -858,6 +802,389 @@ namespace Chord
     TEST_METHOD_CONSTEXPR(Shuffle8)
       { ForEachSimdType([](auto t, auto c) { SimdTest::Shuffle8<typename decltype(t)::type, decltype(c)::value>(); }); }
 
-    // !!! continue
+    TEST_METHOD_CONSTEXPR(Abs)
+    {
+      ForEachSimdType(
+        [](auto t, auto c)
+        {
+          using Element = typename decltype(t)::type;
+          if constexpr (!std::unsigned_integral<Element>)
+          {
+            SimdTest::TestAgainstScalar<decltype(c)::value>(
+              [](auto v) { return Abs(v); },
+              {
+                std::make_tuple(Element(0)),
+                std::make_tuple(Element(1)),
+                std::make_tuple(Element(-1)),
+                std::make_tuple(Element(1234)),
+                std::make_tuple(Element(-1234)),
+              });
+          }
+        });
+    }
+
+    TEST_METHOD_CONSTEXPR(Floor)
+    {
+      ForEachSimdType(
+        [](auto t, auto c)
+        {
+          using Element = typename decltype(t)::type;
+          if constexpr (std::floating_point<Element>)
+          {
+            SimdTest::TestAgainstScalar<decltype(c)::value>(
+              [](auto v) { return Floor(v); },
+              {
+                std::make_tuple(Element(0.0)),
+                std::make_tuple(Element(1.0)),
+                std::make_tuple(Element(1.25)),
+                std::make_tuple(Element(1.5)),
+                std::make_tuple(Element(1.75)),
+                std::make_tuple(Element(-1.0)),
+                std::make_tuple(Element(-1.25)),
+                std::make_tuple(Element(-1.5)),
+                std::make_tuple(Element(-1.75)),
+                std::make_tuple(Element(0.0)),
+                std::make_tuple(Element(1234.0)),
+                std::make_tuple(Element(1234.25)),
+                std::make_tuple(Element(1234.5)),
+                std::make_tuple(Element(1234.75)),
+                std::make_tuple(Element(-1234.0)),
+                std::make_tuple(Element(-1234.25)),
+                std::make_tuple(Element(-1234.5)),
+                std::make_tuple(Element(-1234.75)),
+              });
+          }
+        });
+    }
+
+    TEST_METHOD_CONSTEXPR(Ceil)
+    {
+      ForEachSimdType(
+        [](auto t, auto c)
+        {
+          using Element = typename decltype(t)::type;
+          if constexpr (std::floating_point<Element>)
+          {
+            SimdTest::TestAgainstScalar<decltype(c)::value>(
+              [](auto v) { return Ceil(v); },
+              {
+                std::make_tuple(Element(0.0)),
+                std::make_tuple(Element(1.0)),
+                std::make_tuple(Element(1.25)),
+                std::make_tuple(Element(1.5)),
+                std::make_tuple(Element(1.75)),
+                std::make_tuple(Element(-1.0)),
+                std::make_tuple(Element(-1.25)),
+                std::make_tuple(Element(-1.5)),
+                std::make_tuple(Element(-1.75)),
+                std::make_tuple(Element(0.0)),
+                std::make_tuple(Element(1234.0)),
+                std::make_tuple(Element(1234.25)),
+                std::make_tuple(Element(1234.5)),
+                std::make_tuple(Element(1234.75)),
+                std::make_tuple(Element(-1234.0)),
+                std::make_tuple(Element(-1234.25)),
+                std::make_tuple(Element(-1234.5)),
+                std::make_tuple(Element(-1234.75)),
+              });
+          }
+        });
+    }
+
+    TEST_METHOD_CONSTEXPR(Round)
+    {
+      ForEachSimdType(
+        [](auto t, auto c)
+        {
+          using Element = typename decltype(t)::type;
+          if constexpr (std::floating_point<Element>)
+          {
+            SimdTest::TestAgainstScalar<decltype(c)::value>(
+              [](auto v) { return Round(v); },
+              {
+                std::make_tuple(Element(0.0)),
+                std::make_tuple(Element(1.0)),
+                std::make_tuple(Element(1.25)),
+                std::make_tuple(Element(1.5)),
+                std::make_tuple(Element(1.75)),
+                std::make_tuple(Element(-1.0)),
+                std::make_tuple(Element(-1.25)),
+                std::make_tuple(Element(-1.5)),
+                std::make_tuple(Element(-1.75)),
+                std::make_tuple(Element(0.0)),
+                std::make_tuple(Element(1234.0)),
+                std::make_tuple(Element(1234.25)),
+                std::make_tuple(Element(1234.5)),
+                std::make_tuple(Element(1234.75)),
+                std::make_tuple(Element(-1234.0)),
+                std::make_tuple(Element(-1234.25)),
+                std::make_tuple(Element(-1234.5)),
+                std::make_tuple(Element(-1234.75)),
+              });
+          }
+        });
+    }
+
+    TEST_METHOD_CONSTEXPR(Trunc)
+    {
+      ForEachSimdType(
+        [](auto t, auto c)
+        {
+          using Element = typename decltype(t)::type;
+          if constexpr (std::floating_point<Element>)
+          {
+            SimdTest::TestAgainstScalar<decltype(c)::value>(
+              [](auto v) { return Trunc(v); },
+              {
+                std::make_tuple(Element(0.0)),
+                std::make_tuple(Element(1.0)),
+                std::make_tuple(Element(1.25)),
+                std::make_tuple(Element(1.5)),
+                std::make_tuple(Element(1.75)),
+                std::make_tuple(Element(-1.0)),
+                std::make_tuple(Element(-1.25)),
+                std::make_tuple(Element(-1.5)),
+                std::make_tuple(Element(-1.75)),
+                std::make_tuple(Element(0.0)),
+                std::make_tuple(Element(1234.0)),
+                std::make_tuple(Element(1234.25)),
+                std::make_tuple(Element(1234.5)),
+                std::make_tuple(Element(1234.75)),
+                std::make_tuple(Element(-1234.0)),
+                std::make_tuple(Element(-1234.25)),
+                std::make_tuple(Element(-1234.5)),
+                std::make_tuple(Element(-1234.75)),
+              });
+          }
+        });
+    }
+
+    TEST_METHOD_CONSTEXPR(Min)
+    {
+      ForEachSimdType(
+        [](auto t, auto c)
+        {
+          using Element = typename decltype(t)::type;
+          SimdTest::TestAgainstScalar<decltype(c)::value>(
+            [](auto a, auto b) { return Min(a, b); },
+            Span<const std::tuple<Element, Element>>(GetUnsignedComparisonTests<Element>()));
+
+          if constexpr (!std::unsigned_integral<Element>)
+          {
+            SimdTest::TestAgainstScalar<decltype(c)::value>(
+              [](auto a, auto b) { return Min(a, b); },
+              Span<const std::tuple<Element, Element>>(GetSignedComparisonTests<Element>()));
+          }
+        });
+    }
+
+    TEST_METHOD_CONSTEXPR(Max)
+    {
+      ForEachSimdType(
+        [](auto t, auto c)
+        {
+          using Element = typename decltype(t)::type;
+          SimdTest::TestAgainstScalar<decltype(c)::value>(
+            [](auto a, auto b) { return Max(a, b); },
+            Span<const std::tuple<Element, Element>>(GetUnsignedComparisonTests<Element>()));
+
+          if constexpr (!std::unsigned_integral<Element>)
+          {
+            SimdTest::TestAgainstScalar<decltype(c)::value>(
+              [](auto a, auto b) { return Max(a, b); },
+              Span<const std::tuple<Element, Element>>(GetSignedComparisonTests<Element>()));
+          }
+        });
+    }
+
+    // Note: not currently testing Reciprocal or ReciprocalSqrt. These are SIMD approximations and maybe I should just remove them entirely.
+
+    TEST_METHOD_CONSTEXPR(Sqrt)
+    {
+      ForEachSimdType(
+        [](auto t, auto c)
+        {
+          using Element = typename decltype(t)::type;
+          if constexpr (std::floating_point<Element>)
+          {
+            SimdTest::TestAgainstScalar<decltype(c)::value>(
+              [](auto v) { return Sqrt(v); },
+              {
+                std::make_tuple(Element(0.0)),
+                std::make_tuple(Element(1.0)),
+                std::make_tuple(Element(1.25)),
+                std::make_tuple(Element(10.0)),
+                std::make_tuple(Element(100.0)),
+                std::make_tuple(Element(-1.0)),
+              });
+          }
+        });
+    }
+
+    TEST_METHOD_CONSTEXPR(AndNot)
+    {
+      ForEachSimdType(
+        [](auto t, auto c)
+        {
+          using Element = typename decltype(t)::type;
+          SimdTest::TestAgainstScalar<decltype(c)::value>(
+            [](auto a, auto b)
+            {
+              if constexpr (std::same_as<decltype(a), f32>)
+                { return std::bit_cast<f32>(AndNot(std::bit_cast<s32>(a), std::bit_cast<s32>(b))); }
+              else if constexpr (std::same_as<decltype(a), f64>)
+                { return std::bit_cast<f64>(AndNot(std::bit_cast<s64>(a), std::bit_cast<s64>(b))); }
+              else
+                { return AndNot(a, b); }
+            },
+            [](auto a, auto b) { return AndNot(a, b); },
+            {
+              std::make_tuple(Element(0), Element(0)),
+              std::make_tuple(Element(2), Element(2)),
+              std::make_tuple(Element(1), Element(2)),
+              std::make_tuple(Element(123), Element(678)),
+            });
+        });
+    }
+
+    TEST_METHOD_CONSTEXPR(CountLeadingZeros)
+    {
+      ForEachSimdType(
+        [](auto t, auto c)
+        {
+          using Element = typename decltype(t)::type;
+          if constexpr (!std::floating_point<Element>)
+          {
+            SimdTest::TestAgainstScalar<decltype(c)::value>(
+              [](auto v) { return CountLeadingZeros(v); },
+              {
+                std::make_tuple(Element(0)),
+                std::make_tuple(Element(0b00000000000000000000000000000001)),
+                std::make_tuple(Element(0b00000000010010100001010011010110)),
+                std::make_tuple(Element(0b00000000000000001101010110001100)),
+                std::make_tuple(Element(0b00000010000000000000000000000000)),
+                std::make_tuple(Element(0b10000000000000000000000000000000)),
+              });
+
+            if constexpr (sizeof(Element) == 8)
+            {
+              SimdTest::TestAgainstScalar<decltype(c)::value>(
+                [](auto v) { return CountLeadingZeros(v); },
+                {
+                  std::make_tuple(Element(0)),
+                  std::make_tuple(Element(0b00000000000000000000000000000000'00000000000000000000000000000000)),
+                  std::make_tuple(Element(0b00000000000000000000000000000001'00000000000000000000000000000000)),
+                  std::make_tuple(Element(0b00000000000000000000000000000001'11111111111111111111111111111111)),
+                  std::make_tuple(Element(0b00000000010010100001010011010110'00000000000000000000000000000000)),
+                  std::make_tuple(Element(0b00000000010010100001010011010110'00010000000000000000000000000000)),
+                  std::make_tuple(Element(0b00000000000000001101010110001100'00000000000000000001000000000000)),
+                  std::make_tuple(Element(0b00000010000000000000000000000000'00000000000000000000000000000000)),
+                  std::make_tuple(Element(0b00000010000000000000000000000000'11111111111111111111111111111111)),
+                  std::make_tuple(Element(0b10000000000000000000000000000000'00000000000000000000000000000000)),
+                  std::make_tuple(Element(0b10000000000000000000000000000000'01000000000000000000000000000000)),
+                  std::make_tuple(Element(0b00000000000000000000000000000000'00000000000000000000000000000000)),
+                  std::make_tuple(Element(0b00000000000000000000000000000000'00000000000000000000000000000001)),
+                  std::make_tuple(Element(0b11111111111111111111111111111111'00000000000000000000000000000001)),
+                  std::make_tuple(Element(0b00000000000000000000000000000000'00000000010010100001010011010110)),
+                  std::make_tuple(Element(0b00010000000000000000000000000000'00000000010010100001010011010110)),
+                  std::make_tuple(Element(0b00000000000000000001000000000000'00000000000000001101010110001100)),
+                  std::make_tuple(Element(0b00000000000000000000000000000000'00000010000000000000000000000000)),
+                  std::make_tuple(Element(0b11111111111111111111111111111111'00000010000000000000000000000000)),
+                  std::make_tuple(Element(0b00000000000000000000000000000000'10000000000000000000000000000000)),
+                  std::make_tuple(Element(0b01000000000000000000000000000000'10000000000000000000000000000000)),
+                });
+            }
+          }
+        });
+    }
+
+    TEST_METHOD_CONSTEXPR(SumElements)
+      { ForEachSimdType([](auto t, auto c) { SimdTest::SumElements<typename decltype(t)::type, decltype(c)::value>(); }); }
+
+    TEST_METHOD_CONSTEXPR(FMAdd)
+    {
+      ForEachSimdType(
+        [](auto t, auto c)
+        {
+          using Element = typename decltype(t)::type;
+          if constexpr (std::floating_point<Element>)
+          {
+            SimdTest::TestAgainstScalar<decltype(c)::value>(
+              [](auto x, auto y, auto z) { return FMAdd(x, y, z); },
+              Span<const std::tuple<Element, Element, Element>>(GetFMAddTests<Element>()));
+          }
+        });
+    }
+
+    TEST_METHOD_CONSTEXPR(FMSub)
+    {
+      ForEachSimdType(
+        [](auto t, auto c)
+        {
+          using Element = typename decltype(t)::type;
+          if constexpr (std::floating_point<Element>)
+          {
+            SimdTest::TestAgainstScalar<decltype(c)::value>(
+              [](auto x, auto y, auto z) { return FMSub(x, y, z); },
+              Span<const std::tuple<Element, Element, Element>>(GetFMAddTests<Element>()));
+          }
+        });
+    }
+
+    TEST_METHOD_CONSTEXPR(FMAddSub)
+      { ForEachSimdType([](auto t, auto c) { SimdTest::FMAddSub<typename decltype(t)::type, decltype(c)::value>(); }); }
+
+    TEST_METHOD_CONSTEXPR(FMSubAdd)
+      { ForEachSimdType([](auto t, auto c) { SimdTest::FMSubAdd<typename decltype(t)::type, decltype(c)::value>(); }); }
+
+    TEST_METHOD_CONSTEXPR(FNMAdd)
+    {
+      ForEachSimdType(
+        [](auto t, auto c)
+        {
+          using Element = typename decltype(t)::type;
+          if constexpr (std::floating_point<Element>)
+          {
+            SimdTest::TestAgainstScalar<decltype(c)::value>(
+              [](auto x, auto y, auto z) { return FNMAdd(x, y, z); },
+              Span<const std::tuple<Element, Element, Element>>(GetFMAddTests<Element>()));
+          }
+        });
+    }
+
+    TEST_METHOD_CONSTEXPR(FNMSub)
+    {
+      ForEachSimdType(
+        [](auto t, auto c)
+        {
+          using Element = typename decltype(t)::type;
+          if constexpr (std::floating_point<Element>)
+          {
+            SimdTest::TestAgainstScalar<decltype(c)::value>(
+              [](auto x, auto y, auto z) { return FNMSub(x, y, z); },
+              Span<const std::tuple<Element, Element, Element>>(GetFMAddTests<Element>()));
+          }
+        });
+    }
+
+    TEST_METHOD_CONSTEXPR(FNMAddSub)
+      { ForEachSimdType([](auto t, auto c) { SimdTest::FNMAddSub<typename decltype(t)::type, decltype(c)::value>(); }); }
+
+    TEST_METHOD_CONSTEXPR(FNMSubAdd)
+      { ForEachSimdType([](auto t, auto c) { SimdTest::FNMSubAdd<typename decltype(t)::type, decltype(c)::value>(); }); }
+
+    TEST_METHOD_CONSTEXPR(AddSub)
+      { ForEachSimdType([](auto t, auto c) { SimdTest::AddSub<typename decltype(t)::type, decltype(c)::value>(); }); }
+
+    TEST_METHOD_CONSTEXPR(SubAdd)
+      { ForEachSimdType([](auto t, auto c) { SimdTest::SubAdd<typename decltype(t)::type, decltype(c)::value>(); }); }
+
+    TEST_METHOD_CONSTEXPR(Select)
+      { ForEachSimdType([](auto t, auto c) { SimdTest::Select<typename decltype(t)::type, decltype(c)::value>(); }); }
+
+    TEST_METHOD_CONSTEXPR(GetMask)
+      { ForEachSimdType([](auto t, auto c) { SimdTest::GetMask<typename decltype(t)::type, decltype(c)::value>(); }); }
+
+    // !!! just need transcendentals now
   };
 }

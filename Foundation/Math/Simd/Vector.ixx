@@ -372,67 +372,67 @@ namespace Chord
     template<basic_numeric TElement, usz ElementCount>
       requires (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::Abs>)
     constexpr Vector<TElement, ElementCount> Abs(const Vector<TElement, ElementCount>& v)
-      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::Abs>(v)); }
+      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::Abs>(v.m_data)); }
 
     template<basic_numeric TElement, usz ElementCount>
       requires (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::Floor>)
     constexpr Vector<TElement, ElementCount> Floor(const Vector<TElement, ElementCount>& v)
-      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::Floor>(v)); }
+      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::Floor>(v.m_data)); }
 
     template<basic_numeric TElement, usz ElementCount>
       requires (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::Ceil>)
     constexpr Vector<TElement, ElementCount> Ceil(const Vector<TElement, ElementCount>& v)
-      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::Ceil>(v)); }
+      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::Ceil>(v.m_data)); }
 
     template<basic_numeric TElement, usz ElementCount>
       requires (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::Round>)
     constexpr Vector<TElement, ElementCount> Round(const Vector<TElement, ElementCount>& v)
-      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::Round>(v)); }
+      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::Round>(v.m_data)); }
 
     template<basic_numeric TElement, usz ElementCount>
       requires (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::Trunc>)
     constexpr Vector<TElement, ElementCount> Trunc(const Vector<TElement, ElementCount>& v)
-      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::Trunc>(v)); }
+      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::Trunc>(v.m_data)); }
 
     template<basic_numeric TElement, usz ElementCount>
       requires (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::Min>)
     constexpr Vector<TElement, ElementCount> Min(const Vector<TElement, ElementCount>& a, const Vector<TElement, ElementCount>& b)
-      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::Min>(a, b)); }
+      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::Min>(a.m_data, b.m_data)); }
 
     template<basic_numeric TElement, usz ElementCount>
       requires (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::Max>)
     constexpr Vector<TElement, ElementCount> Max(const Vector<TElement, ElementCount>& a, const Vector<TElement, ElementCount>& b)
-      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::Max>(a, b)); }
+      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::Max>(a.m_data, b.m_data)); }
 
     template<basic_numeric TElement, usz ElementCount>
       requires (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::Reciprocal>)
     constexpr Vector<TElement, ElementCount> Reciprocal(const Vector<TElement, ElementCount>& v)
-      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::Reciprocal>(v)); }
+      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::Reciprocal>(v.m_data)); }
 
     template<basic_numeric TElement, usz ElementCount>
       requires (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::ReciprocalSqrt>)
     constexpr Vector<TElement, ElementCount> ReciprocalSqrt(const Vector<TElement, ElementCount>& v)
-      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::ReciprocalSqrt>(v)); }
+      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::ReciprocalSqrt>(v.m_data)); }
 
     template<basic_numeric TElement, usz ElementCount>
       requires (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::Sqrt>)
     constexpr Vector<TElement, ElementCount> Sqrt(const Vector<TElement, ElementCount>& v)
-      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::Sqrt>(v)); }
+      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::Sqrt>(v.m_data)); }
 
     template<basic_numeric TElement, usz ElementCount>
       requires (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::AndNot>)
     constexpr Vector<TElement, ElementCount> AndNot(const Vector<TElement, ElementCount>& a, const Vector<TElement, ElementCount>& b)
-      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::AndNot>(a, b)); }
+      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::AndNot>(a.m_data, b.m_data)); }
 
     template<basic_numeric TElement, usz ElementCount>
       requires (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::CountLeadingZeros>)
     constexpr typename Vector<TElement, ElementCount>::SignedVector CountLeadingZeros(const Vector<TElement, ElementCount>& v)
-      { return typename Vector<TElement, ElementCount>::SignedVector(RunSimdOperation<TElement, ElementCount, SimdOperation::CountLeadingZeros>(v)); }
+      { return typename Vector<TElement, ElementCount>::SignedVector(RunSimdOperation<TElement, ElementCount, SimdOperation::CountLeadingZeros>(v.m_data)); }
 
     template<basic_numeric TElement, usz ElementCount>
       requires (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::SumElements>)
     constexpr Vector<TElement, ElementCount> SumElements(const Vector<TElement, ElementCount>& v)
-      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::SumElements>(v)); }
+      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::SumElements>(v.m_data)); }
 
     template<basic_numeric TElement, usz ElementCount>
       requires (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::FMAdd>)
@@ -440,7 +440,7 @@ namespace Chord
       const Vector<TElement, ElementCount>& a,
       const Vector<TElement, ElementCount>& b,
       const Vector<TElement, ElementCount>& c)
-      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::FMAdd>(a, b, c)); }
+      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::FMAdd>(a.m_data, b.m_data, c.m_data)); }
 
     template<basic_numeric TElement, usz ElementCount>
       requires (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::FMSub>)
@@ -448,7 +448,7 @@ namespace Chord
       const Vector<TElement, ElementCount>& a,
       const Vector<TElement, ElementCount>& b,
       const Vector<TElement, ElementCount>& c)
-      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::FMSub>(a, b, c)); }
+      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::FMSub>(a.m_data, b.m_data, c.m_data)); }
 
     template<basic_numeric TElement, usz ElementCount>
       requires (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::FMAddSub>)
@@ -456,7 +456,7 @@ namespace Chord
       const Vector<TElement, ElementCount>& a,
       const Vector<TElement, ElementCount>& b,
       const Vector<TElement, ElementCount>& c)
-      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::FMAddSub>(a, b, c)); }
+      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::FMAddSub>(a.m_data, b.m_data, c.m_data)); }
 
     template<basic_numeric TElement, usz ElementCount>
       requires (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::FMSubAdd>)
@@ -464,7 +464,7 @@ namespace Chord
       const Vector<TElement, ElementCount>& a,
       const Vector<TElement, ElementCount>& b,
       const Vector<TElement, ElementCount>& c)
-      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::FMSubAdd>(a, b, c)); }
+      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::FMSubAdd>(a.m_data, b.m_data, c.m_data)); }
 
     template<basic_numeric TElement, usz ElementCount>
       requires (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::FNMAdd>)
@@ -472,7 +472,7 @@ namespace Chord
       const Vector<TElement, ElementCount>& a,
       const Vector<TElement, ElementCount>& b,
       const Vector<TElement, ElementCount>& c)
-      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::FNMAdd>(a, b, c)); }
+      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::FNMAdd>(a.m_data, b.m_data, c.m_data)); }
 
     template<basic_numeric TElement, usz ElementCount>
       requires (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::FNMSub>)
@@ -480,7 +480,7 @@ namespace Chord
       const Vector<TElement, ElementCount>& a,
       const Vector<TElement, ElementCount>& b,
       const Vector<TElement, ElementCount>& c)
-      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::FNMSub>(a, b, c)); }
+      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::FNMSub>(a.m_data, b.m_data, c.m_data)); }
 
     template<basic_numeric TElement, usz ElementCount>
       requires (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::FNMAddSub>)
@@ -488,7 +488,7 @@ namespace Chord
       const Vector<TElement, ElementCount>& a,
       const Vector<TElement, ElementCount>& b,
       const Vector<TElement, ElementCount>& c)
-      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::FNMAddSub>(a, b, c)); }
+      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::FNMAddSub>(a.m_data, b.m_data, c.m_data)); }
 
     template<basic_numeric TElement, usz ElementCount>
       requires (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::FNMSubAdd>)
@@ -496,21 +496,21 @@ namespace Chord
       const Vector<TElement, ElementCount>& a,
       const Vector<TElement, ElementCount>& b,
       const Vector<TElement, ElementCount>& c)
-      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::FNMSubAdd>(a, b, c)); }
+      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::FNMSubAdd>(a.m_data, b.m_data, c.m_data)); }
 
     template<basic_numeric TElement, usz ElementCount>
       requires (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::AddSub>)
     constexpr Vector<TElement, ElementCount> AddSub(
       const Vector<TElement, ElementCount>& a,
       const Vector<TElement, ElementCount>& b)
-      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::AddSub>(a, b)); }
+      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::AddSub>(a.m_data, b.m_data)); }
 
     template<basic_numeric TElement, usz ElementCount>
       requires (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::SubAdd>)
     constexpr Vector<TElement, ElementCount> SubAdd(
       const Vector<TElement, ElementCount>& a,
       const Vector<TElement, ElementCount>& b)
-      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::SubAdd>(a, b)); }
+      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::SubAdd>(a.m_data, b.m_data)); }
 
     template<basic_numeric TElement, usz ElementCount>
       requires (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::Select>)
@@ -518,12 +518,15 @@ namespace Chord
       const typename Vector<TElement, ElementCount>::SignedVector& condition,
       const Vector<TElement, ElementCount>& trueValue,
       const Vector<TElement, ElementCount>& falseValue)
-      { return Vector<TElement, ElementCount>(RunSimdOperation<TElement, ElementCount, SimdOperation::Select>(condition, trueValue, falseValue)); }
+    {
+      return Vector<TElement, ElementCount>(
+        RunSimdOperation<TElement, ElementCount, SimdOperation::Select>(condition.m_data, trueValue.m_data, falseValue.m_data));
+    }
 
     template<basic_numeric TElement, usz ElementCount>
       requires (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::GetMask>)
     constexpr s32 GetMask(const Vector<TElement, ElementCount>& v)
-      { return RunSimdOperation<TElement, ElementCount, SimdOperation::GetMask>(v); }
+      { return RunSimdOperation<TElement, ElementCount, SimdOperation::GetMask>(v.m_data); }
 
     template<basic_numeric TElement, usz ElementCount>
       requires (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::GetMask>)
@@ -560,7 +563,6 @@ namespace Chord
       using uBBxC = typename Vector<TElement, ElementCount>::UnsignedVector;
       return std::bit_cast<fBBxC>(
         (std::bit_cast<uBBxC>(v) & ~FloatTraits<TElement>::SignBitMask) | (std::bit_cast<uBBxC>(sign) & FloatTraits<TElement>::SignBitMask));
-      return v != v;
     }
   }
 }

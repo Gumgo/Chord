@@ -338,6 +338,183 @@ namespace Chord
         }
       }
 
+      template<basic_numeric TElement, usz ElementCount>
+      static constexpr void SumElements()
+      {
+        if constexpr (IsSimdTypeSupported<TElement, ElementCount>)
+        {
+          alignas(32) FixedArray<TElement, 8> sourceElements;
+          for (usz i = 0; i < 8; i++)
+            { sourceElements[i] = TElement(i + 4); }
+          auto v = Vector<TElement, ElementCount>::LoadAligned(sourceElements);
+          auto sum = ::Chord::SumElements(v);
+          alignas(32) FixedArray<TElement, ElementCount> elements;
+          sum.StoreAligned(elements);
+          for (usz i = 0; i < ElementCount; i++)
+          {
+            if constexpr (ElementCount == 2)
+              { EXPECT(elements[i] == TElement(9)); }
+            else if constexpr (ElementCount == 4)
+              { EXPECT(elements[i] == TElement(22)); }
+            else
+            {
+              static_assert(ElementCount == 8);
+              EXPECT(elements[i] == TElement(60));
+            }
+          }
+        }
+      }
+
+      template<basic_numeric TElement, usz ElementCount>
+      static constexpr void FMAddSub()
+      {
+        if constexpr (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::FMAddSub>)
+        {
+          auto a = Vector<TElement, ElementCount>(TElement(4));
+          auto b = Vector<TElement, ElementCount>(TElement(5));
+          auto c = Vector<TElement, ElementCount>(TElement(1));
+          auto v = ::Chord::FMAddSub(a, b, c);
+          alignas(32) FixedArray<TElement, ElementCount> elements;
+          v.StoreAligned(elements);
+          for (usz i = 0; i < ElementCount; i += 2)
+          {
+            EXPECT(elements[i] == TElement(19));
+            EXPECT(elements[i + 1] == TElement(21));
+          }
+        }
+      }
+
+      template<basic_numeric TElement, usz ElementCount>
+      static constexpr void FMSubAdd()
+      {
+        if constexpr (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::FMSubAdd>)
+        {
+          auto a = Vector<TElement, ElementCount>(TElement(4));
+          auto b = Vector<TElement, ElementCount>(TElement(5));
+          auto c = Vector<TElement, ElementCount>(TElement(1));
+          auto v = ::Chord::FMSubAdd(a, b, c);
+          alignas(32) FixedArray<TElement, ElementCount> elements;
+          v.StoreAligned(elements);
+          for (usz i = 0; i < ElementCount; i += 2)
+          {
+            EXPECT(elements[i] == TElement(21));
+            EXPECT(elements[i + 1] == TElement(19));
+          }
+        }
+      }
+
+      template<basic_numeric TElement, usz ElementCount>
+      static constexpr void FNMAddSub()
+      {
+        if constexpr (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::FNMAddSub>)
+        {
+          auto a = Vector<TElement, ElementCount>(TElement(4));
+          auto b = Vector<TElement, ElementCount>(TElement(5));
+          auto c = Vector<TElement, ElementCount>(TElement(1));
+          auto v = ::Chord::FNMAddSub(a, b, c);
+          alignas(32) FixedArray<TElement, ElementCount> elements;
+          v.StoreAligned(elements);
+          for (usz i = 0; i < ElementCount; i += 2)
+          {
+            EXPECT(elements[i] == TElement(-21));
+            EXPECT(elements[i + 1] == TElement(-19));
+          }
+        }
+      }
+
+      template<basic_numeric TElement, usz ElementCount>
+      static constexpr void FNMSubAdd()
+      {
+        if constexpr (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::FNMSubAdd>)
+        {
+          auto a = Vector<TElement, ElementCount>(TElement(4));
+          auto b = Vector<TElement, ElementCount>(TElement(5));
+          auto c = Vector<TElement, ElementCount>(TElement(1));
+          auto v = ::Chord::FNMSubAdd(a, b, c);
+          alignas(32) FixedArray<TElement, ElementCount> elements;
+          v.StoreAligned(elements);
+          for (usz i = 0; i < ElementCount; i += 2)
+          {
+            EXPECT(elements[i] == TElement(-19));
+            EXPECT(elements[i + 1] == TElement(-21));
+          }
+        }
+      }
+
+      template<basic_numeric TElement, usz ElementCount>
+      static constexpr void AddSub()
+      {
+        if constexpr (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::AddSub>)
+        {
+          auto a = Vector<TElement, ElementCount>(TElement(4));
+          auto b = Vector<TElement, ElementCount>(TElement(1));
+          auto v = ::Chord::AddSub(a, b);
+          alignas(32) FixedArray<TElement, ElementCount> elements;
+          v.StoreAligned(elements);
+          for (usz i = 0; i < ElementCount; i += 2)
+          {
+            EXPECT(elements[i] == TElement(3));
+            EXPECT(elements[i + 1] == TElement(5));
+          }
+        }
+      }
+
+      template<basic_numeric TElement, usz ElementCount>
+      static constexpr void SubAdd()
+      {
+        if constexpr (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::SubAdd>)
+        {
+          auto a = Vector<TElement, ElementCount>(TElement(4));
+          auto b = Vector<TElement, ElementCount>(TElement(1));
+          auto v = ::Chord::SubAdd(a, b);
+          alignas(32) FixedArray<TElement, ElementCount> elements;
+          v.StoreAligned(elements);
+          for (usz i = 0; i < ElementCount; i += 2)
+          {
+            EXPECT(elements[i] == TElement(5));
+            EXPECT(elements[i + 1] == TElement(3));
+          }
+        }
+      }
+
+      template<basic_numeric TElement, usz ElementCount>
+      static constexpr void Select()
+      {
+        if constexpr (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::SubAdd>)
+        {
+          using S = SimdRelatedSignedElement<TElement>; // Shorthand in the next line
+          alignas(32) FixedArray<SimdRelatedSignedElement<TElement>, 8> conditionElements = { S(0), S(-1), S(0), S(0), S(-1), S(0), S(-1), S(-1) };
+          alignas(32) FixedArray<TElement, 8> trueElements;
+          alignas(32) FixedArray<TElement, 8> falseElements;
+          for (usz i = 0; i < 8; i++)
+          {
+            trueElements[i] = TElement(i + 4);
+            falseElements[i] = -TElement(i + 4);
+          }
+          auto condition = Vector<SimdRelatedSignedElement<TElement>, ElementCount>::LoadAligned(conditionElements);
+          auto trueBranch = Vector<TElement, ElementCount>::LoadAligned(trueElements);
+          auto falseBranch = Vector<TElement, ElementCount>::LoadAligned(falseElements);
+          auto v = ::Chord::Select(condition, trueBranch, falseBranch);
+          alignas(32) FixedArray<TElement, ElementCount> elements;
+          v.StoreAligned(elements);
+          for (usz i = 0; i < ElementCount; i += 2)
+            { EXPECT(elements[i] == conditionElements[i] != 0 ? trueElements[i] : falseElements[i]); }
+        }
+      }
+
+      template<basic_numeric TElement, usz ElementCount>
+      static constexpr void GetMask()
+      {
+        if constexpr (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::SubAdd>)
+        {
+          using S = SimdRelatedSignedElement<TElement>; // Shorthand in the next line
+          alignas(32) FixedArray<SimdRelatedSignedElement<TElement>, 8> sourceElements = { S(0), S(-1), S(0), S(0), S(-1), S(0), S(-1), S(-1) };
+          auto v = Vector<SimdRelatedSignedElement<TElement>, ElementCount>::LoadAligned(sourceElements);
+          auto m = ::Chord::GetMask(v);
+          EXPECT(m == (0b11010010 & ~(~0 << ElementCount)));
+        }
+      }
+
       template<usz ElementCount, typename TFunc, basic_numeric... TArgs>
       static constexpr void TestAgainstScalar(
         TFunc&& func,
