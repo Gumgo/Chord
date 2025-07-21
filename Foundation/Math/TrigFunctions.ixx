@@ -13,26 +13,52 @@ export import :Math.Fmod;
 
 namespace Chord
 {
-  // Taylor series coefficients for sin(2 * pi * x) for x in range [-0.25, 0.25]
-  // Sollya command: taylorform(sin(2 * pi * x), 21, 0)
+  // For some reason, in MSVC, specializing FixedArray directly results in all values being 0, so I'm specializing wrapping structs instead
+
   template<std::floating_point T>
-  constexpr FixedArray<T, 12> SinCoefficients =
+  struct SinCoefficientsData
+    { };
+
+  template<>
+  struct SinCoefficientsData<f32>
   {
-    T(6.2831853071795864769252867665590057683943387987503),
-    T(-41.341702240399760233968420089468526936300384754514),
-    T(81.605249276075054203397682678249495061413521767488),
-    T(-76.705859753061385841630641093893125889966539055125),
-    T(42.058693944897653144986811148133552541612779928452),
-    T(-15.0946425768229903918266162325315205144814351073722),
-    T(3.8199525848482821277337920673404661254406128731425),
-    T(-0.7181223017785005122317402786068623805398616888429),
-    T(0.104229162208139841172710448987604110970299953164173),
-    T(-1.20315859421206272332025678452865566538857371827387e-2),
-    T(1.13092374825179618777021804144885255157321619059556e-3),
-    T(-8.8235335992430051344844841671401871742374913922068e-5),
+    // Sollya command: fpminimax(sin(2 * pi * x), [|1,3,5,7,9,11,13|], [|single...|], [0,0.25])
+    static constexpr FixedArray<f32, 7> Coefficients =
+    {
+      6.283185482025146484375f,
+      -41.341777801513671875f,
+      81.61460113525390625f,
+      -77.20458984375f,
+      55.0490264892578125f,
+      -178.11871337890625f,
+      793.0009765625f,
+    };
   };
 
-  // For some reason, in MSVC, specializing FixedArray directly results in all values being 0, so I'm specializing wrapping structs instead
+  template<>
+  struct SinCoefficientsData<f64>
+  {
+    // Sollya command: fpminimax(sin(2 * pi * x), [|1,3,5,7,9,11,13,15,17,19,21,23,25|], [|double...|], [0,0.25])
+    static constexpr FixedArray<f64, 13> Coefficients =
+    {
+      6.28318530717958623199592693708837032318115234375,
+      -41.34170224039936414328622049652040004730224609375,
+      81.6052492758848728726661647669970989227294921875,
+      -76.7058597105829704787538503296673297882080078125,
+      42.0586886177316756629807059653103351593017578125,
+      -15.094228655601458655155511223711073398590087890625,
+      3.79890163294518945491518024937249720096588134765625,
+      2.6148309416498096216519009260537131922319531440735e-3,
+      -16.631267378931976708145157317630946636199951171875,
+      259.91428259684499835202586837112903594970703125,
+      -2585.60369354069507608073763549327850341796875,
+      14893.192655518054380081593990325927734375,
+      -37776.2400200304764439351856708526611328125,
+    };
+  };
+
+  template<std::floating_point T>
+  constexpr auto SinCoefficients = SinCoefficientsData<T>::Coefficients;
 
   template<std::floating_point T>
   struct AcosCoefficientsData
@@ -204,7 +230,7 @@ namespace Chord
   {
     using fBB = ScalarOrVectorElementType<T>;
 
-    static constexpr usz CoefficientCount = std::same_as<fBB, f32> ? 7 : 12;
+    static constexpr usz CoefficientCount = SinCoefficients<fBB>.Count();
     T vSquared = v * v;
     T result = T(SinCoefficients<fBB>[CoefficientCount - 1]);
     Unroll<1, CoefficientCount>([&](auto i) { result = FMAdd(result, vSquared, T(SinCoefficients<fBB>[CoefficientCount - i.value - 1])); });
@@ -408,7 +434,7 @@ namespace Chord
 
       // Mirror and offset the result to cover the range [-1, 0]
       polyResult = Select(
-        polyResult < T(0.0),
+        v < T(0.0),
         [&] { return T(std::numbers::pi_v<fBB>) - polyResult; },
         [&] { return polyResult; });
 

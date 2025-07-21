@@ -281,10 +281,12 @@ namespace Chord
         if (result.SetResult(IsNaN(a) | IsNaN(b), T(std::numeric_limits<fBB>::quiet_NaN())))
           { return result.Result(); }
 
-        // If 0^b is 0 if b > 0 and is undefined otherwise
+        // If 0^b is 0 if b > 0, 1 if b == 0, and undefined otherwise
         auto aZero = (a == Zero);
+        auto bZero = (b == Zero);
         auto bPositive = (b > Zero);
-        if (result.SetResult(aZero, AndNot(std::bit_cast<T>(bPositive), T(std::numeric_limits<fBB>::quiet_NaN()))))
+        if (result.SetResult(aZero & bZero, T(1.0))
+          || result.SetResult(aZero, AndNot(std::bit_cast<T>(bPositive), T(std::numeric_limits<fBB>::quiet_NaN()))))
           { return result.Result(); }
 
         // When a is negative, the result is real only if b is an integer. We'll return NaN otherwise.
@@ -317,7 +319,12 @@ namespace Chord
         if (a <= T(0.0))
         {
           if (a == T(0.0))
-            { return (b > T(0.0)) ? T(0.0) : std::numeric_limits<T>::quiet_NaN(); }
+          {
+            if (b == T(0.0))
+              { return T(1.0); }
+            else
+              { return (b > T(0.0)) ? T(0.0) : std::numeric_limits<T>::quiet_NaN(); }
+          }
 
           if (b != Round(b))
             { return std::numeric_limits<T>::quiet_NaN(); }
