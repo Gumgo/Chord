@@ -56,6 +56,13 @@ namespace Chord
       ConvertF32,
       ConvertF64,
 
+      CastS32,
+      CastS64,
+      CastU32,
+      CastU64,
+      CastF32,
+      CastF64,
+
       LowerHalf,
       UpperHalf,
       WidenAndSplit,

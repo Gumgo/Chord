@@ -278,6 +278,45 @@ namespace Chord
       };
 
       template<>
+      struct SimdOperationImplementation<u64, 4, SimdOperation::CastS32> : public SupportedSimdOperationImplementation
+      {
+        static __m256s32 Run(const __m256u64& v)
+          { return v.m_value; }
+      };
+
+      template<>
+      struct SimdOperationImplementation<u64, 4, SimdOperation::CastS64> : public SupportedSimdOperationImplementation
+      {
+        static __m256s64 Run(const __m256u64& v)
+          { return v.m_value; }
+      };
+
+      template<>
+      struct SimdOperationImplementation<u64, 4, SimdOperation::CastU32> : public SupportedSimdOperationImplementation
+      {
+        static __m256u32 Run(const __m256u64& v)
+          { return v.m_value; }
+      };
+
+      template<>
+      struct SimdOperationImplementation<u64, 4, SimdOperation::CastU64> : public UnsupportedSimdOperationImplementation
+        { };
+
+      template<>
+      struct SimdOperationImplementation<u64, 4, SimdOperation::CastF32> : public SupportedSimdOperationImplementation
+      {
+        static __m256 Run(const __m256u64& v)
+          { return _mm256_castsi256_ps(v); }
+      };
+
+      template<>
+      struct SimdOperationImplementation<u64, 4, SimdOperation::CastF64> : public SupportedSimdOperationImplementation
+      {
+        static __m256d Run(const __m256u64& v)
+          { return _mm256_castsi256_pd(v); }
+      };
+
+      template<>
       struct SimdOperationImplementation<u64, 4, SimdOperation::LowerHalf> : public SupportedSimdOperationImplementation
       {
         static __m128u64 Run(const __m256u64& v)
@@ -469,7 +508,7 @@ namespace Chord
       struct SimdOperationImplementation<u64, 4, SimdOperation::Select> : public SupportedSimdOperationImplementation
       {
         static __m256u64 Run(const __m256u64& condition, const __m256u64& trueValue, const __m256u64& falseValue)
-          { return _mm256_castpd_si256(_mm256_blendv_pd(_mm256_castsi256_pd(condition), _mm256_castsi256_pd(trueValue), _mm256_castsi256_pd(falseValue))); }
+          { return _mm256_castpd_si256(_mm256_blendv_pd(_mm256_castsi256_pd(falseValue), _mm256_castsi256_pd(trueValue), _mm256_castsi256_pd(condition))); }
       };
 
       template<>

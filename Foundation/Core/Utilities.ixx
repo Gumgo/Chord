@@ -19,7 +19,7 @@ namespace Chord
     struct Zero_t
     {
       template<basic_numeric T>
-      operator T() const
+      constexpr operator T() const
         { return T(0); }
     };
 

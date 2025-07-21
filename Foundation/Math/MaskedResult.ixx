@@ -97,7 +97,7 @@ namespace Chord
 
       constexpr bool SetResult(const typename T::SignedVector& condition, const T& value)
       {
-        m_result |= std::bit_cast<T>(NotAnd(m_mask, condition) & std::bit_cast<typename T::SignedVector>(value));
+        m_result |= std::bit_cast<T>(AndNot(m_mask, condition) & std::bit_cast<typename T::SignedVector>(value));
         m_mask |= condition;
         return TestMaskAllOnes(m_mask);
       }
@@ -106,14 +106,14 @@ namespace Chord
         requires requires (TGetValue&& getValue) { { getValue() } -> std::same_as<T>; }
       constexpr bool SetResult(const typename T::SignedVector& condition, TGetValue&& getValue)
       {
-        m_result |= std::bit_cast<T>(NotAnd(m_mask, condition) & std::bit_cast<typename T::SignedVector>(getValue()));
+        m_result |= std::bit_cast<T>(AndNot(m_mask, condition) & std::bit_cast<typename T::SignedVector>(getValue()));
         m_mask |= condition;
         return TestMaskAllOnes(m_mask);
       }
 
       constexpr void SetResult(const T& value)
       {
-        m_result |= std::bit_cast<T>(NotAnd(m_mask, std::bit_cast<typename T::SignedVector>(value)));
+        m_result |= std::bit_cast<T>(AndNot(m_mask, std::bit_cast<typename T::SignedVector>(value)));
         m_mask = typename T::SignedVector(-1);
       }
 

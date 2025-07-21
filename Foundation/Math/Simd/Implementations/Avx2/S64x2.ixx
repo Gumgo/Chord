@@ -263,6 +263,45 @@ namespace Chord
       };
 
       template<>
+      struct SimdOperationImplementation<s64, 2, SimdOperation::CastS32> : public SupportedSimdOperationImplementation
+      {
+        static __m128s32 Run(const __m128s64& v)
+          { return v.m_value; }
+      };
+
+      template<>
+      struct SimdOperationImplementation<s64, 2, SimdOperation::CastS64> : public UnsupportedSimdOperationImplementation
+        { };
+
+      template<>
+      struct SimdOperationImplementation<s64, 2, SimdOperation::CastU32> : public SupportedSimdOperationImplementation
+      {
+        static __m128u32 Run(const __m128s64& v)
+          { return v.m_value; }
+      };
+
+      template<>
+      struct SimdOperationImplementation<s64, 2, SimdOperation::CastU64> : public SupportedSimdOperationImplementation
+      {
+        static __m128u64 Run(const __m128s64& v)
+          { return v.m_value; }
+      };
+
+      template<>
+      struct SimdOperationImplementation<s64, 2, SimdOperation::CastF32> : public SupportedSimdOperationImplementation
+      {
+        static __m128 Run(const __m128s64& v)
+          { return _mm_castsi128_ps(v); }
+      };
+
+      template<>
+      struct SimdOperationImplementation<s64, 2, SimdOperation::CastF64> : public SupportedSimdOperationImplementation
+      {
+        static __m128d Run(const __m128s64& v)
+          { return _mm_castsi128_pd(v); }
+      };
+
+      template<>
       struct SimdOperationImplementation<s64, 2, SimdOperation::LowerHalf> : public UnsupportedSimdOperationImplementation
         { };
 
@@ -430,7 +469,7 @@ namespace Chord
       struct SimdOperationImplementation<s64, 2, SimdOperation::Select> : public SupportedSimdOperationImplementation
       {
         static __m128s64 Run(const __m128s64& condition, const __m128s64& trueValue, const __m128s64& falseValue)
-          { return _mm_castpd_si128(_mm_blendv_pd(_mm_castsi128_pd(condition), _mm_castsi128_pd(trueValue), _mm_castsi128_pd(falseValue))); }
+          { return _mm_castpd_si128(_mm_blendv_pd(_mm_castsi128_pd(falseValue), _mm_castsi128_pd(trueValue), _mm_castsi128_pd(condition))); }
       };
 
       template<>

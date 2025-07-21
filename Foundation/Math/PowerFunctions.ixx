@@ -140,7 +140,7 @@ namespace Chord
       MaskedResult<T> result;
 
       if (result.SetResult(IsNaN(v), v)
-        || result.SetResult(v >= T(FloatTraits<T>::MaxExponent + 1), T(std::numeric_limits<T>::infinity()))
+        || result.SetResult(v >= T(FloatTraits<T>::MaxExponent + 1), T(std::numeric_limits<fBB>::infinity()))
         || result.SetResult(v < T(FloatTraits<T>::MinExponent - FloatTraits<T>::MantissaBitCount), Zero))
         { return result.Result(); }
 
@@ -160,7 +160,7 @@ namespace Chord
       T exponentiatedInt = std::bit_cast<T>((uBBxC(intPart) + uBBxC(FloatTraits<T>::ExponentBias)) << FloatTraits<T>::MantissaBitCount);
 
       static constexpr usz CoefficientCount = Exp2Coefficients<fBB>.Count();
-      T exponentiatedFraction = Exp2Coefficients<fBB>[CoefficientCount - 1];
+      T exponentiatedFraction = T(Exp2Coefficients<fBB>[CoefficientCount - 1]);
       Unroll<1, CoefficientCount>(
         [&](auto i) { exponentiatedFraction = FMAdd(exponentiatedFraction, fractionPart, T(Exp2Coefficients<fBB>[CoefficientCount - i.value - 1])); });
 
@@ -209,7 +209,7 @@ namespace Chord
         { return result.Result(); }
 
       static constexpr s32 DenormalExponentBias = FloatTraits<T>::MantissaBitCount;
-      auto isDenormal = (v < std::numeric_limits<fBB>::min());
+      auto isDenormal = (v < T(std::numeric_limits<fBB>::min()));
       auto [vAdjusted, additionalExponentBias] =
         [&]()
         {
@@ -229,7 +229,7 @@ namespace Chord
         }();
 
       uBBxC vBits = std::bit_cast<uBBxC>(vAdjusted);
-      sBBxC biasedExponent = sBBxC(vBits & FloatTraits<T>::ExponentMask) >> FloatTraits<T>::MantissaBitCount;
+      sBBxC biasedExponent = (vBits & sBBxC(FloatTraits<T>::ExponentMask)) >> FloatTraits<T>::MantissaBitCount;
 
       // If the top bit of the mantissa is set, the value is >= 1.5. If we then divide by two, the range [1.5, 2) maps to [0.75, 1) and now our entire fraction
       // fits into the range [0.75, 1.5).
@@ -239,10 +239,10 @@ namespace Chord
       T exponent = T(biasedExponent - exponentBias - additionalExponentBias);
 
       // Build our significand input in the range of [0.75, 1.5). The polynomial expects a value in the range [-0.25, 0.5) so subtract 1.
-      T polyInput = std::bit_cast<T>((vBits & FloatTraits<T>::MantissaMask) | uBBxC(exponentBias << FloatTraits<T>::MantissaBitCount)) - T(1.0);
+      T polyInput = std::bit_cast<T>((vBits & uBBxC(FloatTraits<T>::MantissaMask)) | uBBxC(exponentBias << FloatTraits<T>::MantissaBitCount)) - T(1.0);
 
       static constexpr usz CoefficientCount = Log2Coefficients<fBB>.Count();
-      T polyResult = Log2Coefficients<fBB>[CoefficientCount - 1];
+      T polyResult = T(Log2Coefficients<fBB>[CoefficientCount - 1]);
       Unroll<1, CoefficientCount>(
         [&](auto i) { polyResult = FMAdd(polyResult, polyInput, T(Log2Coefficients<fBB>[CoefficientCount - i.value - 1])); });
 
@@ -270,10 +270,11 @@ namespace Chord
     constexpr T Pow(const T& a, const T& b)
     {
       using fBB = ScalarOrVectorElementType<T>;
+      using sBBxC = ScalarOrVectorSignedType<T>;
       using uBBxC = ScalarOrVectorUnsignedType<T>;
 
       // The scalar vs vector logic is different enough that it's easier to just write separately
-      if (vector<T>)
+      if constexpr (vector<T>)
       {
         MaskedResult<T> result;
 
@@ -283,20 +284,21 @@ namespace Chord
         // If 0^b is 0 if b > 0 and is undefined otherwise
         auto aZero = (a == Zero);
         auto bPositive = (b > Zero);
-        if (result.SetResult(aZero, NotAnd(std::bit_cast<T>(bPositive), T(std::numeric_limits<fBB>::quiet_NaN()))))
+        if (result.SetResult(aZero, AndNot(std::bit_cast<T>(bPositive), T(std::numeric_limits<fBB>::quiet_NaN()))))
           { return result.Result(); }
 
         // When a is negative, the result is real only if b is an integer. We'll return NaN otherwise.
         auto aNegative = (a < Zero);
-        if (result.SetResult(aNegative & (a != Round(a)), T(std::numeric_limits<fBB>::quiet_NaN())))
+        if (result.SetResult(aNegative & (b != Round(b)), T(std::numeric_limits<fBB>::quiet_NaN())))
           { return result.Result(); }
 
         // When a is negative, the result's sign flips based on whether b is even or odd
-        T signBit = aNegative & std::bit_cast<T>((uBBxC(b) & 1) << (FloatTraits<T>::MantissaBitCount + FloatTraits<T>::ExponentBitCount));
+        T signBit = std::bit_cast<T>(aNegative)
+          & std::bit_cast<T>((sBBxC(b) & sBBxC(1)) << (FloatTraits<T>::MantissaBitCount + FloatTraits<T>::ExponentBitCount));
 
         // If a == 1, the result is always 1. If a == -1, the result toggles between 1 and -1 depending on b's (integer) value.
         T aAbs = Abs(a);
-        if (result.SetResult(aAbs == T(1.0), signBit))
+        if (result.SetResult(aAbs == T(1.0), signBit | T(1.0)))
           { return result.Result(); }
 
         T resultIfBNonNegative = Exp2(Abs(b) * Log2(aAbs)) | signBit;
@@ -321,14 +323,14 @@ namespace Chord
             { return std::numeric_limits<T>::quiet_NaN(); }
 
           // Because a is negative, the result's sign flips based on whether b is even or odd
-          T sign = std::bit_cast<T>((uBBxC(b) & 1) << (FloatTraits<T>::MantissaBitCount + FloatTraits<T>::ExponentBitCount));
+          T sign = std::bit_cast<T>((sBBxC(b) & 1) << (FloatTraits<T>::MantissaBitCount + FloatTraits<T>::ExponentBitCount));
           return CopySign(Pow(Abs(a), b), sign);
         }
 
         if (a == T(1.0))
           { return T(1.0); }
 
-        return (b < Zero)
+        return (b < T(0.0))
           ? T(1.0) / Exp2(-b * Log2(a))
           : Exp2(b * Log2(a));
       }

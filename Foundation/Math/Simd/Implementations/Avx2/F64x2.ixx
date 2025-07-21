@@ -242,6 +242,45 @@ namespace Chord
         { };
 
       template<>
+      struct SimdOperationImplementation<f64, 2, SimdOperation::CastS32> : public SupportedSimdOperationImplementation
+      {
+        static __m128s32 Run(const __m128d& v)
+          { return _mm_castpd_si128(v); }
+      };
+
+      template<>
+      struct SimdOperationImplementation<f64, 2, SimdOperation::CastS64> : public SupportedSimdOperationImplementation
+      {
+        static __m128s64 Run(const __m128d& v)
+          { return _mm_castpd_si128(v); }
+      };
+
+      template<>
+      struct SimdOperationImplementation<f64, 2, SimdOperation::CastU32> : public SupportedSimdOperationImplementation
+      {
+        static __m128u32 Run(const __m128d& v)
+          { return _mm_castpd_si128(v); }
+      };
+
+      template<>
+      struct SimdOperationImplementation<f64, 2, SimdOperation::CastU64> : public SupportedSimdOperationImplementation
+      {
+        static __m128u64 Run(const __m128d& v)
+          { return _mm_castpd_si128(v); }
+      };
+
+      template<>
+      struct SimdOperationImplementation<f64, 2, SimdOperation::CastF32> : public SupportedSimdOperationImplementation
+      {
+        static __m128 Run(const __m128d& v)
+          { return _mm_castpd_ps(v); }
+      };
+
+      template<>
+      struct SimdOperationImplementation<f64, 2, SimdOperation::CastF64> : public UnsupportedSimdOperationImplementation
+        { };
+
+      template<>
       struct SimdOperationImplementation<f64, 2, SimdOperation::LowerHalf> : public UnsupportedSimdOperationImplementation
         { };
 
@@ -471,7 +510,7 @@ namespace Chord
       struct SimdOperationImplementation<f64, 2, SimdOperation::Select> : public SupportedSimdOperationImplementation
       {
         static __m128d Run(const __m128s64& condition, const __m128d& trueValue, const __m128d& falseValue)
-          { return _mm_blendv_pd(_mm_castsi128_pd(condition), trueValue, falseValue); }
+          { return _mm_blendv_pd(falseValue, trueValue, _mm_castsi128_pd(condition)); }
       };
 
       template<>

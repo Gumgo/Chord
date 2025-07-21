@@ -9,6 +9,39 @@ import :Utilities.Unroll;
 
 namespace Chord
 {
+  template<basic_numeric TTo, basic_numeric TFrom, usz FromElementCount>
+  constexpr auto Cast(const FixedArray<TFrom, FromElementCount>& from)
+  {
+    using FromUnsigned = std::conditional_t<sizeof(TFrom) == 4, u32, u64>;
+    using ToUnsigned = std::conditional_t<sizeof(TTo) == 4, u32, u64>;
+    static constexpr usz ToElementCount = FromElementCount * sizeof(TFrom) / sizeof(TTo);
+    FixedArray<TTo, FromElementCount * sizeof(TFrom) / sizeof(TTo)> to;
+    Unroll<0, ToElementCount>(
+      [&](auto i)
+      {
+        if constexpr (sizeof(TFrom) == 4 && sizeof(TTo) == 8)
+        {
+          if constexpr (std::endian::native == std::endian::little)
+            { to[i.value] = std::bit_cast<TTo>(u64(std::bit_cast<u32>(from[i.value * 2])) | (u64(std::bit_cast<u32>(from[i.value * 2 + 1])) << 32)); }
+          else
+            { to[i.value] = std::bit_cast<TTo>(u64(std::bit_cast<u32>(from[i.value * 2 + 1])) | (u64(std::bit_cast<u32>(from[i.value * 2])) << 32)); }
+        }
+        else if constexpr (sizeof(TFrom) == 8 && sizeof(TTo) == 4)
+        {
+          if constexpr (std::endian::native == std::endian::little)
+            { to[i.value] = std::bit_cast<TTo>(u32(std::bit_cast<u64>(from[i.value / 2]) >> ((i.value % 2) * 32))); }
+          else
+            { to[i.value] = std::bit_cast<TTo>(u32(std::bit_cast<u64>(from[i.value / 2]) >> (32 - (i.value % 2) * 32))); }
+        }
+        else
+        {
+          static_assert(sizeof(TFrom) == sizeof(TTo));
+          to[i.value] = std::bit_cast<TTo>(from[i.value]);
+        }
+      });
+    return to;
+  }
+
   export
   {
     template<basic_numeric TElement, usz ElementCount, SimdOperation Operation>
@@ -160,7 +193,19 @@ namespace Chord
       static constexpr FixedArray<TElement, ElementCount> Run(const FixedArray<TElement, ElementCount>& a, const FixedArray<TElement, ElementCount>& b)
       {
         FixedArray<TElement, ElementCount> result;
-        Unroll<0, ElementCount>([&](auto i) { result[i.value] = a[i.value] / b[i.value]; });
+        Unroll<0, ElementCount>(
+          [&](auto i)
+          {
+            if constexpr (std::floating_point<TElement>)
+            {
+              // We can't divide by 0 in consteval branches so handle it explicitly
+              result[i.value] = (b[i.value] == TElement(0))
+                ? std::numeric_limits<TElement>::quiet_NaN()
+                : a[i.value] / b[i.value];
+            }
+            else
+              { result[i.value] = a[i.value] / b[i.value]; }
+          });
         return result;
       }
     };
@@ -366,23 +411,23 @@ namespace Chord
     };
 
     template<basic_numeric TElement, usz ElementCount>
-    struct EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::ConvertU32>
-    {
-      static constexpr FixedArray<u32, ElementCount> Run(const FixedArray<TElement, ElementCount>& v)
-      {
-        FixedArray<u32, ElementCount> result;
-        Unroll<0, ElementCount>([&](auto i) { result[i.value] = u32(v[i.value]); });
-        return result;
-      }
-    };
-
-    template<basic_numeric TElement, usz ElementCount>
     struct EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::ConvertS64>
     {
       static constexpr FixedArray<s64, ElementCount> Run(const FixedArray<TElement, ElementCount>& v)
       {
         FixedArray<s64, ElementCount> result;
         Unroll<0, ElementCount>([&](auto i) { result[i.value] = s64(v[i.value]); });
+        return result;
+      }
+    };
+
+    template<basic_numeric TElement, usz ElementCount>
+    struct EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::ConvertU32>
+    {
+      static constexpr FixedArray<u32, ElementCount> Run(const FixedArray<TElement, ElementCount>& v)
+      {
+        FixedArray<u32, ElementCount> result;
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = u32(v[i.value]); });
         return result;
       }
     };
@@ -418,6 +463,48 @@ namespace Chord
         Unroll<0, ElementCount>([&](auto i) { result[i.value] = f64(v[i.value]); });
         return result;
       }
+    };
+
+    template<basic_numeric TElement, usz ElementCount>
+    struct EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::CastS32>
+    {
+      static constexpr auto Run(const FixedArray<TElement, ElementCount>& v)
+        { return Cast<s32>(v); }
+    };
+
+    template<basic_numeric TElement, usz ElementCount>
+    struct EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::CastS64>
+    {
+      static constexpr auto Run(const FixedArray<TElement, ElementCount>& v)
+        { return Cast<s64>(v); }
+    };
+
+    template<basic_numeric TElement, usz ElementCount>
+    struct EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::CastU32>
+    {
+      static constexpr auto Run(const FixedArray<TElement, ElementCount>& v)
+        { return Cast<u32>(v); }
+    };
+
+    template<basic_numeric TElement, usz ElementCount>
+    struct EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::CastU64>
+    {
+      static constexpr auto Run(const FixedArray<TElement, ElementCount>& v)
+        { return Cast<u64>(v); }
+    };
+
+    template<basic_numeric TElement, usz ElementCount>
+    struct EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::CastF32>
+    {
+      static constexpr auto Run(const FixedArray<TElement, ElementCount>& v)
+        { return Cast<f32>(v); }
+    };
+
+    template<basic_numeric TElement, usz ElementCount>
+    struct EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::CastF64>
+    {
+      static constexpr auto Run(const FixedArray<TElement, ElementCount>& v)
+        { return Cast<f64>(v); }
     };
 
     template<basic_numeric TElement, usz ElementCount>

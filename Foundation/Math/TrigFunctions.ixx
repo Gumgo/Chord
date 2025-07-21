@@ -248,9 +248,9 @@ namespace Chord
       if constexpr (vector<T>)
       {
         vAbs -= Trunc(vAbs);
-        auto subtractOneMask = (vAbs >= 0.75);
+        auto subtractOneMask = (vAbs >= T(0.75));
         vAbs = Select(
-          NotAnd(subtractOneMask, vAbs >= T(0.25)),
+          AndNot(subtractOneMask, vAbs >= T(0.25)),
           T(0.5) - vAbs,
           vAbs - (std::bit_cast<T>(subtractOneMask) & T(1.0)));
       }
@@ -318,11 +318,12 @@ namespace Chord
       static constexpr fBB ZeroThreshold = std::same_as<fBB, f32> ? fBB(0.0006) : fBB(1e-11);
 
       // Near 0, the first few terms of sin(x)'s Taylor series are 1 + x^3 / 3!. Dividing by x, we get:
-      static constexpr T Coefficient = T(1.0 / 6.0);
-      if (result.SetResult(Abs(v) < ZeroThreshold, [&]() { return FMAdd(v, v * Coefficient, T(1.0)); }))
+      static constexpr fBB Coefficient = fBB(1.0 / 6.0);
+      if (result.SetResult(Abs(v) < T(ZeroThreshold), [&]() { return FMAdd(v, v * T(Coefficient), T(1.0)); }))
         { return result.Result(); }
 
-      result.SetResult(SinPi(v * T(std::numbers::inv_pi_v<fBB>)) / v);
+      static constexpr fBB InvTwoPi = fBB(0.5) * std::numbers::inv_pi_v<fBB>;
+      result.SetResult(SinTwoPi(v * T(InvTwoPi)) / v);
       return result.Result();
     }
 
@@ -347,17 +348,17 @@ namespace Chord
         [&]()
         {
           static constexpr usz CoefficientCount = AcosCoefficients<fBB>.Count();
-          T polyResult = AcosCoefficients<fBB>[CoefficientCount - 1];
+          T polyResult = T(AcosCoefficients<fBB>[CoefficientCount - 1]);
           Unroll<1, CoefficientCount>(
             [&](auto i) { polyResult = FMAdd(polyResult, vAbs, T(AcosCoefficients<fBB>[CoefficientCount - i.value - 1])); });
-          return fBB(std::numbers::pi * 0.5) - polyResult * Sqrt(T(1.0) - vAbs);
+          return T(std::numbers::pi_v<fBB> * fBB(0.5)) - polyResult * Sqrt(T(1.0) - vAbs);
         };
 
       auto EvaluateBelowZeroThreshold =
         [&]()
         {
           static constexpr usz CoefficientCount = AsinNearZeroCoefficients<fBB>.Count();
-          T polyResult = AsinNearZeroCoefficients<fBB>[CoefficientCount - 1];
+          T polyResult = T(AsinNearZeroCoefficients<fBB>[CoefficientCount - 1]);
           Unroll<1, CoefficientCount>(
             [&](auto i) { polyResult = FMAdd(polyResult, vAbs, T(AsinNearZeroCoefficients<fBB>[CoefficientCount - i.value - 1])); });
           return polyResult * vAbs;
@@ -365,14 +366,15 @@ namespace Chord
 
       if constexpr (vector<T>)
       {
-        auto mask = GetMask(vAbs < ZeroThreshold);
+        auto belowZeroThreshold = (vAbs < T(ZeroThreshold));
+        auto mask = GetMask(belowZeroThreshold);
         T evaluateResult = Uninitialized;
         if (mask == 0)
           { evaluateResult = EvaluateAboveZeroThreshold(); }
         else if (mask == (1 << T::ElementCount) - 1)
           { evaluateResult = EvaluateBelowZeroThreshold(); }
         else
-          { evaluateResult = Select(mask, EvaluateBelowZeroThreshold(), EvaluateAboveZeroThreshold()); }
+          { evaluateResult = Select(belowZeroThreshold, EvaluateBelowZeroThreshold(), EvaluateAboveZeroThreshold()); }
         result.SetResult(CopySign(evaluateResult, v));
       }
       else
@@ -399,7 +401,7 @@ namespace Chord
       T vAbs = Abs(v);
 
       static constexpr usz CoefficientCount = AcosCoefficients<fBB>.Count();
-      T polyResult = AcosCoefficients<fBB>[CoefficientCount - 1];
+      T polyResult = T(AcosCoefficients<fBB>[CoefficientCount - 1]);
       Unroll<1, CoefficientCount>(
         [&](auto i) { polyResult = FMAdd(polyResult, vAbs, T(AcosCoefficients<fBB>[CoefficientCount - i.value - 1])); });
       polyResult *= Sqrt(T(1.0) - vAbs);
@@ -428,14 +430,14 @@ namespace Chord
 
       // For very large values, just return +-pi/2, as that is what atan(x) converges toward
       static constexpr fBB LargeValueThreshold = std::same_as<fBB, f32> ? 1e8f : 1e18;
-      if (result.SetResult(vAbs >= LargeValueThreshold, [&]() { return CopySign(T(std::numbers::pi * 0.5), v); }))
+      if (result.SetResult(vAbs >= T(LargeValueThreshold), [&]() { return CopySign(T(std::numbers::pi_v<fBB> * fBB(0.5)), v); }))
         { return result.Result(); }
 
       auto inputExceedsOne = (vAbs > T(1.0));
       T polyInput = Select(inputExceedsOne, [&] { return T(-1.0) / vAbs; }, [&] { return vAbs; });
       T polyResult = EvaluateAtanPolynomial(polyInput);
       if constexpr (vector<T>)
-        { polyResult += std::bit_cast<T>(inputExceedsOne) & T(std::numbers::pi * 0.5); }
+        { polyResult += std::bit_cast<T>(inputExceedsOne) & T(std::numbers::pi_v<fBB> * fBB(0.5)); }
       else
       {
         if (inputExceedsOne)
@@ -449,6 +451,8 @@ namespace Chord
     template<floating_point_scalar_or_vector T>
     constexpr T Atan2(const T& y, const T& x)
     {
+      using fBB = ScalarOrVectorElementType<T>;
+
       T xAbs = Abs(x);
       T yAbs = Abs(y);
 
@@ -463,8 +467,8 @@ namespace Chord
         T polyInput = numerator / denominator;
         T offset = Select(
           xMagnitudeGreaterEqualMask,
-          std::bit_cast<T>(x < Zero) & CopySign(std::numbers::pi_v<T>, y),
-          CopySign(T(std::numbers::pi * 0.5), y));
+          std::bit_cast<T>(x < Zero) & CopySign(T(std::numbers::pi_v<fBB>), y),
+          CopySign(T(std::numbers::pi_v<fBB> * fBB(0.5)), y));
 
         result.SetResult(EvaluateAtanPolynomial(polyInput) + offset);
         return result.Result();

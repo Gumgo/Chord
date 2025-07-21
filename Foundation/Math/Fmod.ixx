@@ -17,8 +17,8 @@ namespace Chord
     const Vector<s64, ElementCount>& resultMask)
   {
     using f64xC = Vector<f64, ElementCount>;
-    using s64xC = Vector<f64, ElementCount>;
-    using u64xC = Vector<f64, ElementCount>;
+    using s64xC = Vector<s64, ElementCount>;
+    using u64xC = Vector<u64, ElementCount>;
 
     f64xC xRemainder = xAbs;
     while (true)
@@ -31,7 +31,7 @@ namespace Chord
       f64xC quotient = Trunc(std::bit_cast<f64xC>(std::bit_cast<u64xC>(xRemainder / yAbs) - u64xC(1)));
 
       // FNMAdd might add extra bits of precision but the subtraction will reduce the precision back to storable range
-      xRemainder = FNMAdd(AndNot(std::bit_cast<f64xC>(mask), quotient), yAbs, xRemainder);
+      xRemainder = FNMAdd(std::bit_cast<f64xC>(mask) & quotient, yAbs, xRemainder);
     }
 
     return xRemainder;
@@ -64,12 +64,13 @@ namespace Chord
     constexpr T Fmod(const T& x, const T& y)
     {
       using fBB = ScalarOrVectorElementType<T>;
+      using sBB = SimdRelatedSignedElement<fBB>;
       using sBBxC = ScalarOrVectorSignedType<T>;
       using uBBxC = ScalarOrVectorUnsignedType<T>;
 
       MaskedResult<T> result;
 
-      if (result.SetResult(IsInf(x) || IsNaN(x) || IsNan(y) || y == T(0.0), T(std::numeric_limits<fBB>::quiet_NaN())))
+      if (result.SetResult(IsInf(x) || IsNaN(x) || IsNaN(y) || y == T(0.0), T(std::numeric_limits<fBB>::quiet_NaN())))
         { return result.Result(); }
 
       T xAbs = Abs(x);
@@ -133,7 +134,7 @@ namespace Chord
         T xRemainderHigh = xAbs;
 
         // Scale y up if its exponent is too low so we don't hit against denormals
-        T scale = Select(yAbsOrig < T(0x1p-800), T(0x1p400), T(1.0));
+        T scale = Select(yAbsOrig < T(0x1p-800), []() { return T(0x1p400); }, []() { return T(1.0); });
         T yAbsOrigScaled = yAbsOrig * scale;
 
         // This lets us split calculations up into "ranges" that are guaranteed not to overflow
@@ -142,7 +143,7 @@ namespace Chord
           {
             T valueWithTargetExponent = std::bit_cast<T>(
               (std::bit_cast<uBBxC>(yAbsOrigScaled) & uBBxC(FloatTraits<T>::MantissaMask))
-                | sBBxC((FloatTraits<T>::ExponentBias + targetExponent) << FloatTraits<T>::MantissaBitCount));
+                | sBBxC(sBB(FloatTraits<T>::ExponentBias + targetExponent) << FloatTraits<T>::MantissaBitCount));
             return Max(yAbsOrig, valueWithTargetExponent);
           };
 

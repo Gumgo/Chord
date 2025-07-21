@@ -152,6 +152,32 @@ namespace Chord
   }
 
   template<std::floating_point T>
+  constexpr auto GetRoundTests()
+  {
+    return FixedArray<std::tuple<T>, 18>
+    {
+      std::make_tuple(T(0.0)),
+      std::make_tuple(T(1.0)),
+      std::make_tuple(T(1.25)),
+      std::make_tuple(T(1.5)),
+      std::make_tuple(T(1.75)),
+      std::make_tuple(T(-1.0)),
+      std::make_tuple(T(-1.25)),
+      std::make_tuple(T(-1.5)),
+      std::make_tuple(T(-1.75)),
+      std::make_tuple(T(0.0)),
+      std::make_tuple(T(1234.0)),
+      std::make_tuple(T(1234.25)),
+      std::make_tuple(T(1234.5)),
+      std::make_tuple(T(1234.75)),
+      std::make_tuple(T(-1234.0)),
+      std::make_tuple(T(-1234.25)),
+      std::make_tuple(T(-1234.5)),
+      std::make_tuple(T(-1234.75)),
+    };
+  }
+
+  template<std::floating_point T>
   constexpr auto GetFMAddTests()
   {
     return FixedArray<std::tuple<T, T, T>, 16>
@@ -652,7 +678,7 @@ namespace Chord
         });
     }
 
-    TEST_METHOD_CONSTEXPR(ConvertToS32)
+    TEST_METHOD_CONSTEXPR(ConvertS32)
     {
       ForEachSimdType(
         [](auto t, auto c)
@@ -672,7 +698,7 @@ namespace Chord
         });
     }
 
-    TEST_METHOD_CONSTEXPR(ConvertToS64)
+    TEST_METHOD_CONSTEXPR(ConvertS64)
     {
       ForEachSimdType(
         [](auto t, auto c)
@@ -692,7 +718,7 @@ namespace Chord
         });
     }
 
-    TEST_METHOD_CONSTEXPR(ConvertToU32)
+    TEST_METHOD_CONSTEXPR(ConvertU32)
     {
       ForEachSimdType(
         [](auto t, auto c)
@@ -724,7 +750,7 @@ namespace Chord
         });
     }
 
-    TEST_METHOD_CONSTEXPR(ConvertToU64)
+    TEST_METHOD_CONSTEXPR(ConvertU64)
     {
       ForEachSimdType(
         [](auto t, auto c)
@@ -744,7 +770,7 @@ namespace Chord
         });
     }
 
-    TEST_METHOD_CONSTEXPR(ConvertToF32)
+    TEST_METHOD_CONSTEXPR(ConvertF32)
     {
       ForEachSimdType(
         [](auto t, auto c)
@@ -764,7 +790,7 @@ namespace Chord
         });
     }
 
-    TEST_METHOD_CONSTEXPR(ConvertToF64)
+    TEST_METHOD_CONSTEXPR(ConvertF64)
     {
       ForEachSimdType(
         [](auto t, auto c)
@@ -781,6 +807,54 @@ namespace Chord
               [](auto v) { return Vector<f64, ElementCount>(v); },
               Span<const std::tuple<Element>>(tests));
           }
+        });
+    }
+
+    TEST_METHOD_CONSTEXPR(Cast)
+    {
+      ForEachSimdType(
+        [](auto tFrom, auto cFrom)
+        {
+          using FromElement = typename decltype(tFrom)::type;
+          using From = Vector<FromElement, decltype(cFrom)::value>;
+          ForEachSimdType(
+            [&](auto tTo, auto cTo)
+            {
+              using ToElement = typename decltype(tTo)::type;
+              using To = Vector<ToElement, decltype(cTo)::value>;
+              if constexpr (sizeof(From) == sizeof(To))
+              {
+                static constexpr usz FromElementCount = From::ElementCount;
+                alignas(32) FixedArray<FromElement, FromElementCount> fromElements;
+                for (usz i = 0; i < FromElementCount; i++)
+                  { fromElements[i] = RandomValues<FromElement>[i]; }
+
+                auto from = From::LoadAligned(fromElements);
+                auto to = std::bit_cast<To>(from);
+
+                static constexpr usz ToElementCount = To::ElementCount;
+                alignas(32) FixedArray<ToElement, ToElementCount> toElements;
+                to.StoreUnaligned(toElements);
+
+                using FromUnsigned = SimdRelatedUnsignedElement<FromElement>;
+                using ToUnsigned = SimdRelatedUnsignedElement<ToElement>;
+                usz byteCount = FromElementCount * sizeof(FromElement);
+                for (usz i = 0; i < byteCount; i++)
+                {
+                  FromUnsigned unsignedA = std::bit_cast<FromUnsigned>(fromElements[i / sizeof(FromElement)]);
+                  ToUnsigned unsignedB = std::bit_cast<ToUnsigned>(toElements[i / sizeof(ToElement)]);
+                  if constexpr (std::endian::native == std::endian::big)
+                  {
+                    unsignedA = std::byteswap(unsignedA);
+                    unsignedB = std::byteswap(unsignedB);
+                  }
+
+                  u8 bA = u8(unsignedA >> ((i % sizeof(FromElement)) * 8));
+                  u8 bB = u8(unsignedB >> ((i % sizeof(ToElement)) * 8));
+                  EXPECT(bA == bB);
+                }
+              }
+            });
         });
     }
 
@@ -833,26 +907,7 @@ namespace Chord
           {
             SimdTest::TestAgainstScalar<decltype(c)::value>(
               [](auto v) { return Floor(v); },
-              {
-                std::make_tuple(Element(0.0)),
-                std::make_tuple(Element(1.0)),
-                std::make_tuple(Element(1.25)),
-                std::make_tuple(Element(1.5)),
-                std::make_tuple(Element(1.75)),
-                std::make_tuple(Element(-1.0)),
-                std::make_tuple(Element(-1.25)),
-                std::make_tuple(Element(-1.5)),
-                std::make_tuple(Element(-1.75)),
-                std::make_tuple(Element(0.0)),
-                std::make_tuple(Element(1234.0)),
-                std::make_tuple(Element(1234.25)),
-                std::make_tuple(Element(1234.5)),
-                std::make_tuple(Element(1234.75)),
-                std::make_tuple(Element(-1234.0)),
-                std::make_tuple(Element(-1234.25)),
-                std::make_tuple(Element(-1234.5)),
-                std::make_tuple(Element(-1234.75)),
-              });
+              Span<const std::tuple<Element>>(GetRoundTests<Element>()));
           }
         });
     }
@@ -867,26 +922,7 @@ namespace Chord
           {
             SimdTest::TestAgainstScalar<decltype(c)::value>(
               [](auto v) { return Ceil(v); },
-              {
-                std::make_tuple(Element(0.0)),
-                std::make_tuple(Element(1.0)),
-                std::make_tuple(Element(1.25)),
-                std::make_tuple(Element(1.5)),
-                std::make_tuple(Element(1.75)),
-                std::make_tuple(Element(-1.0)),
-                std::make_tuple(Element(-1.25)),
-                std::make_tuple(Element(-1.5)),
-                std::make_tuple(Element(-1.75)),
-                std::make_tuple(Element(0.0)),
-                std::make_tuple(Element(1234.0)),
-                std::make_tuple(Element(1234.25)),
-                std::make_tuple(Element(1234.5)),
-                std::make_tuple(Element(1234.75)),
-                std::make_tuple(Element(-1234.0)),
-                std::make_tuple(Element(-1234.25)),
-                std::make_tuple(Element(-1234.5)),
-                std::make_tuple(Element(-1234.75)),
-              });
+              Span<const std::tuple<Element>>(GetRoundTests<Element>()));
           }
         });
     }
@@ -901,26 +937,7 @@ namespace Chord
           {
             SimdTest::TestAgainstScalar<decltype(c)::value>(
               [](auto v) { return Round(v); },
-              {
-                std::make_tuple(Element(0.0)),
-                std::make_tuple(Element(1.0)),
-                std::make_tuple(Element(1.25)),
-                std::make_tuple(Element(1.5)),
-                std::make_tuple(Element(1.75)),
-                std::make_tuple(Element(-1.0)),
-                std::make_tuple(Element(-1.25)),
-                std::make_tuple(Element(-1.5)),
-                std::make_tuple(Element(-1.75)),
-                std::make_tuple(Element(0.0)),
-                std::make_tuple(Element(1234.0)),
-                std::make_tuple(Element(1234.25)),
-                std::make_tuple(Element(1234.5)),
-                std::make_tuple(Element(1234.75)),
-                std::make_tuple(Element(-1234.0)),
-                std::make_tuple(Element(-1234.25)),
-                std::make_tuple(Element(-1234.5)),
-                std::make_tuple(Element(-1234.75)),
-              });
+              Span<const std::tuple<Element>>(GetRoundTests<Element>()));
           }
         });
     }
@@ -935,26 +952,7 @@ namespace Chord
           {
             SimdTest::TestAgainstScalar<decltype(c)::value>(
               [](auto v) { return Trunc(v); },
-              {
-                std::make_tuple(Element(0.0)),
-                std::make_tuple(Element(1.0)),
-                std::make_tuple(Element(1.25)),
-                std::make_tuple(Element(1.5)),
-                std::make_tuple(Element(1.75)),
-                std::make_tuple(Element(-1.0)),
-                std::make_tuple(Element(-1.25)),
-                std::make_tuple(Element(-1.5)),
-                std::make_tuple(Element(-1.75)),
-                std::make_tuple(Element(0.0)),
-                std::make_tuple(Element(1234.0)),
-                std::make_tuple(Element(1234.25)),
-                std::make_tuple(Element(1234.5)),
-                std::make_tuple(Element(1234.75)),
-                std::make_tuple(Element(-1234.0)),
-                std::make_tuple(Element(-1234.25)),
-                std::make_tuple(Element(-1234.5)),
-                std::make_tuple(Element(-1234.75)),
-              });
+              Span<const std::tuple<Element>>(GetRoundTests<Element>()));
           }
         });
     }
@@ -1185,6 +1183,373 @@ namespace Chord
     TEST_METHOD_CONSTEXPR(GetMask)
       { ForEachSimdType([](auto t, auto c) { SimdTest::GetMask<typename decltype(t)::type, decltype(c)::value>(); }); }
 
-    // !!! just need transcendentals now
+    TEST_METHOD_CONSTEXPR(Fmod)
+    {
+      ForEachSimdType(
+        [](auto t, auto c)
+        {
+          using Element = typename decltype(t)::type;
+          if constexpr (std::floating_point<Element>)
+          {
+            SimdTest::TestAgainstScalar<decltype(c)::value>(
+              [](auto a, auto b) { return Fmod(a, b); },
+              {
+                std::make_tuple(Element(1.0), Element(1.0)),
+                std::make_tuple(Element(2.0), Element(5.0)),
+                std::make_tuple(Element(10.0), Element(2.0)),
+                std::make_tuple(Element(3.74), Element(1.46)),
+                std::make_tuple(Element(-2.0), Element(0.5)),
+                std::make_tuple(Element(2.0), Element(-0.5)),
+                std::make_tuple(Element(-2.0), Element(-0.5)),
+              });
+          }
+        });
+    }
+
+    TEST_METHOD_CONSTEXPR(Exp2)
+    {
+      ForEachSimdType(
+        [](auto t, auto c)
+        {
+          using Element = typename decltype(t)::type;
+          if constexpr (std::floating_point<Element>)
+          {
+            SimdTest::TestAgainstScalar<decltype(c)::value>(
+              [](auto v) { return Exp2(v); },
+              {
+                std::make_tuple(Element(-100.0)),
+                std::make_tuple(Element(-10.0)),
+                std::make_tuple(Element(-5.0)),
+                std::make_tuple(Element(-2.5)),
+                std::make_tuple(Element(-1.0)),
+                std::make_tuple(Element(-0.5)),
+                std::make_tuple(Element(0.0)),
+                std::make_tuple(Element(0.5)),
+                std::make_tuple(Element(1.0)),
+                std::make_tuple(Element(2.5)),
+                std::make_tuple(Element(5.0)),
+                std::make_tuple(Element(10.0)),
+                std::make_tuple(Element(100.0)),
+              });
+          }
+        });
+    }
+
+    TEST_METHOD_CONSTEXPR(Exp10)
+    {
+      ForEachSimdType(
+        [](auto t, auto c)
+        {
+          using Element = typename decltype(t)::type;
+          if constexpr (std::floating_point<Element>)
+          {
+            SimdTest::TestAgainstScalar<decltype(c)::value>(
+              [](auto v) { return Exp10(v); },
+              {
+                std::make_tuple(Element(-100.0)),
+                std::make_tuple(Element(-10.0)),
+                std::make_tuple(Element(-5.0)),
+                std::make_tuple(Element(-2.5)),
+                std::make_tuple(Element(-1.0)),
+                std::make_tuple(Element(-0.5)),
+                std::make_tuple(Element(0.0)),
+                std::make_tuple(Element(0.5)),
+                std::make_tuple(Element(1.0)),
+                std::make_tuple(Element(2.5)),
+                std::make_tuple(Element(5.0)),
+                std::make_tuple(Element(10.0)),
+                std::make_tuple(Element(100.0)),
+              });
+          }
+        });
+    }
+
+    TEST_METHOD_CONSTEXPR(Exp)
+    {
+      ForEachSimdType(
+        [](auto t, auto c)
+        {
+          using Element = typename decltype(t)::type;
+          if constexpr (std::floating_point<Element>)
+          {
+            SimdTest::TestAgainstScalar<decltype(c)::value>(
+              [](auto v) { return Exp(v); },
+              {
+                std::make_tuple(Element(-100.0)),
+                std::make_tuple(Element(-10.0)),
+                std::make_tuple(Element(-5.0)),
+                std::make_tuple(Element(-2.5)),
+                std::make_tuple(Element(-1.0)),
+                std::make_tuple(Element(-0.5)),
+                std::make_tuple(Element(0.0)),
+                std::make_tuple(Element(0.5)),
+                std::make_tuple(Element(1.0)),
+                std::make_tuple(Element(2.5)),
+                std::make_tuple(Element(5.0)),
+                std::make_tuple(Element(10.0)),
+                std::make_tuple(Element(100.0)),
+              });
+          }
+        });
+    }
+
+    TEST_METHOD_CONSTEXPR(Log2)
+    {
+      ForEachSimdType(
+        [](auto t, auto c)
+        {
+          using Element = typename decltype(t)::type;
+          if constexpr (std::floating_point<Element>)
+          {
+            SimdTest::TestAgainstScalar<decltype(c)::value>(
+              [](auto v) { return Log2(v); },
+              {
+                std::make_tuple(Element(-1.0)),
+                std::make_tuple(Element(0.0)),
+                std::make_tuple(Element(0.5)),
+                std::make_tuple(Element(1.0)),
+                std::make_tuple(Element(2.5)),
+                std::make_tuple(Element(5.0)),
+                std::make_tuple(Element(10.0)),
+                std::make_tuple(Element(100.0)),
+              });
+          }
+        });
+    }
+
+    TEST_METHOD_CONSTEXPR(Log10)
+    {
+      ForEachSimdType(
+        [](auto t, auto c)
+        {
+          using Element = typename decltype(t)::type;
+          if constexpr (std::floating_point<Element>)
+          {
+            SimdTest::TestAgainstScalar<decltype(c)::value>(
+              [](auto v) { return Log10(v); },
+              {
+                std::make_tuple(Element(-1.0)),
+                std::make_tuple(Element(0.0)),
+                std::make_tuple(Element(0.5)),
+                std::make_tuple(Element(1.0)),
+                std::make_tuple(Element(2.5)),
+                std::make_tuple(Element(5.0)),
+                std::make_tuple(Element(10.0)),
+                std::make_tuple(Element(100.0)),
+              });
+          }
+        });
+    }
+
+    TEST_METHOD_CONSTEXPR(Log)
+    {
+      ForEachSimdType(
+        [](auto t, auto c)
+        {
+          using Element = typename decltype(t)::type;
+          if constexpr (std::floating_point<Element>)
+          {
+            SimdTest::TestAgainstScalar<decltype(c)::value>(
+              [](auto v) { return Log(v); },
+              {
+                std::make_tuple(Element(-1.0)),
+                std::make_tuple(Element(0.0)),
+                std::make_tuple(Element(0.5)),
+                std::make_tuple(Element(1.0)),
+                std::make_tuple(Element(2.5)),
+                std::make_tuple(Element(5.0)),
+                std::make_tuple(Element(10.0)),
+                std::make_tuple(Element(100.0)),
+              });
+          }
+        });
+    }
+
+    TEST_METHOD_CONSTEXPR(Pow)
+    {
+      ForEachSimdType(
+        [](auto t, auto c)
+        {
+          using Element = typename decltype(t)::type;
+          if constexpr (std::floating_point<Element>)
+          {
+            FixedArray<std::tuple<Element, Element>, 81> tests;
+            usz testIndex = 0;
+            for (Element a = Element(-2.0); a <= Element(2.0); a += Element(0.5))
+            {
+              for (Element b = Element(-2.0); b <= Element(2.0); b += Element(0.5))
+              {
+                tests[testIndex] = std::make_tuple(a, b);
+                testIndex++;
+              }
+            }
+
+            SimdTest::TestAgainstScalar<decltype(c)::value>(
+              [](auto a, auto b) { return Pow(a, b); },
+              Span<const std::tuple<Element, Element>>(tests));
+          }
+        });
+    }
+
+    TEST_METHOD_CONSTEXPR(SinTwoPi)
+    {
+      ForEachSimdType(
+        [](auto t, auto c)
+        {
+          using Element = typename decltype(t)::type;
+          if constexpr (std::floating_point<Element>)
+          {
+            FixedArray<std::tuple<Element>, 40> tests;
+            for (usz i = 0; i < tests.Count() / 2; i++)
+            {
+              tests[i * 2] = std::make_tuple(Element(i) * Element(0.125));
+              tests[i * 2 + 1] = std::make_tuple(Element(i) * Element(-0.125));
+            }
+            SimdTest::TestAgainstScalar<decltype(c)::value>(
+              [](auto v) { return SinTwoPi(v); },
+              Span<const std::tuple<Element>>(tests));
+          }
+        });
+    }
+
+    TEST_METHOD_CONSTEXPR(CosTwoPi)
+    {
+      ForEachSimdType(
+        [](auto t, auto c)
+        {
+          using Element = typename decltype(t)::type;
+          if constexpr (std::floating_point<Element>)
+          {
+            FixedArray<std::tuple<Element>, 40> tests;
+            for (usz i = 0; i < tests.Count() / 2; i++)
+            {
+              tests[i * 2] = std::make_tuple(Element(i) * Element(0.125));
+              tests[i * 2 + 1] = std::make_tuple(Element(i) * Element(-0.125));
+            }
+            SimdTest::TestAgainstScalar<decltype(c)::value>(
+              [](auto v) { return CosTwoPi(v); },
+              Span<const std::tuple<Element>>(tests));
+          }
+        });
+    }
+
+    TEST_METHOD_CONSTEXPR(Sinc)
+    {
+      ForEachSimdType(
+        [](auto t, auto c)
+        {
+          using Element = typename decltype(t)::type;
+          if constexpr (std::floating_point<Element>)
+          {
+            FixedArray<std::tuple<Element>, 40> tests;
+            for (usz i = 0; i < tests.Count() / 2; i++)
+            {
+              tests[i * 2] = std::make_tuple(Element(i) * Element(0.125));
+              tests[i * 2 + 1] = std::make_tuple(Element(i) * Element(-0.125));
+            }
+            SimdTest::TestAgainstScalar<decltype(c)::value>(
+              [](auto v) { return ::Chord::Sinc(v); },
+              Span<const std::tuple<Element>>(tests));
+          }
+        });
+    }
+
+    TEST_METHOD_CONSTEXPR(Asin)
+    {
+      ForEachSimdType(
+        [](auto t, auto c)
+        {
+          using Element = typename decltype(t)::type;
+          if constexpr (std::floating_point<Element>)
+          {
+            FixedArray<std::tuple<Element>, 40> tests;
+            for (usz i = 0; i < tests.Count(); i += 2)
+            for (usz i = 0; i < tests.Count() / 2; i++)
+            {
+              tests[i * 2] = std::make_tuple(Element(i) * Element(1.0 / 16.0));
+              tests[i * 2 + 1] = std::make_tuple(Element(i) * Element(-1.0 / 16.0));
+            }
+            SimdTest::TestAgainstScalar<decltype(c)::value>(
+              [](auto v) { return Asin(v); },
+              Span<const std::tuple<Element>>(tests));
+          }
+        });
+    }
+
+    TEST_METHOD_CONSTEXPR(Acos)
+    {
+      ForEachSimdType(
+        [](auto t, auto c)
+        {
+          using Element = typename decltype(t)::type;
+          if constexpr (std::floating_point<Element>)
+          {
+            FixedArray<std::tuple<Element>, 40> tests;
+            for (usz i = 0; i < tests.Count(); i += 2)
+            for (usz i = 0; i < tests.Count() / 2; i++)
+            {
+              tests[i * 2] = std::make_tuple(Element(i) * Element(1.0 / 16.0));
+              tests[i * 2 + 1] = std::make_tuple(Element(i) * Element(-1.0 / 16.0));
+            }
+            SimdTest::TestAgainstScalar<decltype(c)::value>(
+              [](auto v) { return Acos(v); },
+              Span<const std::tuple<Element>>(tests));
+          }
+        });
+    }
+
+    TEST_METHOD_CONSTEXPR(Atan)
+    {
+      ForEachSimdType(
+        [](auto t, auto c)
+        {
+          using Element = typename decltype(t)::type;
+          if constexpr (std::floating_point<Element>)
+          {
+            FixedArray<std::tuple<Element>, 40> tests;
+            for (usz i = 0; i < tests.Count(); i += 2)
+              for (usz i = 0; i < tests.Count() / 2; i++)
+              {
+                tests[i * 2] = std::make_tuple(Element(i) * Element(0.125));
+                tests[i * 2 + 1] = std::make_tuple(Element(i) * Element(-0.125));
+              }
+            SimdTest::TestAgainstScalar<decltype(c)::value>(
+              [](auto v) { return Atan(v); },
+              Span<const std::tuple<Element>>(tests));
+          }
+        });
+    }
+
+    TEST_METHOD_CONSTEXPR(Atan2)
+    {
+      ForEachSimdType(
+        [](auto t, auto c)
+        {
+          using Element = typename decltype(t)::type;
+          if constexpr (std::floating_point<Element>)
+          {
+            SimdTest::TestAgainstScalar<decltype(c)::value>(
+              [](auto a, auto b) { return Atan2(a, b); },
+              {
+                std::make_tuple(Element(0.0), Element(0.0)),
+                std::make_tuple(Element(0.0), Element(1.0)),
+                std::make_tuple(Element(0.5), Element(1.0)),
+                std::make_tuple(Element(1.0), Element(1.0)),
+                std::make_tuple(Element(1.0), Element(0.5)),
+                std::make_tuple(Element(1.0), Element(0.0)),
+                std::make_tuple(Element(1.0), Element(-0.5)),
+                std::make_tuple(Element(1.0), Element(-1.0)),
+                std::make_tuple(Element(0.5), Element(-1.0)),
+                std::make_tuple(Element(0.0), Element(-1.0)),
+                std::make_tuple(Element(-0.5), Element(-1.0)),
+                std::make_tuple(Element(-1.0), Element(-1.0)),
+                std::make_tuple(Element(-1.0), Element(-0.5)),
+                std::make_tuple(Element(-1.0), Element(0.0)),
+                std::make_tuple(Element(-1.0), Element(0.5)),
+                std::make_tuple(Element(-1.0), Element(1.0)),
+              });
+          }
+        });
+    }
   };
 }

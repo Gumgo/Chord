@@ -245,6 +245,45 @@ namespace Chord
         { };
 
       template<>
+      struct SimdOperationImplementation<f32, 8, SimdOperation::CastS32> : public SupportedSimdOperationImplementation
+      {
+        static __m256s32 Run(const __m256& v)
+          { return _mm256_castps_si256(v); }
+      };
+
+      template<>
+      struct SimdOperationImplementation<f32, 8, SimdOperation::CastS64> : public SupportedSimdOperationImplementation
+      {
+        static __m256s64 Run(const __m256& v)
+          { return _mm256_castps_si256(v); }
+      };
+
+      template<>
+      struct SimdOperationImplementation<f32, 8, SimdOperation::CastU32> : public SupportedSimdOperationImplementation
+      {
+        static __m256u32 Run(const __m256& v)
+          { return _mm256_castps_si256(v); }
+      };
+
+      template<>
+      struct SimdOperationImplementation<f32, 8, SimdOperation::CastU64> : public SupportedSimdOperationImplementation
+      {
+        static __m256u64 Run(const __m256& v)
+          { return _mm256_castps_si256(v); }
+      };
+
+      template<>
+      struct SimdOperationImplementation<f32, 8, SimdOperation::CastF32> : public UnsupportedSimdOperationImplementation
+        { };
+
+      template<>
+      struct SimdOperationImplementation<f32, 8, SimdOperation::CastF64> : public SupportedSimdOperationImplementation
+      {
+        static __m256d Run(const __m256& v)
+          { return _mm256_castps_pd(v); }
+      };
+
+      template<>
       struct SimdOperationImplementation<f32, 8, SimdOperation::LowerHalf> : public SupportedSimdOperationImplementation
       {
         static __m128 Run(const __m256& v)
@@ -503,7 +542,7 @@ namespace Chord
       struct SimdOperationImplementation<f32, 8, SimdOperation::Select> : public SupportedSimdOperationImplementation
       {
         static __m256 Run(const __m256s32& condition, const __m256& trueValue, const __m256& falseValue)
-          { return _mm256_blendv_ps(_mm256_castsi256_ps(condition), trueValue, falseValue); }
+          { return _mm256_blendv_ps(falseValue, trueValue, _mm256_castsi256_ps(condition)); }
       };
 
       template<>

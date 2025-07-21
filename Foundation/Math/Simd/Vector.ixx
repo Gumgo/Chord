@@ -55,7 +55,7 @@ namespace Chord
         : m_data(v.m_data)
         { }
 
-      constexpr Vector(TElement v)
+      explicit constexpr Vector(TElement v)
         : m_data(Run<SimdOperation::SetSingle>(v))
         { }
 
@@ -272,67 +272,67 @@ namespace Chord
         return *this;
       }
 
-      constexpr Vector& operator+=(const Vector& v) const requires Vector::template IsSupported<SimdOperation::Add>
+      constexpr Vector& operator+=(const Vector& v) requires Vector::template IsSupported<SimdOperation::Add>
       {
         *this = *this + v;
         return *this;
       }
 
-      constexpr Vector& operator-=(const Vector& v) const requires Vector::template IsSupported<SimdOperation::Subtract>
+      constexpr Vector& operator-=(const Vector& v) requires Vector::template IsSupported<SimdOperation::Subtract>
       {
         *this = *this - v;
         return *this;
       }
 
-      constexpr Vector& operator*=(const Vector& v) const requires Vector::template IsSupported<SimdOperation::Multiply>
+      constexpr Vector& operator*=(const Vector& v) requires Vector::template IsSupported<SimdOperation::Multiply>
       {
         *this = *this * v;
         return *this;
       }
 
-      constexpr Vector& operator/=(const Vector& v) const requires Vector::template IsSupported<SimdOperation::Divide>
+      constexpr Vector& operator/=(const Vector& v) requires Vector::template IsSupported<SimdOperation::Divide>
       {
         *this = *this / v;
         return *this;
       }
 
-      constexpr Vector& operator&=(const Vector& v) const requires Vector::template IsSupported<SimdOperation::BitwiseAnd>
+      constexpr Vector& operator&=(const Vector& v) requires Vector::template IsSupported<SimdOperation::BitwiseAnd>
       {
         *this = *this & v;
         return *this;
       }
 
-      constexpr Vector& operator|=(const Vector& v) const requires Vector::template IsSupported<SimdOperation::BitwiseOr>
+      constexpr Vector& operator|=(const Vector& v) requires Vector::template IsSupported<SimdOperation::BitwiseOr>
       {
         *this = *this | v;
         return *this;
       }
 
-      constexpr Vector& operator^=(const Vector& v) const requires Vector::template IsSupported<SimdOperation::BitwiseXor>
+      constexpr Vector& operator^=(const Vector& v) requires Vector::template IsSupported<SimdOperation::BitwiseXor>
       {
         *this = *this ^ v;
         return *this;
       }
 
-      constexpr Vector& operator<<=(s32 count) const requires Vector::template IsSupported<SimdOperation::ShiftLeftScalar>
+      constexpr Vector& operator<<=(s32 count) requires Vector::template IsSupported<SimdOperation::ShiftLeftScalar>
       {
         *this = *this << count;
         return *this;
       }
 
-      constexpr Vector& operator<<=(const SignedVector& count) const requires Vector::template IsSupported<SimdOperation::ShiftLeftVector>
+      constexpr Vector& operator<<=(const SignedVector& count) requires Vector::template IsSupported<SimdOperation::ShiftLeftVector>
       {
         *this = *this << count;
         return *this;
       }
 
-      constexpr Vector& operator>>=(s32 count) const requires Vector::template IsSupported<SimdOperation::ShiftRightScalar>
+      constexpr Vector& operator>>=(s32 count) requires Vector::template IsSupported<SimdOperation::ShiftRightScalar>
       {
         *this = *this >> count;
         return *this;
       }
 
-      constexpr Vector& operator>>=(const SignedVector& count) const requires Vector::template IsSupported<SimdOperation::ShiftRightVector>
+      constexpr Vector& operator>>=(const SignedVector& count) requires Vector::template IsSupported<SimdOperation::ShiftRightVector>
       {
         *this = *this >> count;
         return *this;
@@ -537,17 +537,77 @@ namespace Chord
       requires (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::GetMask>)
     constexpr bool TestMaskAllOnes(const Vector<TElement, ElementCount>& v)
       { return GetMask(v) == ((1 << ElementCount) - 1); }
+  }
+}
 
+namespace std
+{
+  // Special-case concept because the other vector-related concepts are declared in Simd.ixx
+  template<typename T>
+  concept bit_cast_vector = same_as<T, ::Chord::Vector<typename T::Element, T::ElementCount>>;
+
+  export
+  {
+    // I'm not sure if this is a terrible idea or not but it makes bit_cast work with vectors
+    template<bit_cast_vector TTo, bit_cast_vector TFrom>
+      requires (sizeof(TTo) == sizeof(TFrom))
+    [[nodiscard]] constexpr TTo bit_cast(const TFrom& v) noexcept
+    {
+      using namespace Chord;
+
+      using FromElement = typename TFrom::Element;
+      using ToElement = typename TTo::Element;
+      static constexpr usz FromElementCount = TFrom::ElementCount;
+      if constexpr (std::same_as<TTo, TFrom>)
+        { return v; }
+      else if constexpr (std::same_as<ToElement, s32>)
+      {
+        static_assert(IsSimdOperationSupported<FromElement, FromElementCount, SimdOperation::CastS32>);
+        return TTo(RunSimdOperation<FromElement, FromElementCount, SimdOperation::CastS32>(v.m_data));
+      }
+      else if constexpr (std::same_as<ToElement, s64>)
+      {
+        static_assert(IsSimdOperationSupported<FromElement, FromElementCount, SimdOperation::CastS64>);
+        return TTo(RunSimdOperation<FromElement, FromElementCount, SimdOperation::CastS64>(v.m_data));
+      }
+      else if constexpr (std::same_as<ToElement, u32>)
+      {
+        static_assert(IsSimdOperationSupported<FromElement, FromElementCount, SimdOperation::CastU32>);
+        return TTo(RunSimdOperation<FromElement, FromElementCount, SimdOperation::CastU32>(v.m_data));
+      }
+      else if constexpr (std::same_as<ToElement, u64>)
+      {
+        static_assert(IsSimdOperationSupported<FromElement, FromElementCount, SimdOperation::CastU64>);
+        return TTo(RunSimdOperation<FromElement, FromElementCount, SimdOperation::CastU64>(v.m_data));
+      }
+      else if constexpr (std::same_as<ToElement, f32>)
+      {
+        static_assert(IsSimdOperationSupported<FromElement, FromElementCount, SimdOperation::CastF32>);
+        return TTo(RunSimdOperation<FromElement, FromElementCount, SimdOperation::CastF32>(v.m_data));
+      }
+      else if constexpr (std::same_as<ToElement, f64>)
+      {
+        static_assert(IsSimdOperationSupported<FromElement, FromElementCount, SimdOperation::CastF64>);
+        return TTo(RunSimdOperation<FromElement, FromElementCount, SimdOperation::CastF64>(v.m_data));
+      }
+      else
+        { static_assert(AlwaysFalse<TTo>, "Unsupported cast"); }
+    }
+  }
+}
+
+namespace Chord
+{
+  export
+  {
     // Additional functions which don't rely on IsSimdOperationSupported directly:
 
     template<std::floating_point TElement, usz ElementCount>
       requires (IsSimdTypeSupported<TElement, ElementCount>)
     constexpr auto IsInf(const Vector<TElement, ElementCount>& v) -> typename Vector<TElement, ElementCount>::SignedVector
     {
-      using UnsignedVector = typename Vector<TElement, ElementCount>::UnsignedVector;
-      static constexpr UnsignedVector SignBitMask = UnsignedVector(~FloatTraits<TElement>::SignBitMask);
-      static constexpr UnsignedVector ExponentMask = UnsignedVector(FloatTraits<TElement>::ExponentMask);
-      return (std::bit_cast<UnsignedVector>(v) & SignBitMask) == ExponentMask;
+      using uBBxC = typename Vector<TElement, ElementCount>::UnsignedVector;
+      return (std::bit_cast<uBBxC>(v) & uBBxC(~FloatTraits<TElement>::SignBitMask)) == uBBxC(FloatTraits<TElement>::ExponentMask);
     }
 
     template<std::floating_point TElement, usz ElementCount>
@@ -561,8 +621,9 @@ namespace Chord
     {
       using fBBxC = Vector<TElement, ElementCount>;
       using uBBxC = typename Vector<TElement, ElementCount>::UnsignedVector;
-      return std::bit_cast<fBBxC>(
-        (std::bit_cast<uBBxC>(v) & ~FloatTraits<TElement>::SignBitMask) | (std::bit_cast<uBBxC>(sign) & FloatTraits<TElement>::SignBitMask));
+      uBBxC vBits = std::bit_cast<uBBxC>(v);
+      uBBxC signBits = std::bit_cast<uBBxC>(sign);
+      return std::bit_cast<fBBxC>((vBits & uBBxC(~FloatTraits<TElement>::SignBitMask)) | (signBits & uBBxC(FloatTraits<TElement>::SignBitMask)));
     }
   }
 }

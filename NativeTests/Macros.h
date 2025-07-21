@@ -2,6 +2,9 @@
 
 #include "../Foundation/Macros.h"
 
+// Disable this to speed up build time when constexpr tests aren't needed
+#define CONSTEXPR_TESTS_ENABLED 1
+
 #define TEST_CLASS(name) \
   static TestClassInfo s_testClassInfo__ ## name = \
     [&]() \
@@ -37,23 +40,31 @@
   \
   void TestMethod__ ## name()
 
-// This version also runs the test method in a consteval context during compilation
-#define TEST_METHOD_CONSTEXPR(name) \
-  static void InvokeTestMethod__ ## name(void* testClassInstance) \
-  { \
-    static_assert( \
-      []() \
-      { \
-        ThisClass instance; \
-        instance.TestMethod__ ## name(); \
-        return true; \
-      }()); \
-    return static_cast<ThisClass*>(testClassInstance)->TestMethod__ ## name(); \
-  } \
-  \
-  REGISTER_TEST_METHOD_(name) \
-  \
-  constexpr void TestMethod__ ## name()
+#if CONSTEXPR_TESTS_ENABLED
+
+  // This version also runs the test method in a consteval context during compilation
+  #define TEST_METHOD_CONSTEXPR(name) \
+    static void InvokeTestMethod__ ## name(void* testClassInstance) \
+    { \
+      static_assert( \
+        []() \
+        { \
+          ThisClass instance; \
+          instance.TestMethod__ ## name(); \
+          return true; \
+        }()); \
+      return static_cast<ThisClass*>(testClassInstance)->TestMethod__ ## name(); \
+    } \
+    \
+    REGISTER_TEST_METHOD_(name) \
+    \
+    constexpr void TestMethod__ ## name()
+
+#else
+
+  #define TEST_METHOD_CONSTEXPR(name) TEST_METHOD(name)
+
+#endif
 
 // This is the same as ASSERT except it's non-fatal for test - an exception is not thrown. This is a simplified copy/paste of the ASSERT macro.
 #define EXPECT(condition, ...) \

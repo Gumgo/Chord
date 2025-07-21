@@ -251,6 +251,45 @@ namespace Chord
       };
 
       template<>
+      struct SimdOperationImplementation<f32, 4, SimdOperation::CastS32> : public SupportedSimdOperationImplementation
+      {
+        static __m128s32 Run(const __m128& v)
+          { return _mm_castps_si128(v); }
+      };
+
+      template<>
+      struct SimdOperationImplementation<f32, 4, SimdOperation::CastS64> : public SupportedSimdOperationImplementation
+      {
+        static __m128s64 Run(const __m128& v)
+          { return _mm_castps_si128(v); }
+      };
+
+      template<>
+      struct SimdOperationImplementation<f32, 4, SimdOperation::CastU32> : public SupportedSimdOperationImplementation
+      {
+        static __m128u32 Run(const __m128& v)
+          { return _mm_castps_si128(v); }
+      };
+
+      template<>
+      struct SimdOperationImplementation<f32, 4, SimdOperation::CastU64> : public SupportedSimdOperationImplementation
+      {
+        static __m128u64 Run(const __m128& v)
+          { return _mm_castps_si128(v); }
+      };
+
+      template<>
+      struct SimdOperationImplementation<f32, 4, SimdOperation::CastF32> : public UnsupportedSimdOperationImplementation
+        { };
+
+      template<>
+      struct SimdOperationImplementation<f32, 4, SimdOperation::CastF64> : public SupportedSimdOperationImplementation
+      {
+        static __m128d Run(const __m128& v)
+          { return _mm_castps_pd(v); }
+      };
+
+      template<>
       struct SimdOperationImplementation<f32, 4, SimdOperation::LowerHalf> : public UnsupportedSimdOperationImplementation
         { };
 
@@ -495,7 +534,7 @@ namespace Chord
       struct SimdOperationImplementation<f32, 4, SimdOperation::Select> : public SupportedSimdOperationImplementation
       {
         static __m128 Run(const __m128s32& condition, const __m128& trueValue, const __m128& falseValue)
-          { return _mm_blendv_ps(_mm_castsi128_ps(condition), trueValue, falseValue); }
+          { return _mm_blendv_ps(falseValue, trueValue, _mm_castsi128_ps(condition)); }
       };
 
       template<>
