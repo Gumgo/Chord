@@ -63,7 +63,7 @@ namespace Chord
         // For each pair x and y:
         // x * y
         //  = (xL + xH * 2^32) * (yL + yH * 2^32)
-        //  = xL*xH + (xL*yH + yL*xH)*2^32 + xH*yH*(2^32)^2
+        //  = xL*yL + (xL*yH + yL*xH)*2^32 + xH*yH*(2^32)^2
         // Because we're working in mod64 space, the final term can be left off (because (2^32)^2 mod 64 bits is 0)
 
         // First, flip the L and H words to get [aH, aL, bH, bL] and [cH, cL, dH, dL]
@@ -87,7 +87,7 @@ namespace Chord
         // For each pair x and y:
         // x * y
         //  = (xL + xH * 2^32) * (yL + yH * 2^32)
-        //  = xL*xH + (xL*yH + yL*xH)*2^32 + xH*yH*(2^32)^2
+        //  = xL*yL + (xL*yH + yL*xH)*2^32 + xH*yH*(2^32)^2
         // Because we're working in mod64 space, the final term can be left off (because (2^32)^2 mod 64 bits is 0)
 
         // First, flip the L and H words to get [aH, aL, bH, bL, cL, cH, dL, dH] and [eH, eL, fH, fL, gL, gH, hL, hH]

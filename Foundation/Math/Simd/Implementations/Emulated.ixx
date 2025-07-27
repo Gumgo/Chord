@@ -1,5 +1,7 @@
 export module Chord.Foundation:Math.Simd.Implementations.Emulated;
 
+import std;
+
 import :Containers.FixedArray;
 import :Core;
 import :Math.CommonMath;
@@ -9,36 +11,19 @@ import :Utilities.Unroll;
 
 namespace Chord
 {
+  // Note: all of these functions should be consteval, not constexpr, but MSVC doesn't seem to allow consteval functions to be called from an 'if consteval'
+  // branch within a constexpr function.
+
   template<basic_numeric TTo, basic_numeric TFrom, usz FromElementCount>
   constexpr auto Cast(const FixedArray<TFrom, FromElementCount>& from)
   {
-    using FromUnsigned = std::conditional_t<sizeof(TFrom) == 4, u32, u64>;
-    using ToUnsigned = std::conditional_t<sizeof(TTo) == 4, u32, u64>;
     static constexpr usz ToElementCount = FromElementCount * sizeof(TFrom) / sizeof(TTo);
-    FixedArray<TTo, FromElementCount * sizeof(TFrom) / sizeof(TTo)> to;
-    Unroll<0, ToElementCount>(
-      [&](auto i)
-      {
-        if constexpr (sizeof(TFrom) == 4 && sizeof(TTo) == 8)
-        {
-          if constexpr (std::endian::native == std::endian::little)
-            { to[i.value] = std::bit_cast<TTo>(u64(std::bit_cast<u32>(from[i.value * 2])) | (u64(std::bit_cast<u32>(from[i.value * 2 + 1])) << 32)); }
-          else
-            { to[i.value] = std::bit_cast<TTo>(u64(std::bit_cast<u32>(from[i.value * 2 + 1])) | (u64(std::bit_cast<u32>(from[i.value * 2])) << 32)); }
-        }
-        else if constexpr (sizeof(TFrom) == 8 && sizeof(TTo) == 4)
-        {
-          if constexpr (std::endian::native == std::endian::little)
-            { to[i.value] = std::bit_cast<TTo>(u32(std::bit_cast<u64>(from[i.value / 2]) >> ((i.value % 2) * 32))); }
-          else
-            { to[i.value] = std::bit_cast<TTo>(u32(std::bit_cast<u64>(from[i.value / 2]) >> (32 - (i.value % 2) * 32))); }
-        }
-        else
-        {
-          static_assert(sizeof(TFrom) == sizeof(TTo));
-          to[i.value] = std::bit_cast<TTo>(from[i.value]);
-        }
-      });
+
+    std::array<TFrom, FromElementCount> fromCopy;
+    std::ranges::copy(from, fromCopy.begin());
+    auto toCopy = std::bit_cast<std::array<TTo, ToElementCount>>(fromCopy);
+    FixedArray<TTo, ToElementCount> to;
+    std::ranges::copy(toCopy, to.begin());
     return to;
   }
 
@@ -405,7 +390,7 @@ namespace Chord
       static constexpr FixedArray<s32, ElementCount> Run(const FixedArray<TElement, ElementCount>& v)
       {
         FixedArray<s32, ElementCount> result;
-        Unroll<0, ElementCount>([&](auto i) { result[i.value] = s32(v[i.value]); });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = ConstevalSafeCast<s32>(v[i.value]); });
         return result;
       }
     };
@@ -416,7 +401,7 @@ namespace Chord
       static constexpr FixedArray<s64, ElementCount> Run(const FixedArray<TElement, ElementCount>& v)
       {
         FixedArray<s64, ElementCount> result;
-        Unroll<0, ElementCount>([&](auto i) { result[i.value] = s64(v[i.value]); });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = ConstevalSafeCast<s64>(v[i.value]); });
         return result;
       }
     };
@@ -427,7 +412,7 @@ namespace Chord
       static constexpr FixedArray<u32, ElementCount> Run(const FixedArray<TElement, ElementCount>& v)
       {
         FixedArray<u32, ElementCount> result;
-        Unroll<0, ElementCount>([&](auto i) { result[i.value] = u32(v[i.value]); });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = ConstevalSafeCast<u32>(v[i.value]); });
         return result;
       }
     };
@@ -438,7 +423,7 @@ namespace Chord
       static constexpr FixedArray<u64, ElementCount> Run(const FixedArray<TElement, ElementCount>& v)
       {
         FixedArray<u64, ElementCount> result;
-        Unroll<0, ElementCount>([&](auto i) { result[i.value] = u64(v[i.value]); });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = ConstevalSafeCast<u64>(v[i.value]); });
         return result;
       }
     };
@@ -449,7 +434,7 @@ namespace Chord
       static constexpr FixedArray<f32, ElementCount> Run(const FixedArray<TElement, ElementCount>& v)
       {
         FixedArray<f32, ElementCount> result;
-        Unroll<0, ElementCount>([&](auto i) { result[i.value] = f32(v[i.value]); });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = ConstevalSafeCast<f32>(v[i.value]); });
         return result;
       }
     };
@@ -460,7 +445,7 @@ namespace Chord
       static constexpr FixedArray<f64, ElementCount> Run(const FixedArray<TElement, ElementCount>& v)
       {
         FixedArray<f64, ElementCount> result;
-        Unroll<0, ElementCount>([&](auto i) { result[i.value] = f64(v[i.value]); });
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = ConstevalSafeCast<f64>(v[i.value]); });
         return result;
       }
     };

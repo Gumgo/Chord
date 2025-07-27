@@ -31,6 +31,7 @@
     <ClCompile Include="Core\Concepts.ixx" />
     <ClCompile Include="Core\Core.ixx" />
     <ClCompile Include="Core\FloatTraits.ixx" />
+    <ClCompile Include="Core\ConstevalSafeCast.ixx" />
     <ClCompile Include="Foundation.ixx" />
     <ClCompile Include="Core\NullTerminatedString.ixx" />
     <ClCompile Include="Core\Types.ixx" />

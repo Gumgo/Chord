@@ -18,22 +18,22 @@ namespace Chord
   {
     static constexpr FixedArray<T, 16> Values =
     {
-      T(0x78c4e5a5),
-      T(0x68fc23d6),
-      T(0x3a07efa8),
-      T(0x4a519aa8),
-      T(0xc0d102b0),
-      T(0x63c51401),
-      T(0xefaa6094),
-      T(0xcc827290),
-      T(0x5ef60a6c),
-      T(0xf3f80db8),
-      T(0x4e5b22f1),
-      T(0x3a5d14eb),
-      T(0x09d89802),
-      T(0x5314711c),
-      T(0x1e3f6671),
-      T(0x3ca42074),
+      std::bit_cast<T>(0x78c4e5a5_u32),
+      std::bit_cast<T>(0x68fc23d6_u32),
+      std::bit_cast<T>(0x3a07efa8_u32),
+      std::bit_cast<T>(0x4a519aa8_u32),
+      std::bit_cast<T>(0xc0d102b0_u32),
+      std::bit_cast<T>(0x63c51401_u32),
+      std::bit_cast<T>(0xefaa6094_u32),
+      std::bit_cast<T>(0xcc827290_u32),
+      std::bit_cast<T>(0x5ef60a6c_u32),
+      std::bit_cast<T>(0xf3f80db8_u32),
+      std::bit_cast<T>(0x4e5b22f1_u32),
+      std::bit_cast<T>(0x3a5d14eb_u32),
+      std::bit_cast<T>(0x09d89802_u32),
+      std::bit_cast<T>(0x5314711c_u32),
+      std::bit_cast<T>(0x1e3f6671_u32),
+      std::bit_cast<T>(0x3ca42074_u32),
     };
   };
 
@@ -43,70 +43,22 @@ namespace Chord
   {
     static constexpr FixedArray<T, 16> Values =
     {
-      T(0x68aaae404f08c7a2),
-      T(0xe0570c7001eb84bf),
-      T(0x1374e9d5720b6ba0),
-      T(0xaa228fcfb0b6c963),
-      T(0xfb5bd35d694dd9a0),
-      T(0x8928d6db2be4eadc),
-      T(0x30e0b33bc74d7dc4),
-      T(0x29d278a365736d50),
-      T(0xe662655a7ccb5641),
-      T(0xa1ee7ba1633c6084),
-      T(0xced4c8e90b71ac54),
-      T(0x100337051591893b),
-      T(0xad2a1e9be1b453d9),
-      T(0x1f62d68522471751),
-      T(0x87396711f5ee2693),
-      T(0xc9c47dc61ed2158b),
-    };
-  };
-
-  template<>
-  struct RandomValuesData<f32>
-  {
-    static constexpr FixedArray<f32, 16> Values =
-    {
-      std::bit_cast<f32>(0x78c4e5a5),
-      std::bit_cast<f32>(0x68fc23d6),
-      std::bit_cast<f32>(0x3a07efa8),
-      std::bit_cast<f32>(0x4a519aa8),
-      std::bit_cast<f32>(0xc0d102b0),
-      std::bit_cast<f32>(0x63c51401),
-      std::bit_cast<f32>(0xefaa6094),
-      std::bit_cast<f32>(0xcc827290),
-      std::bit_cast<f32>(0x5ef60a6c),
-      std::bit_cast<f32>(0xf3f80db8),
-      std::bit_cast<f32>(0x4e5b22f1),
-      std::bit_cast<f32>(0x3a5d14eb),
-      std::bit_cast<f32>(0x09d89802),
-      std::bit_cast<f32>(0x5314711c),
-      std::bit_cast<f32>(0x1e3f6671),
-      std::bit_cast<f32>(0x3ca42074),
-    };
-  };
-
-  template<>
-  struct RandomValuesData<f64>
-  {
-    static constexpr FixedArray<f64, 16> Values =
-    {
-      std::bit_cast<f64>(0x68aaae404f08c7a2),
-      std::bit_cast<f64>(0xe0570c7001eb84bf),
-      std::bit_cast<f64>(0x1374e9d5720b6ba0),
-      std::bit_cast<f64>(0xaa228fcfb0b6c963),
-      std::bit_cast<f64>(0xfb5bd35d694dd9a0),
-      std::bit_cast<f64>(0x8928d6db2be4eadc),
-      std::bit_cast<f64>(0x30e0b33bc74d7dc4),
-      std::bit_cast<f64>(0x29d278a365736d50),
-      std::bit_cast<f64>(0xe662655a7ccb5641),
-      std::bit_cast<f64>(0xa1ee7ba1633c6084),
-      std::bit_cast<f64>(0xced4c8e90b71ac54),
-      std::bit_cast<f64>(0x100337051591893b),
-      std::bit_cast<f64>(0xad2a1e9be1b453d9),
-      std::bit_cast<f64>(0x1f62d68522471751),
-      std::bit_cast<f64>(0x87396711f5ee2693),
-      std::bit_cast<f64>(0xc9c47dc61ed2158b),
+      std::bit_cast<T>(0x68aaae404f08c7a2_u64),
+      std::bit_cast<T>(0xe0570c7001eb84bf_u64),
+      std::bit_cast<T>(0x1374e9d5720b6ba0_u64),
+      std::bit_cast<T>(0xaa228fcfb0b6c963_u64),
+      std::bit_cast<T>(0xfb5bd35d694dd9a0_u64),
+      std::bit_cast<T>(0x8928d6db2be4eadc_u64),
+      std::bit_cast<T>(0x30e0b33bc74d7dc4_u64),
+      std::bit_cast<T>(0x29d278a365736d50_u64),
+      std::bit_cast<T>(0xe662655a7ccb5641_u64),
+      std::bit_cast<T>(0xa1ee7ba1633c6084_u64),
+      std::bit_cast<T>(0xced4c8e90b71ac54_u64),
+      std::bit_cast<T>(0x100337051591893b_u64),
+      std::bit_cast<T>(0xad2a1e9be1b453d9_u64),
+      std::bit_cast<T>(0x1f62d68522471751_u64),
+      std::bit_cast<T>(0x87396711f5ee2693_u64),
+      std::bit_cast<T>(0xc9c47dc61ed2158b_u64),
     };
   };
 
@@ -691,7 +643,7 @@ namespace Chord
             for (usz i = 0; i < RandomValues<Element>.Count(); i++)
               { tests[i] = std::make_tuple(RandomValues<Element>[i]); }
             SimdTest::TestAgainstScalar<decltype(c)::value>(
-              [](auto v) { return s32(v); },
+              [](auto v) { return ConstevalSafeCast<s32>(v); },
               [](auto v) { return Vector<s32, ElementCount>(v); },
               Span<const std::tuple<Element>>(tests));
           }
@@ -711,7 +663,7 @@ namespace Chord
             for (usz i = 0; i < RandomValues<Element>.Count(); i++)
               { tests[i] = std::make_tuple(RandomValues<Element>[i]); }
             SimdTest::TestAgainstScalar<decltype(c)::value>(
-              [](auto v) { return s64(v); },
+              [](auto v) { return ConstevalSafeCast<s64>(v); },
               [](auto v) { return Vector<s64, ElementCount>(v); },
               Span<const std::tuple<Element>>(tests));
           }
@@ -743,7 +695,7 @@ namespace Chord
             }
 
             SimdTest::TestAgainstScalar<decltype(c)::value>(
-              [](auto v) { return u32(v); },
+              [](auto v) { return ConstevalSafeCast<u32>(v); },
               [](auto v) { return Vector<u32, ElementCount>(v); },
               Span<const std::tuple<Element>>(tests, 0, testCount));
           }
@@ -763,7 +715,7 @@ namespace Chord
             for (usz i = 0; i < RandomValues<Element>.Count(); i++)
               { tests[i] = std::make_tuple(RandomValues<Element>[i]); }
             SimdTest::TestAgainstScalar<decltype(c)::value>(
-              [](auto v) { return u64(v); },
+              [](auto v) { return ConstevalSafeCast<u64>(v); },
               [](auto v) { return Vector<u64, ElementCount>(v); },
               Span<const std::tuple<Element>>(tests));
           }
@@ -783,7 +735,7 @@ namespace Chord
             for (usz i = 0; i < RandomValues<Element>.Count(); i++)
               { tests[i] = std::make_tuple(RandomValues<Element>[i]); }
             SimdTest::TestAgainstScalar<decltype(c)::value>(
-              [](auto v) { return f32(v); },
+              [](auto v) { return ConstevalSafeCast<f32>(v); },
               [](auto v) { return Vector<f32, ElementCount>(v); },
               Span<const std::tuple<Element>>(tests));
           }
@@ -803,7 +755,7 @@ namespace Chord
             for (usz i = 0; i < RandomValues<Element>.Count(); i++)
               { tests[i] = std::make_tuple(RandomValues<Element>[i]); }
             SimdTest::TestAgainstScalar<decltype(c)::value>(
-              [](auto v) { return f64(v); },
+              [](auto v) { return ConstevalSafeCast<f64>(v); },
               [](auto v) { return Vector<f64, ElementCount>(v); },
               Span<const std::tuple<Element>>(tests));
           }

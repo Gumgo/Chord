@@ -34,6 +34,17 @@ namespace Chord
   // This class only tests a few key values. MathPrecisionTests is used to dial in most of these functions.
   TEST_CLASS(MathFunctions)
   {
+    static_assert(Log2(0.5f) == Log2(f32x4(0.5f)).GetElement<0>());
+    TEST_METHOD_CONSTEXPR(Test)
+    {
+      auto a = Log2(f32x4(0.5f)).GetElement<0>();
+      auto b = Log2(0.5f);
+      static constexpr f32x4 c = Log2(f32x4(0.5f));
+      EXPECT(a == -1.0f);
+      EXPECT(b == -1.0f);
+      EXPECT(c.GetElement<0>() == -1.0f);
+    }
+
     TEST_METHOD_CONSTEXPR(Fmod)
     {
       ForEachFloatType(
@@ -137,7 +148,7 @@ namespace Chord
         });
     }
 
-    TEST_METHOD(SinTwoPi)
+    TEST_METHOD_CONSTEXPR(SinTwoPi)
     {
       ForEachFloatType(
         [](auto t)
@@ -163,7 +174,7 @@ namespace Chord
         });
     }
 
-    TEST_METHOD(CosTwoPi)
+    TEST_METHOD_CONSTEXPR(CosTwoPi)
     {
       ForEachFloatType(
         [](auto t)

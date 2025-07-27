@@ -236,7 +236,7 @@ namespace Chord
       uBBxC upperMantissaBit = (vBits >> (FloatTraits<T>::MantissaBitCount - 1)) & uBBxC(1);
       sBBxC exponentBias = sBBxC(FloatTraits<T>::ExponentBias) - sBBxC(upperMantissaBit);
 
-      T exponent = T(biasedExponent - exponentBias - additionalExponentBias);
+      T exponent = ConstevalSafeCast<T>(biasedExponent - exponentBias - additionalExponentBias);
 
       // Build our significand input in the range of [0.75, 1.5). The polynomial expects a value in the range [-0.25, 0.5) so subtract 1.
       T polyInput = std::bit_cast<T>((vBits & uBBxC(FloatTraits<T>::MantissaMask)) | uBBxC(exponentBias << FloatTraits<T>::MantissaBitCount)) - T(1.0);
