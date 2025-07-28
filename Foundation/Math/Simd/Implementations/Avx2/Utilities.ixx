@@ -182,26 +182,26 @@ namespace Chord
 
       inline __m128i MmCmpltEpu64(const __m128i& a, const __m128i& b)
       {
-        // Subtract and shift the MSB right to become a 32-bit mask, then duplicate into the lower 32-bits of the mask
-        return _mm_shuffle_epi32(_mm_srai_epi32(_mm_sub_epi64(a, b), 31), _MM_SHUFFLE(3, 3, 1, 1));
+        // Subtract and compare against 0
+        return _mm_cmpgt_epi64(_mm_sub_epi64(b, a), _mm_setzero_si128());
       }
 
       inline __m128i MmCmpgtEpu64(const __m128i& a, const __m128i& b)
       {
-        // Subtract and shift the MSB right to become a 32-bit mask, then duplicate into the lower 32-bits of the mask
-        return _mm_shuffle_epi32(_mm_srai_epi32(_mm_sub_epi64(b, a), 31), _MM_SHUFFLE(3, 3, 1, 1));
+        // Subtract and compare against 0
+        return _mm_cmpgt_epi64(_mm_sub_epi64(a, b), _mm_setzero_si128());
       }
 
       inline __m256i Mm256CmpltEpu64(const __m256i& a, const __m256i& b)
       {
-        // Subtract and shift the MSB right to become a 32-bit mask, then duplicate into the lower 32-bits of the mask
-        return _mm256_shuffle_epi32(_mm256_srai_epi32(_mm256_sub_epi64(a, b), 31), _MM_SHUFFLE(3, 3, 1, 1));
+        // Subtract and compare against 0
+        return _mm256_cmpgt_epi64(_mm256_sub_epi64(b, a), _mm256_setzero_si256());
       }
 
       inline __m256i Mm256CmpgtEpu64(const __m256i& a, const __m256i& b)
       {
-        // Subtract and shift the MSB right to become a 32-bit mask, then duplicate into the lower 32-bits of the mask
-        return _mm256_shuffle_epi32(_mm256_srai_epi32(_mm256_sub_epi64(b, a), 31), _MM_SHUFFLE(3, 3, 1, 1));
+        // Subtract and compare against 0
+        return _mm256_cmpgt_epi64(_mm256_sub_epi64(a, b), _mm256_setzero_si256());
       }
 
       inline __m128i MmAbsEpi64(const __m128i& v)
@@ -298,11 +298,10 @@ namespace Chord
       {
         // This returns the correct result for all inputs which can fit in the u32 range. Results for other inputs are undefined.
         __m128i ones = MmSetAllBitsSi128();
-        __m128 absMask = _mm_castsi128_ps(_mm_srli_epi32(ones, 1));
         __m128 onePastMaxSignedInt = _mm_set1_ps(f32(0x80000000));
 
         // If the converted value would fit in an s32, we can simply call _mm_cvttps_epi32. Otherwise, halve the input, convert, and double.
-        __m128 exceedsMaxSignedInt = _mm_cmpge_ps(_mm_and_ps(v, absMask), onePastMaxSignedInt);
+        __m128 exceedsMaxSignedInt = _mm_cmpge_ps(v, onePastMaxSignedInt);
         return _mm_blendv_epi8(
           _mm_cvttps_epi32(v),
           _mm_slli_epi32(_mm_cvttps_epi32(_mm_mul_ps(v, _mm_set1_ps(0.5f))), 1),
@@ -313,11 +312,10 @@ namespace Chord
       {
         // This returns the correct result for all inputs which can fit in the u32 range. Results for other inputs are undefined.
         __m256i ones = Mm256SetAllBitsSi256();
-        __m256 absMask = _mm256_castsi256_ps(_mm256_srli_epi32(ones, 1));
         __m256 onePastMaxSignedInt = _mm256_set1_ps(f32(0x80000000));
 
         // If the converted value would fit in an s32, we can simply call _mm256_cvttps_epi32. Otherwise, halve the input, convert, and double.
-        __m256 exceedsMaxSignedInt = _mm256_cmp_ps(_mm256_and_ps(v, absMask), onePastMaxSignedInt, _CMP_GE_OQ);
+        __m256 exceedsMaxSignedInt = _mm256_cmp_ps(v, onePastMaxSignedInt, _CMP_GE_OQ);
         return _mm256_blendv_epi8(
           _mm256_cvttps_epi32(v),
           _mm256_slli_epi32(_mm256_cvttps_epi32(_mm256_mul_ps(v, _mm256_set1_ps(0.5f))), 1),
