@@ -36,6 +36,8 @@
     <ClCompile Include="Core\NullTerminatedString.ixx" />
     <ClCompile Include="Core\Types.ixx" />
     <ClCompile Include="Core\Utilities.ixx" />
+    <ClCompile Include="Functional\Callable.ixx" />
+    <ClCompile Include="Functional\Functional.ixx" />
     <ClCompile Include="Math\CommonMath.ixx" />
     <ClCompile Include="Math\Fmod.ixx" />
     <ClCompile Include="Math\MaskedResult.ixx" />
