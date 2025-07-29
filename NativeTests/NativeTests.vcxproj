@@ -167,6 +167,7 @@
     <ClCompile Include="Containers\BoundedArray.cpp" />
     <ClCompile Include="Containers\FixedArray.cpp" />
     <ClCompile Include="Containers\UnboundedArray.cpp" />
+    <ClCompile Include="Functional\Callable.cpp" />
     <ClCompile Include="Math\MathFunctions.cpp" />
     <ClCompile Include="Math\Simd.cpp" />
     <ClCompile Include="TestUtilities\ObjectWithConstructorArguments.ixx" />
