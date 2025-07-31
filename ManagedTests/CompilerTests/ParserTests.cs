@@ -4,7 +4,7 @@ using Compiler.Parsing;
 using Compiler.Tokenization;
 using Compiler.Types;
 
-namespace Tests.CompilerTests;
+namespace ManagedTests.CompilerTests;
 
 // Note: node tests are listed in alphabetical order for simplicity, except for expression nodes, which are tested in ParserExpressionTests.cs
 public class ParserTests

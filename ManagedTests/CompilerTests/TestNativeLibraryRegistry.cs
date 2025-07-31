@@ -4,7 +4,7 @@ using Compiler.Types;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 
-namespace Tests.CompilerTests;
+namespace ManagedTests.CompilerTests;
 
 internal sealed class TestNativeLibraryRegistry : INativeLibraryRegistry, INativeLibraryRegistryAccess
 {

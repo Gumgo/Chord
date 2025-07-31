@@ -2,7 +2,7 @@
 using Compiler.Ast.Expression;
 using Compiler.Types;
 
-namespace Tests.CompilerTests.AstBuilderTests;
+namespace ManagedTests.CompilerTests.AstBuilderTests;
 
 // Note: node tests are listed in alphabetical order for simplicity, except for expression nodes, which are tested in ExpressionNodeTests.cs
 public class NodeTests

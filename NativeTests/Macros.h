@@ -7,7 +7,7 @@
 
 #define TEST_CLASS(name) \
   static TestClassInfo s_testClassInfo__ ## name = \
-    [&]() \
+    []() \
     { \
       return TestClassInfo \
       { \
@@ -21,7 +21,7 @@
 
 #define REGISTER_TEST_METHOD_(name) \
   static inline TestMethodInfo s_testMethodInfo__ ## name = \
-    [&]() \
+    []() \
     { \
       return TestMethodInfo \
       { \

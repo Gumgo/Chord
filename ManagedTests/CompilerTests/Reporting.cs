@@ -1,6 +1,6 @@
 ﻿using Compiler;
 
-namespace Tests.CompilerTests;
+namespace ManagedTests.CompilerTests;
 
 public class Reporting : IReporting
 {

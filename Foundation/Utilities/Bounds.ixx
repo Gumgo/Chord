@@ -117,6 +117,6 @@ namespace Chord
 
     template<basic_integral TIndex, basic_integral TElementCount>
     constexpr bool IsInRangeArray(TIndex index, TElementCount elementCount)
-      { return index >= 0 && index < elementCount; }
+      { return index >= 0 && std::cmp_less(index, elementCount); }
   }
 }

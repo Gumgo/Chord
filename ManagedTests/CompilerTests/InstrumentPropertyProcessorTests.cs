@@ -3,7 +3,7 @@ using Compiler.InstrumentProperty;
 using Compiler.Lexing;
 using Compiler.Parsing;
 
-namespace Tests.CompilerTests;
+namespace ManagedTests.CompilerTests;
 
 public class InstrumentPropertyProcessorTests
 {

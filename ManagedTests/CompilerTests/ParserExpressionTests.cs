@@ -5,7 +5,7 @@ using Compiler.Tokenization;
 using Compiler.Types;
 using Compiler.Utilities;
 
-namespace Tests.CompilerTests;
+namespace ManagedTests.CompilerTests;
 
 public class ParserExpressionTests
 {

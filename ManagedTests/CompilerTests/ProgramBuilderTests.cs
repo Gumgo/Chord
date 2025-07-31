@@ -4,7 +4,7 @@ using Compiler.ProgramBuilding;
 using Compiler.Types;
 using Compiler.Utilities;
 
-namespace Tests.CompilerTests;
+namespace ManagedTests.CompilerTests;
 
 // Note: this also tests Compiler
 public class ProgramBuilderTests

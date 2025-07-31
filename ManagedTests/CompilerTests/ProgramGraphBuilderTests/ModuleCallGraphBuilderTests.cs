@@ -6,7 +6,7 @@ using Compiler.Program.ProgramGraphNodes;
 using Compiler.ProgramGraphBuilding;
 using Compiler.Types;
 
-namespace Tests.CompilerTests.ProgramGraphBuilderTests;
+namespace ManagedTests.CompilerTests.ProgramGraphBuilderTests;
 
 public class ModuleCallGraphBuilderTests
 {

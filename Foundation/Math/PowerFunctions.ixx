@@ -229,7 +229,7 @@ namespace Chord
         }();
 
       uBBxC vBits = std::bit_cast<uBBxC>(vAdjusted);
-      sBBxC biasedExponent = (vBits & sBBxC(FloatTraits<T>::ExponentMask)) >> FloatTraits<T>::MantissaBitCount;
+      sBBxC biasedExponent = (sBBxC(vBits) & sBBxC(FloatTraits<T>::ExponentMask)) >> FloatTraits<T>::MantissaBitCount;
 
       // If the top bit of the mantissa is set, the value is >= 1.5. If we then divide by two, the range [1.5, 2) maps to [0.75, 1) and now our entire fraction
       // fits into the range [0.75, 1.5).

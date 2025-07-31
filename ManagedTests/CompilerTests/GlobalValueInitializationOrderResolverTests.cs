@@ -1,6 +1,6 @@
-﻿using Tests.CompilerTests.AstBuilderTests;
+﻿using ManagedTests.CompilerTests.AstBuilderTests;
 
-namespace Tests.CompilerTests;
+namespace ManagedTests.CompilerTests;
 
 // Note: we're using AstBuilderTestUtilities for convenience even though this is technically not under the AST builder scope
 public class GlobalValueInitializationOrderResolverTests

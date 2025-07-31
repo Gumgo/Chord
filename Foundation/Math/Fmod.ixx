@@ -212,7 +212,7 @@ namespace Chord
           DoLoop();
 
           // Scale back down before returning our final result
-          result.SetResult(xRemainderHigh / scale, xSign);
+          result.SetResult(CopySign(xRemainderHigh / scale, xSign));
         }
       }
 

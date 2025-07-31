@@ -28,14 +28,14 @@ namespace Chord
       struct SimdOperationImplementation<u32, 8, SimdOperation::SetSingle> : public SupportedSimdOperationImplementation
       {
         static __m256u32 Run(u32 v)
-          { return _mm256_set1_epi32(v); }
+          { return _mm256_set1_epi32(s32(v)); }
       };
 
       template<>
       struct SimdOperationImplementation<u32, 8, SimdOperation::Set> : public SupportedSimdOperationImplementation
       {
         static __m256u32 Run(u32 v0, u32 v1, u32 v2, u32 v3, u32 v4, u32 v5, u32 v6, u32 v7)
-          { return _mm256_set_epi32(v7, v6, v5, v4, v3, v2, v1, v0); }
+          { return _mm256_set_epi32(s32(v7), s32(v6), s32(v5), s32(v4), s32(v3), s32(v2), s32(v1), s32(v0)); }
       };
 
       template<>
@@ -80,9 +80,9 @@ namespace Chord
         static u32 Run(const __m256u32& v, std::integral_constant<usz, Index>)
         {
           if constexpr (Index == 0)
-            { return _mm256_cvtsi256_si32(v); }
+            { return u32(_mm256_cvtsi256_si32(v)); }
           else
-            { return _mm256_extract_epi32(v, Index); }
+            { return u32(_mm256_extract_epi32(v, Index)); }
         }
       };
 
@@ -511,7 +511,7 @@ namespace Chord
       template<>
       struct SimdOperationImplementation<u32, 8, SimdOperation::Select> : public SupportedSimdOperationImplementation
       {
-        static __m256u32 Run(const __m256u32& condition, const __m256u32& trueValue, const __m256u32& falseValue)
+        static __m256u32 Run(const __m256s32& condition, const __m256u32& trueValue, const __m256u32& falseValue)
           { return _mm256_castps_si256(_mm256_blendv_ps(_mm256_castsi256_ps(falseValue), _mm256_castsi256_ps(trueValue), _mm256_castsi256_ps(condition))); }
       };
 

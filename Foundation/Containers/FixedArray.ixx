@@ -30,7 +30,7 @@ namespace Chord
       template <typename... TArgs>
         requires ((std::is_same_v<std::remove_cvref_t<TArgs>, TElement> && ...) && sizeof...(TArgs) == Length)
       constexpr FixedArray(TArgs&&... args)
-        : m_storage({ std::forward<TArgs>(args)... })
+        : m_storage({ { std::forward<TArgs>(args)... } })
         { }
 
       constexpr ~FixedArray() noexcept = default;
@@ -75,7 +75,7 @@ namespace Chord
 
       constexpr FixedArray(FixedArray&& other) noexcept
         : m_elements(std::exchange(other.m_elements, nullptr))
-        , m_count(std::exchange(other.m_count, 0))
+        , m_count(std::exchange(other.m_count, 0_usz))
         { }
 
       constexpr FixedArray(usz count) requires (std::is_default_constructible_v<TElement>)
@@ -141,7 +141,7 @@ namespace Chord
         FreeElements();
 
         m_elements = std::exchange(other.m_elements, nullptr);
-        m_count = std::exchange(other.m_count, 0);
+        m_count = std::exchange(other.m_count, 0_usz);
         return *this;
       }
 

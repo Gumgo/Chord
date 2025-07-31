@@ -5,7 +5,7 @@ using Compiler.ProgramGraphOptimization;
 using Compiler.Types;
 using Compiler.Utilities;
 
-namespace Tests.CompilerTests.ProgramGraphOptimizationTests;
+namespace ManagedTests.CompilerTests.ProgramGraphOptimizationTests;
 
 public class ProgramGraphSimplifierTests
 {

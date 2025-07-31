@@ -1,4 +1,4 @@
-﻿namespace Tests.CompilerTests.AstBuilderTests;
+﻿namespace ManagedTests.CompilerTests.AstBuilderTests;
 
 public class ExpressionBuilderTests
 {

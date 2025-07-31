@@ -45,6 +45,12 @@ namespace Chord
     constexpr s64 operator""_s64(unsigned long long value)
       { return s64(value); }
 
+    constexpr usz operator""_usz(unsigned long long value)
+      { return usz(value); }
+
+    constexpr ssz operator""_ssz(unsigned long long value)
+      { return ssz(value); }
+
     constexpr f32 operator""_f32(long double value)
       { return f32(value); }
 

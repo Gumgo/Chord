@@ -212,14 +212,14 @@ namespace Chord
         virtual constexpr bool IsValid() const override
           { return false; }
 
-        virtual constexpr TReturn Call(TArgs... args) override
+        virtual constexpr TReturn Call([[maybe_unused]] TArgs... args) override
         {
           ASSERT(false, "Cannot invoke unassigned Callable");
           if constexpr (!std::same_as<TReturn, void>)
             { return *static_cast<TReturn*>(nullptr); }
         }
 
-        virtual constexpr TReturn Call(TArgs... args) const override
+        virtual constexpr TReturn Call([[maybe_unused]] TArgs... args) const override
         {
           ASSERT(false, "Cannot invoke unassigned Callable");
           if constexpr (!std::same_as<TReturn, void>)

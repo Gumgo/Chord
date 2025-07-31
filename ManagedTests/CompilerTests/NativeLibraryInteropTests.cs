@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using NativeTypes = Compiler.Native.NativeTypes;
 
-namespace Tests.CompilerTests;
+namespace ManagedTests.CompilerTests;
 
 [StructLayout(LayoutKind.Sequential)]
 internal unsafe struct NativeModuleContext123

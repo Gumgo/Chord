@@ -1,7 +1,7 @@
 ﻿using Compiler.Program.ProgramGraphNodes;
 using Compiler.Types;
 
-namespace Tests.CompilerTests.ProgramGraphBuilderTests;
+namespace ManagedTests.CompilerTests.ProgramGraphBuilderTests;
 
 internal class TestProcessorProgramGraphNode : IProcessorProgramGraphNode
 {

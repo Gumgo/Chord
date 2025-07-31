@@ -1,7 +1,7 @@
 ﻿using Compiler.Native;
 using Compiler.ProgramGraphOptimization;
 
-namespace Tests.CompilerTests.ProgramGraphOptimizationTests;
+namespace ManagedTests.CompilerTests.ProgramGraphOptimizationTests;
 
 public class OptimizationRuleComponentDepthTrackerTests
 {

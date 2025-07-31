@@ -38,7 +38,7 @@ namespace Chord
       { return v; }
 
     template<typename T, usz Length>
-    constexpr usz ArrayLength(T (&v)[Length])
+    constexpr usz ArrayLength([[maybe_unused]] T (&v)[Length])
       { return Length; }
   }
 

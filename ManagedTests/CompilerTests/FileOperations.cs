@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.Text;
 
-namespace Tests.CompilerTests;
+namespace ManagedTests.CompilerTests;
 
 public class FileOperations : IFileOperations
 {

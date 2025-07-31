@@ -249,12 +249,12 @@ namespace Chord
     {
       TypedString str(Str("foo bar quack bar florg").Pointer());
 
-      EXPECT(str.FirstIndexOf(TChar('b')) == 4);
-      EXPECT(str.FirstIndexOf(OtherChar('b')) == 4);
-      EXPECT(str.FirstIndexOf(TypedString(Str("bar").Pointer())) == 4);
-      EXPECT(str.FirstIndexOf(OtherTypedString(StrOther("bar").Pointer())) == 4);
-      EXPECT(str.FirstIndexOf(Str("bar").Pointer()) == 4);
-      EXPECT(str.FirstIndexOf(StrOther("bar").Pointer()) == 4);
+      EXPECT(str.FirstIndexOf(TChar('b')) == 4_usz);
+      EXPECT(str.FirstIndexOf(OtherChar('b')) == 4_usz);
+      EXPECT(str.FirstIndexOf(TypedString(Str("bar").Pointer())) == 4_usz);
+      EXPECT(str.FirstIndexOf(OtherTypedString(StrOther("bar").Pointer())) == 4_usz);
+      EXPECT(str.FirstIndexOf(Str("bar").Pointer()) == 4_usz);
+      EXPECT(str.FirstIndexOf(StrOther("bar").Pointer()) == 4_usz);
 
       EXPECT(str.FirstIndexOf(TChar('z')) == std::nullopt);
       EXPECT(str.FirstIndexOf(OtherChar('z')) == std::nullopt);
@@ -268,12 +268,12 @@ namespace Chord
     {
       TypedString str(Str("foo bar quack bar florg").Pointer());
 
-      EXPECT(str.LastIndexOf(TChar('b')) == 14);
-      EXPECT(str.LastIndexOf(OtherChar('b')) == 14);
-      EXPECT(str.LastIndexOf(TypedString(Str("bar").Pointer())) == 14);
-      EXPECT(str.LastIndexOf(OtherTypedString(StrOther("bar").Pointer())) == 14);
-      EXPECT(str.LastIndexOf(Str("bar").Pointer()) == 14);
-      EXPECT(str.LastIndexOf(StrOther("bar").Pointer()) == 14);
+      EXPECT(str.LastIndexOf(TChar('b')) == 14_usz);
+      EXPECT(str.LastIndexOf(OtherChar('b')) == 14_usz);
+      EXPECT(str.LastIndexOf(TypedString(Str("bar").Pointer())) == 14_usz);
+      EXPECT(str.LastIndexOf(OtherTypedString(StrOther("bar").Pointer())) == 14_usz);
+      EXPECT(str.LastIndexOf(Str("bar").Pointer()) == 14_usz);
+      EXPECT(str.LastIndexOf(StrOther("bar").Pointer()) == 14_usz);
 
       EXPECT(str.LastIndexOf(TChar('z')) == std::nullopt);
       EXPECT(str.LastIndexOf(OtherChar('z')) == std::nullopt);

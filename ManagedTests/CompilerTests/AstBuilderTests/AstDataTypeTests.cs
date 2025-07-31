@@ -3,7 +3,7 @@ using Compiler.Ast;
 using Compiler.Ast.Expression;
 using Compiler.Types;
 
-namespace Tests.CompilerTests.AstBuilderTests;
+namespace ManagedTests.CompilerTests.AstBuilderTests;
 
 public class AstDataTypeTests
 {

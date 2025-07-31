@@ -13,6 +13,10 @@ struct TestFailure
 
 struct TestContext
 {
+  TestContext() = default;
+  TestContext(const TestContext&) = delete;
+  TestContext& operator=(const TestContext&) = delete;
+
   std::mutex m_mutex;
   std::vector<TestFailure> m_failures;
 };

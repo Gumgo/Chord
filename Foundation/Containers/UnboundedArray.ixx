@@ -29,8 +29,8 @@ namespace Chord
 
       constexpr UnboundedArray(UnboundedArray&& other) noexcept
         : m_elements(std::exchange(other.m_elements, nullptr))
-        , m_capacity(std::exchange(other.m_capacity, 0))
-        { this->m_count = std::exchange(other.m_count, 0); }
+        , m_capacity(std::exchange(other.m_capacity, 0_usz))
+        { this->m_count = std::exchange(other.m_count, 0_usz); }
 
       constexpr UnboundedArray(usz capacity)
         : m_elements(std::allocator<TElement>().allocate(capacity))
@@ -69,8 +69,8 @@ namespace Chord
         FreeElements();
 
         m_elements = std::exchange(other.m_elements, nullptr);
-        m_capacity = std::exchange(other.m_capacity, 0);
-        this->m_count = std::exchange(other.m_count, 0);
+        m_capacity = std::exchange(other.m_capacity, 0_usz);
+        this->m_count = std::exchange(other.m_count, 0_usz);
         return *this;
       }
 

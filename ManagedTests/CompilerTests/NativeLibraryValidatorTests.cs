@@ -3,7 +3,7 @@ using Compiler.Ast;
 using Compiler.Native;
 using Compiler.Types;
 
-namespace Tests.CompilerTests;
+namespace ManagedTests.CompilerTests;
 
 public class NativeLibraryValidatorTests
 {

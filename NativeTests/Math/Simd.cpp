@@ -1415,7 +1415,6 @@ namespace Chord
           if constexpr (std::floating_point<Element>)
           {
             FixedArray<std::tuple<Element>, 40> tests;
-            for (usz i = 0; i < tests.Count(); i += 2)
             for (usz i = 0; i < tests.Count() / 2; i++)
             {
               tests[i * 2] = std::make_tuple(Element(i) * Element(1.0 / 16.0));
@@ -1437,7 +1436,6 @@ namespace Chord
           if constexpr (std::floating_point<Element>)
           {
             FixedArray<std::tuple<Element>, 40> tests;
-            for (usz i = 0; i < tests.Count(); i += 2)
             for (usz i = 0; i < tests.Count() / 2; i++)
             {
               tests[i * 2] = std::make_tuple(Element(i) * Element(1.0 / 16.0));
@@ -1459,12 +1457,11 @@ namespace Chord
           if constexpr (std::floating_point<Element>)
           {
             FixedArray<std::tuple<Element>, 40> tests;
-            for (usz i = 0; i < tests.Count(); i += 2)
-              for (usz i = 0; i < tests.Count() / 2; i++)
-              {
-                tests[i * 2] = std::make_tuple(Element(i) * Element(0.125));
-                tests[i * 2 + 1] = std::make_tuple(Element(i) * Element(-0.125));
-              }
+            for (usz i = 0; i < tests.Count() / 2; i++)
+            {
+              tests[i * 2] = std::make_tuple(Element(i) * Element(0.125));
+              tests[i * 2 + 1] = std::make_tuple(Element(i) * Element(-0.125));
+            }
             SimdTest::TestAgainstScalar<decltype(c)::value>(
               [](auto v) { return Atan(v); },
               Span<const std::tuple<Element>>(tests));

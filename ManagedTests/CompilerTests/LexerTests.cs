@@ -2,7 +2,7 @@
 using Compiler.Tokenization;
 using System.Reflection;
 
-namespace Tests.CompilerTests;
+namespace ManagedTests.CompilerTests;
 
 public class LexerTests
 {

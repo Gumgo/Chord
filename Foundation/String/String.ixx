@@ -22,6 +22,15 @@ namespace Chord
   template<fixed_char TChar>
   struct StringData
   {
+    StringData(TChar* pointer, usz length, usz capacity)
+      : m_pointer(pointer)
+      , m_length(length)
+      , m_capacity(capacity)
+      { }
+
+    StringData(const StringData&) = delete;
+    StringData& operator=(const StringData&) = delete;
+
     std::atomic<usz> m_refCount = 1;
     TChar* m_pointer = nullptr;
     usz m_length = 0;
@@ -36,6 +45,24 @@ namespace Chord
 
   template<fixed_char TCharA, fixed_char TCharB>
   using BiggerChar = std::conditional_t<(sizeof(TCharA) > sizeof(TCharB)), TCharA, TCharB>;
+
+  // Technically, char could be unsigned, so make sure that's not the case
+  static_assert(std::is_signed_v<char>);
+
+  template<fixed_char TChar>
+  constexpr auto CharToInt(TChar c)
+  {
+    if constexpr (std::same_as<TChar, char>)
+      { return s8(c); }
+    else if constexpr (std::same_as<TChar, char32_t>)
+      { return u32(c); }
+    else
+      { static_assert(AlwaysFalse<TChar>, "Unsupported fixed_char type"); }
+  }
+
+  template<fixed_char TCharA, fixed_char TCharB>
+  constexpr bool CharEqual(TCharA a, TCharB b)
+    { return std::cmp_equal(CharToInt(a), CharToInt(b)); }
 
   export
   {
@@ -187,7 +214,7 @@ namespace Chord
     template<fixed_char TChar>
     constexpr String<TChar>::String(String&& other) noexcept
       : m_pointer(std::exchange(other.m_pointer, nullptr))
-      , m_length(std::exchange(other.m_length, 0))
+      , m_length(std::exchange(other.m_length, 0_usz))
       { }
 
     template<fixed_char TChar>
@@ -245,7 +272,7 @@ namespace Chord
       {
         Clear();
         m_pointer = std::exchange(other.m_pointer, nullptr);
-        m_length = std::exchange(other.m_length, 0);
+        m_length = std::exchange(other.m_length, 0_usz);
       }
 
       return *this;
@@ -373,7 +400,7 @@ namespace Chord
         { return false; }
       for (auto [a, b] : std::views::zip(thisSpan, otherSpan))
       {
-        if (a != b)
+        if (!CharEqual(a, b))
           { return false; }
       }
 
@@ -390,7 +417,7 @@ namespace Chord
       {
         TOtherChar b = *otherChar;
         otherChar++;
-        if (b == 0 || a != b)
+        if (b == 0 || !CharEqual(a, b))
           { return false; }
       }
 
@@ -400,9 +427,10 @@ namespace Chord
     template<fixed_char TChar>
     template<fixed_char TOtherChar> constexpr std::optional<usz> String<TChar>::FirstIndexOf(TOtherChar c) const
     {
-      for (auto [i, v] : std::ranges::enumerate_view(AsSpan()))
+      auto span = AsSpan();
+      for (usz i = 0; i < span.Count(); i++)
       {
-        if (c == v)
+        if (CharEqual(c, span[i]))
           { return i; }
       }
 
@@ -424,7 +452,7 @@ namespace Chord
       for (usz i = 0; i < thisSpan.Count(); i++)
       {
         usz j = thisSpan.Count() - i - 1;
-        if (thisSpan[j] == c)
+        if (CharEqual(thisSpan[j], c))
           { return j; }
       }
 
@@ -457,7 +485,7 @@ namespace Chord
     template<fixed_char TOtherChar> constexpr bool String<TChar>::StartsWith(TOtherChar c) const
     {
       auto thisSpan = AsSpan();
-      return thisSpan.Count() >= 1 && thisSpan[0] == c;
+      return thisSpan.Count() >= 1 && CharEqual(thisSpan[0], c);
     }
 
     template<fixed_char TChar>
@@ -484,7 +512,7 @@ namespace Chord
     template<fixed_char TOtherChar> constexpr bool String<TChar>::EndsWith(TOtherChar c) const
     {
       auto thisSpan = AsSpan();
-      return thisSpan.Count() >= 1 && thisSpan[thisSpan.Count() - 1] == c;
+      return thisSpan.Count() >= 1 && CharEqual(thisSpan[thisSpan.Count() - 1], c);
     }
 
     template<fixed_char TChar>
@@ -555,12 +583,7 @@ namespace Chord
 
       return std::make_tuple(
         ModifyMode::Copy,
-        new StringData<TChar>
-        {
-          .m_pointer = std::allocator<TChar>().allocate(newLength),
-          .m_length = newLength,
-          .m_capacity = newLength,
-        });
+        new StringData<TChar>(std::allocator<TChar>().allocate(newLength), newLength, newLength));
     }
 
     template<fixed_char TChar>
@@ -576,9 +599,9 @@ namespace Chord
       {
         usz offset = Reverse ? (endIndex - i - 1) : i;
         bool found = true;
-        for (auto [j, v] : std::ranges::enumerate_view(otherSpan))
+        for (usz j = 0; j < otherSpan.Count(); j++)
         {
-          if (thisSpan[offset + j] != v)
+          if (!CharEqual(thisSpan[offset + j], otherSpan[j]))
           {
             found = false;
             break;
@@ -594,16 +617,7 @@ namespace Chord
 
     template<fixed_char TChar>
     template<fixed_char TOtherChar> TChar String<TChar>::ConvertCharacter(TOtherChar otherChar, TChar replacementCharacter)
-    {
-      if constexpr (std::same_as<TChar, TOtherChar>)
-        { return otherChar; }
-      else
-      {
-        return std::make_unsigned_t<TOtherChar>(otherChar) <= std::numeric_limits<std::make_unsigned_t<TChar>>::max()
-          ? TChar(otherChar)
-          : replacementCharacter;
-      }
-    }
+      { return CanCoerce<TChar>(otherChar) ? TChar(otherChar) : replacementCharacter; }
 
     template<fixed_char TChar>
     template<fixed_char TOtherChar>

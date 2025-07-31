@@ -2,7 +2,7 @@
 using Compiler.Parsing;
 using Compiler.Tokenization;
 
-namespace Tests.CompilerTests;
+namespace ManagedTests.CompilerTests;
 
 internal static class ParserTestUtilities
 {

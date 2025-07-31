@@ -99,8 +99,8 @@ namespace Chord
             if (lastOverlapIndex.value() > firstOverlapIndex.value())
             {
               ranges.erase(
-                ranges.begin() + firstOverlapIndex.value() + 1,
-                ranges.begin() + lastOverlapIndex.value() + 1);
+                ranges.begin() + Coerce<std::ptrdiff_t>(firstOverlapIndex.value()) + 1,
+                ranges.begin() + Coerce<std::ptrdiff_t>(lastOverlapIndex.value()) + 1);
             }
 
             ranges[firstOverlapIndex.value()] = { overlapFirst, overlapLast };
@@ -121,11 +121,11 @@ namespace Chord
             {
               ranges[i] = resultA.value();
               if (resultB.has_value())
-                { ranges.insert(ranges.begin() + i + 1, resultB.value()); }
+                { ranges.insert(ranges.begin() + Coerce<std::ptrdiff_t>(i) + 1, resultB.value()); }
             }
             else
             {
-              ranges.erase(ranges.begin() + i);
+              ranges.erase(ranges.begin() + Coerce<std::ptrdiff_t>(i));
               i--;
             }
           }
@@ -192,20 +192,20 @@ namespace Chord
         }
       }
 
-      static_assert(ShouldMerge(Range(0, 3), Range(2, 4)));
-      static_assert(ShouldMerge(Range(0, 2), Range(2, 4)));
-      static_assert(ShouldMerge(Range(0, 1), Range(2, 4)));
-      static_assert(!ShouldMerge(Range(0, 1), Range(3, 4)));
+      static_assert(ShouldMerge(Range(uBB(0), uBB(3)), Range(uBB(2), uBB(4))));
+      static_assert(ShouldMerge(Range(uBB(0), uBB(2)), Range(uBB(2), uBB(4))));
+      static_assert(ShouldMerge(Range(uBB(0), uBB(1)), Range(uBB(2), uBB(4))));
+      static_assert(!ShouldMerge(Range(uBB(0), uBB(1)), Range(uBB(3), uBB(4))));
 
-      static_assert(Subtract(Range(2, 5), Range(2, 5)) == SubtractResult(std::nullopt, std::nullopt));
-      static_assert(Subtract(Range(2, 5), Range(0, 7)) == SubtractResult(std::nullopt, std::nullopt));
-      static_assert(Subtract(Range(2, 5), Range(0, 1)) == SubtractResult(Range(2, 5), std::nullopt));
-      static_assert(Subtract(Range(2, 5), Range(0, 2)) == SubtractResult(Range(3, 5), std::nullopt));
-      static_assert(Subtract(Range(2, 5), Range(6, 7)) == SubtractResult(Range(2, 5), std::nullopt));
-      static_assert(Subtract(Range(2, 5), Range(5, 7)) == SubtractResult(Range(2, 4), std::nullopt));
-      static_assert(Subtract(Range(2, 5), Range(0, 3)) == SubtractResult(Range(4, 5), std::nullopt));
-      static_assert(Subtract(Range(2, 5), Range(4, 7)) == SubtractResult(Range(2, 3), std::nullopt));
-      static_assert(Subtract(Range(2, 5), Range(3, 4)) == SubtractResult(Range(2, 2), Range(5, 5)));
+      static_assert(Subtract(Range(uBB(2), uBB(5)), Range(uBB(2), uBB(5))) == SubtractResult(std::nullopt, std::nullopt));
+      static_assert(Subtract(Range(uBB(2), uBB(5)), Range(uBB(0), uBB(7))) == SubtractResult(std::nullopt, std::nullopt));
+      static_assert(Subtract(Range(uBB(2), uBB(5)), Range(uBB(0), uBB(1))) == SubtractResult(Range(uBB(2), uBB(5)), std::nullopt));
+      static_assert(Subtract(Range(uBB(2), uBB(5)), Range(uBB(0), uBB(2))) == SubtractResult(Range(uBB(3), uBB(5)), std::nullopt));
+      static_assert(Subtract(Range(uBB(2), uBB(5)), Range(uBB(6), uBB(7))) == SubtractResult(Range(uBB(2), uBB(5)), std::nullopt));
+      static_assert(Subtract(Range(uBB(2), uBB(5)), Range(uBB(5), uBB(7))) == SubtractResult(Range(uBB(2), uBB(4)), std::nullopt));
+      static_assert(Subtract(Range(uBB(2), uBB(5)), Range(uBB(0), uBB(3))) == SubtractResult(Range(uBB(4), uBB(5)), std::nullopt));
+      static_assert(Subtract(Range(uBB(2), uBB(5)), Range(uBB(4), uBB(7))) == SubtractResult(Range(uBB(2), uBB(3)), std::nullopt));
+      static_assert(Subtract(Range(uBB(2), uBB(5)), Range(uBB(3), uBB(4))) == SubtractResult(Range(uBB(2), uBB(2)), Range(uBB(5), uBB(5))));
 
       std::vector<std::tuple<uBB, uBB>> m_addedRanges;
       std::vector<std::tuple<uBB, uBB>> m_removedRanges;
@@ -369,6 +369,10 @@ namespace Chord
       {
         struct alignas(std::hardware_destructive_interference_size) ThreadData
         {
+          ThreadData() = default;
+          ThreadData(const ThreadData&) = delete;
+          ThreadData& operator=(const ThreadData&) = delete;
+
           std::thread m_thread;
           std::atomic<u64> m_completedTestCount = 0;
           std::atomic<bool> m_allTestsCompleted = false;

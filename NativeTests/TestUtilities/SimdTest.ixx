@@ -50,7 +50,8 @@ namespace Chord
         {
           // Nothing to really test here, just make sure the code compiles
           Vector<TElement, ElementCount> v = Uninitialized;
-          EXPECT(v.ElementCount == ElementCount);
+          usz elementCount = v.ElementCount;
+          EXPECT(elementCount == ElementCount);
         }
       }
 
@@ -480,7 +481,7 @@ namespace Chord
       template<basic_numeric TElement, usz ElementCount>
       static constexpr void Select()
       {
-        if constexpr (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::SubAdd>)
+        if constexpr (IsSimdTypeSupported<TElement, ElementCount>)
         {
           using S = SimdRelatedSignedElement<TElement>; // Shorthand in the next line
           alignas(32) FixedArray<SimdRelatedSignedElement<TElement>, 8> conditionElements = { S(0), S(-1), S(0), S(0), S(-1), S(0), S(-1), S(-1) };
@@ -489,7 +490,7 @@ namespace Chord
           for (usz i = 0; i < 8; i++)
           {
             trueElements[i] = TElement(i + 4);
-            falseElements[i] = -TElement(i + 4);
+            falseElements[i] = TElement(i + 8);
           }
           auto condition = Vector<SimdRelatedSignedElement<TElement>, ElementCount>::LoadAligned(conditionElements);
           auto trueBranch = Vector<TElement, ElementCount>::LoadAligned(trueElements);
@@ -497,15 +498,15 @@ namespace Chord
           auto v = ::Chord::Select(condition, trueBranch, falseBranch);
           alignas(32) FixedArray<TElement, ElementCount> elements;
           v.StoreAligned(elements);
-          for (usz i = 0; i < ElementCount; i += 2)
-            { EXPECT(elements[i] == conditionElements[i] != 0 ? trueElements[i] : falseElements[i]); }
+          for (usz i = 0; i < ElementCount; i++)
+            { EXPECT(elements[i] == ((conditionElements[i] != 0) ? trueElements[i] : falseElements[i])); }
         }
       }
 
       template<basic_numeric TElement, usz ElementCount>
       static constexpr void GetMask()
       {
-        if constexpr (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::SubAdd>)
+        if constexpr (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::GetMask>)
         {
           using S = SimdRelatedSignedElement<TElement>; // Shorthand in the next line
           alignas(32) FixedArray<SimdRelatedSignedElement<TElement>, 8> sourceElements = { S(0), S(-1), S(0), S(0), S(-1), S(0), S(-1), S(-1) };

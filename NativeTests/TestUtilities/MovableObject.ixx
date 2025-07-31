@@ -10,6 +10,8 @@ namespace Chord
     {
     public:
       MovableObject() = default;
+      MovableObject(const MovableObject&) = delete;
+      MovableObject& operator=(const MovableObject&) = delete;
 
       MovableObject(s32 value)
         : m_value(value)

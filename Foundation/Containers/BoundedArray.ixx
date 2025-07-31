@@ -28,7 +28,7 @@ namespace Chord
 
       constexpr BoundedArray(BoundedArray&& other) requires (std::is_move_constructible_v<TElement>)
       {
-        this->m_count = std::exchange(other.m_count, 0);
+        this->m_count = std::exchange(other.m_count, 0_usz);
         for (usz i = 0; i < this->m_count; i++)
         {
           std::construct_at(&Elements()[i], std::move(other.Elements()[i]));
@@ -57,7 +57,7 @@ namespace Chord
         if (this != &other)
         {
           this->Clear();
-          this->m_count = std::exchange(other.m_count, 0);
+          this->m_count = std::exchange(other.m_count, 0_usz);
           for (usz i = 0; i < this->m_count; i++)
           {
             std::construct_at(&Elements()[i], std::move(other.Elements()[i]));
@@ -102,8 +102,8 @@ namespace Chord
 
       constexpr BoundedArray(BoundedArray&& other) noexcept
         : m_elements(std::exchange(other.m_elements, nullptr))
-        , m_capacity(std::exchange(other.m_capacity, 0))
-        { this->m_count = std::exchange(other.m_count, 0); }
+        , m_capacity(std::exchange(other.m_capacity, 0_usz))
+        { this->m_count = std::exchange(other.m_count, 0_usz); }
 
       constexpr BoundedArray(usz capacity)
         : m_elements(std::allocator<TElement>().allocate(capacity))
@@ -142,8 +142,8 @@ namespace Chord
         FreeElements();
 
         m_elements = std::exchange(other.m_elements, nullptr);
-        m_capacity = std::exchange(other.m_capacity, 0);
-        this->m_count = std::exchange(other.m_count, 0);
+        m_capacity = std::exchange(other.m_capacity, 0_usz);
+        this->m_count = std::exchange(other.m_count, 0_usz);
         return *this;
       }
 

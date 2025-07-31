@@ -2,7 +2,7 @@
 using Compiler.Ast;
 using Compiler.Compilation;
 
-namespace Tests.CompilerTests.AstBuilderTests;
+namespace ManagedTests.CompilerTests.AstBuilderTests;
 
 internal static class AstBuilderTestUtilities
 {

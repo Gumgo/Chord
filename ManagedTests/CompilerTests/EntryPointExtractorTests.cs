@@ -4,7 +4,7 @@ using Compiler.EntryPoint;
 using Compiler.InstrumentProperty;
 using Compiler.Types;
 
-namespace Tests.CompilerTests;
+namespace ManagedTests.CompilerTests;
 
 public class EntryPointExtractorTests
 {

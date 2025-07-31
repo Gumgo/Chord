@@ -5,7 +5,7 @@ using Compiler.ProgramGraphBuilding;
 using Compiler.ProgramGraphOptimization;
 using Compiler.Types;
 
-namespace Tests.CompilerTests.ProgramGraphOptimizationTests;
+namespace ManagedTests.CompilerTests.ProgramGraphOptimizationTests;
 
 public class OptimizationRuleCycleDetectorTests
 {

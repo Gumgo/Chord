@@ -28,14 +28,14 @@ namespace Chord
       struct SimdOperationImplementation<u64, 2, SimdOperation::SetSingle> : public SupportedSimdOperationImplementation
       {
         static __m128u64 Run(u64 v)
-          { return _mm_set1_epi64x(v); }
+          { return _mm_set1_epi64x(s64(v)); }
       };
 
       template<>
       struct SimdOperationImplementation<u64, 2, SimdOperation::Set> : public SupportedSimdOperationImplementation
       {
         static __m128u64 Run(u64 v0, u64 v1)
-          { return _mm_set_epi64x(v1, v0); }
+          { return _mm_set_epi64x(s64(v1), s64(v0)); }
       };
 
       template<>
@@ -77,9 +77,9 @@ namespace Chord
         static u64 Run(const __m128u64& v, std::integral_constant<usz, Index>)
         {
           if constexpr (Index == 0)
-            { return _mm_cvtsi128_si64(v); }
+            { return u64(_mm_cvtsi128_si64(v)); }
           else
-            { return _mm_extract_epi64(v, Index); }
+            { return u64(_mm_extract_epi64(v, Index)); }
         }
       };
 
@@ -465,7 +465,7 @@ namespace Chord
       template<>
       struct SimdOperationImplementation<u64, 2, SimdOperation::Select> : public SupportedSimdOperationImplementation
       {
-        static __m128u64 Run(const __m128u64& condition, const __m128u64& trueValue, const __m128u64& falseValue)
+        static __m128u64 Run(const __m128s64& condition, const __m128u64& trueValue, const __m128u64& falseValue)
           { return _mm_castpd_si128(_mm_blendv_pd(_mm_castsi128_pd(falseValue), _mm_castsi128_pd(trueValue), _mm_castsi128_pd(condition))); }
       };
 

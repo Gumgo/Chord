@@ -1,7 +1,7 @@
 ﻿using Compiler;
 using Compiler.ProgramGraphBuilding;
 
-namespace Tests.CompilerTests.ProgramGraphBuilderTests;
+namespace ManagedTests.CompilerTests.ProgramGraphBuilderTests;
 
 public class LatencyAlignerTests
 {

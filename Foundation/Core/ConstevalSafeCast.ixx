@@ -55,7 +55,7 @@ namespace Chord
     if (shift > 0)
     {
       // Apply round-half-to-even
-      s32 shiftedBits = v & ((1 << shift) - 1);
+      s32 shiftedBits = s32(v) & ((1 << shift) - 1);
       s32 addOneThreshold = (1 << shift) >> 1;
       if (shiftedBits > addOneThreshold || (shiftedBits == addOneThreshold && (vShifted & 1) == 1))
         { vShifted++; }
