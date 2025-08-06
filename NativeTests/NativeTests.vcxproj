@@ -66,10 +66,11 @@
     <ClCompile Include="Core\Coerce.cpp" />
     <ClCompile Include="Core\NullTerminatedString.cpp" />
     <ClCompile Include="Main.cpp" />
-    <ClCompile Include="String\String.cpp" />
+    <ClCompile Include="Text\String.cpp" />
     <ClCompile Include="Test.cpp" />
     <ClCompile Include="Test.ixx" />
     <ClCompile Include="TestUtilities\MovableObject.ixx" />
+    <ClCompile Include="Text\Format.cpp" />
     <ClCompile Include="Utilities\Alignment.cpp" />
     <ClCompile Include="Tests.ixx" />
     <ClCompile Include="Utilities\BitOperations.cpp" />

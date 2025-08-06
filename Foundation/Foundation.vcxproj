@@ -68,6 +68,7 @@
     <ClCompile Include="Core\Utilities.ixx" />
     <ClCompile Include="Functional\Callable.ixx" />
     <ClCompile Include="Functional\Functional.ixx" />
+    <ClCompile Include="Functional\OnScopeExit.ixx" />
     <ClCompile Include="Math\CommonMath.ixx" />
     <ClCompile Include="Math\Fmod.ixx" />
     <ClCompile Include="Math\MaskedResult.ixx" />
@@ -95,12 +96,19 @@
     <ClCompile Include="Math\Simd\SimdUnderlyingType.ixx" />
     <ClCompile Include="Math\Simd\Vector.ixx" />
     <ClCompile Include="Math\TrigFunctions.ixx" />
-    <ClCompile Include="String\String.ixx" />
+    <ClCompile Include="Text\Format.ixx" />
+    <ClCompile Include="Text\FormatString.ixx" />
+    <ClCompile Include="Text\FormatStringParameterFormatter.ixx" />
+    <ClCompile Include="Text\FormatStringParameterSpec.ixx" />
+    <ClCompile Include="Text\FormatStringProcessor.ixx" />
+    <ClCompile Include="Text\String.ixx" />
+    <ClCompile Include="Text\Text.ixx" />
     <ClCompile Include="Utilities\Alignment.ixx" />
     <ClCompile Include="Utilities\BitOperations.ixx" />
     <ClCompile Include="Utilities\Copy.ixx" />
     <ClCompile Include="Utilities\Bounds.ixx" />
     <ClCompile Include="Utilities\DisallowAllocationScope.ixx" />
+    <ClCompile Include="Utilities\Guid.ixx" />
     <ClCompile Include="Utilities\Unroll.ixx" />
     <ClCompile Include="Utilities\Utilities.ixx" />
   </ItemGroup>

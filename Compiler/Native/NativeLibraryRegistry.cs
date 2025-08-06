@@ -425,6 +425,11 @@ internal class NativeLibraryRegistry : INativeLibraryRegistry, INativeLibraryReg
         OptimizationRules = validatedOptimizationRules,
       };
     }
+
+    foreach (var nativeLibrary in _nativeLibraries)
+    {
+      _nativeLibraryContexts.Add(nativeLibrary, nativeLibrary.Initialize());
+    }
   }
 
   private void UnloadNativeLibraries()

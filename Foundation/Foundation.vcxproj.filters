@@ -54,7 +54,7 @@
     <ClCompile Include="Utilities\Bounds.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="String\String.ixx">
+    <ClCompile Include="Text\String.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Core\NullTerminatedString.ixx">
@@ -175,6 +175,30 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Functional\Functional.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Utilities\Guid.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Functional\OnScopeExit.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Text\Format.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Text\FormatStringProcessor.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Text\FormatString.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Text\FormatStringParameterFormatter.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Text\FormatStringParameterSpec.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Text\Text.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

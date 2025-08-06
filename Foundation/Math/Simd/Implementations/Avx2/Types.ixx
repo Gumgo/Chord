@@ -10,10 +10,9 @@ import :Containers.FixedArray;
 import :Core;
 import :Math.Simd.SimdUnderlyingType;
 
-namespace Chord
-{
-  #if SIMD_AVX2
-
+#if SIMD_AVX2
+  namespace Chord
+  {
     // Note: all of the emulation conversion functions should be consteval, not constexpr, but MSVC doesn't seem to allow inline constexpr functions to be called from
     // an 'if consteval' branch within a constexpr function.
 
@@ -244,6 +243,5 @@ namespace Chord
       inline constexpr __m256u64 SimdUnderlyingTypeFromEmulated(const FixedArray<u64, 4>& v)
         { return NativeFromArray<__m256u64>(v); }
   }
-
-  #endif
 }
+#endif

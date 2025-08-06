@@ -12,11 +12,11 @@ import :Math.Simd.Implementations.Avx2.Types;
 import :Math.Simd.Implementations.Avx2.Utilities;
 import :Math.Simd.SimdOperation;
 
-namespace Chord
-{
-  export
+#if SIMD_AVX2
+  namespace Chord
   {
-    #if SIMD_AVX2
+    export
+    {
       template<>
       struct SimdOperationImplementation<u32, 8, SimdOperation::SetZero> : public SupportedSimdOperationImplementation
       {
@@ -521,6 +521,6 @@ namespace Chord
         static s32 Run(const __m256u32& v)
           { return _mm256_movemask_ps(_mm256_castsi256_ps(v)); }
       };
-    #endif
+    }
   }
-}
+#endif

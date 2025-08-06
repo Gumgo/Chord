@@ -2,7 +2,7 @@
 
 #include "Platform.Macros.h"
 
-#define CHORD_ASSERTS_ENABLED (DEBUG) // !!! add a DEVELOPMENT config too, with asserts enabled but optimizations
+#define CHORD_ASSERTS_ENABLED (DEBUG)
 
 #ifdef COMPILER_MSVC
   #define DEBUG_BREAK() __debugbreak()
@@ -54,8 +54,16 @@
   #define ASSERT(...) \
     do \
     { \
-      while (false) \
-        { std::ignore = std::make_tuple(__VA_ARGS__); } \
+      if consteval \
+      { \
+        if (!(condition)) \
+          { ConstexprAssertFailed(); } \
+      } \
+      else \
+      { \
+        while (false) \
+          { std::ignore = std::make_tuple(__VA_ARGS__); } \
+      } \
     } \
     while (false)
 
@@ -63,9 +71,17 @@
   #define VERIFY(condition, ...) \
     do \
     { \
-      while (false) \
-        { std::ignore = std::make_tuple(condition, __VA_ARGS__); } \
-      condition; \
+      if consteval \
+      { \
+        if (!(condition)) \
+          { ConstexprAssertFailed(); } \
+      } \
+      else \
+      { \
+        while (false) \
+          { std::ignore = std::make_tuple(condition, __VA_ARGS__); } \
+        condition; \
+      } \
     } \
     while (false)
 #endif

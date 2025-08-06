@@ -4,5 +4,5 @@ export import :Containers;
 export import :Core;
 export import :Functional;
 export import :Math;
-export import :String.String;
+export import :Text;
 export import :Utilities;

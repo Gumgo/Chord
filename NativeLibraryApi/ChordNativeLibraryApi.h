@@ -4,32 +4,37 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 // Note: library and module names (and other char32_t* types without an accompanying size) should be null-terminated UTF32-encoded strings
 
 typedef enum
 {
-  k_moduleParameterDirectionIn,
-  k_moduleParameterDirectionOut,
+  ModuleParameterDirectionIn,
+  ModuleParameterDirectionOut,
 } ModuleParameterDirection;
 
 static_assert(sizeof(ModuleParameterDirection) == sizeof(int32_t));
 
 typedef enum
 {
-  k_primitiveTypeFloat,
-  k_primitiveTypeDouble,
-  k_primitiveTypeInt,
-  k_primitiveTypeBool,
-  k_primitiveTypeString,
+  PrimitiveTypeFloat,
+  PrimitiveTypeDouble,
+  PrimitiveTypeInt,
+  PrimitiveTypeBool,
+  PrimitiveTypeString,
 } PrimitiveType;
 
 static_assert(sizeof(PrimitiveType) == sizeof(int32_t));
 
 typedef enum
 {
-  k_runtimeMutabilityConstant,
-  k_runtimeMutabilityDependentConstant,
-  k_runtimeMutabilityVariable,
+  RuntimeMutabilityConstant,
+  RuntimeMutabilityDependentConstant,
+  RuntimeMutabilityVariable,
 } RuntimeMutability;
 
 static_assert(sizeof(RuntimeMutability) == sizeof(int32_t));
@@ -203,28 +208,28 @@ typedef struct
 {
   union
   {
-    const float m_floatConstantIn;
+    float m_floatConstantIn;
     float m_floatConstantOut;
     InputFloatConstantArray m_floatConstantArrayIn;
     InputFloatBuffer m_floatBufferIn;
     OutputFloatBuffer m_floatBufferOut;
     InputFloatBufferArray m_floatBufferArrayIn;
 
-    const double m_doubleConstantIn;
+    double m_doubleConstantIn;
     double m_doubleConstantOut;
     InputDoubleConstantArray m_doubleConstantArrayIn;
     InputDoubleBuffer m_doubleBufferIn;
     OutputDoubleBuffer m_doubleBufferOut;
     InputDoubleBufferArray m_doubleBufferArrayIn;
 
-    const int m_intConstantIn;
+    int m_intConstantIn;
     int m_intConstantOut;
     InputDoubleConstantArray m_intConstantArrayIn;
     InputDoubleBuffer m_intBufferIn;
     OutputDoubleBuffer m_intBufferOut;
     InputDoubleBufferArray m_intBufferArrayIn;
 
-    const bool m_boolConstantIn;
+    bool m_boolConstantIn;
     bool m_boolConstantOut;
     InputBoolConstantArray m_boolConstantArrayIn;
     InputBoolBuffer m_boolBufferIn;
@@ -270,7 +275,7 @@ typedef struct
 } NativeModuleContext;
 
 // Called before a native module is going to be inserted into the graph. Any necessary argument validation should occur here and latency should be output.
-// pOutArgumentLatenciesOut is an array whose length is equal to the number of output arguments. Each output latency should be specified in terms of that
+// outArgumentLatenciesOut is an array whose length is equal to the number of output arguments. Each output latency should be specified in terms of that
 // argument's upsample factor.
 typedef bool (*NativeModulePrepare)(const NativeModuleContext* context, const NativeModuleArguments* arguments, int32_t* outArgumentLatenciesOut);
 
@@ -318,25 +323,25 @@ typedef struct
 typedef enum
 {
   // Matches against a specific native module call
-  k_optimizationRuleComponentNativeModuleCall,
+  OptimizationRuleComponentNativeModuleCall,
 
   // Matches against a constant value or provides a constant value for output
-  k_optimizationRuleComponentConstant,
+  OptimizationRuleComponentConstant,
 
   // Matches against an array of values or provides an array of values for output
-  k_optimizationRuleComponentArray,
+  OptimizationRuleComponentArray,
 
   // Matches against a native module input, possibly with constraints
-  k_optimizationRuleComponentInput,
+  OptimizationRuleComponentInput,
 
   // Matches against a native module output (no additional data is needed)
-  k_optimizationRuleComponentOutput,
+  OptimizationRuleComponentOutput,
 
   // References a previously-matched native module input by its index in the component list; can only be used in output patterns
-  k_optimizationRuleComponentInputReference,
+  OptimizationRuleComponentInputReference,
 
   // Marks the end of the component list
-  k_optimizationRuleComponentEndOfList,
+  OptimizationRuleComponentEndOfList,
 } OptimizationRuleComponentType;
 
 typedef struct
@@ -438,7 +443,7 @@ typedef struct
   NativeLibraryInitialize m_initialize;
   NativeLibraryDeinitialize m_deinitialize;
   NativeLibraryInitializeVoice m_initializeVoice;
-  NativeLibraryDeinitializeVoice m_initializeVoice;
+  NativeLibraryDeinitializeVoice m_deinitializeVoice;
 
   const NativeModule* const* m_nativeModules;
   size_t m_nativeModuleCount;
@@ -451,4 +456,8 @@ typedef struct
 typedef void (*ListNativeLibrariesCallback)(void* context, const NativeLibrary* nativeLibrary);
 
 // Called to list all native libraries. The provided callback should be called once for each native library.
-typedef void (*ListNativeLibraries)(void* context, ListNativeLibrariesCallback pCallback);
+typedef void (*ListNativeLibraries)(void* context, ListNativeLibrariesCallback callback);
+
+#ifdef __cplusplus
+}
+#endif

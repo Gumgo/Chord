@@ -523,6 +523,23 @@ namespace Chord
         RunSimdOperation<TElement, ElementCount, SimdOperation::Select>(condition.m_data, trueValue.m_data, falseValue.m_data));
     }
 
+    // !!! add the individual mask functions Josh suggested
+    // // Return true if all bits are set
+    // bool AllOf(Nat a)
+    //   { return _mm256_testc_si256(a.v, SetOnes<Nat>().v) == 0; }
+    //
+    // // Returns true if any bits are set
+    // bool AnyOf(Nat a)
+    //   { return _mm256_testz_si256(a.v, a.v) == 0; }
+    //
+    // // Return true if no bits are set
+    // bool NoneOf(Nat a)
+    //   { return _mm256_testz_si256(a.v, a.v) != 0; }
+    //
+    // // SomeOf is equivalent to AnyOf(a) && !AllOf(a)
+    // bool SomeOf(Nat a)
+    //   { return _mm256_testnzc_si256(a.v, SetOnes<Nat>().v) == 0; }
+
     template<basic_numeric TElement, usz ElementCount>
       requires (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::GetMask>)
     constexpr s32 GetMask(const Vector<TElement, ElementCount>& v)

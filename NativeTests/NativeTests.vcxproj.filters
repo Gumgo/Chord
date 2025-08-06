@@ -59,7 +59,7 @@
     <ClCompile Include="Core\NullTerminatedString.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="String\String.cpp">
+    <ClCompile Include="Text\String.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Containers\Span.cpp">
@@ -93,6 +93,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Functional\Callable.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Text\Format.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

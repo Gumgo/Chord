@@ -103,7 +103,7 @@ namespace Chord
         return Coerce<usz>(index);
       }
 
-      constexpr usz EvaluateSubspanStart(this auto const& self, basic_integral auto index)
+      constexpr usz EvaluateSubspanStart(this const auto& self, basic_integral auto index)
       {
         if constexpr (std::is_signed_v<decltype(index)>)
           { ASSERT(index >= 0); }
@@ -111,7 +111,7 @@ namespace Chord
         return Coerce<usz>(index);
       }
 
-      constexpr usz EvaluateSubspanCount(this auto const& self, usz start, subspan_count auto count)
+      constexpr usz EvaluateSubspanCount(this const auto& self, usz start, subspan_count auto count)
       {
         if constexpr (std::same_as<decltype(count), ToEnd_t>)
           { return self.Count() - start; }
@@ -159,7 +159,21 @@ namespace Chord
         requires (std::is_copy_assignable_v<TElement>)
         { std::ranges::fill(self, v); }
 
-      // !!! Add utilities: Contains, ElementsMatch, etc.
+      constexpr std::optional<usz> FirstIndexOf(this const auto& self, TElement& element)
+      {
+        for (usz i = 0; i < self.Count(); i++)
+        {
+          if (self.Elements()[i] == element)
+            { return i; }
+        }
+
+        return std::nullopt;
+      }
+
+      constexpr bool Contains(this const auto& self, TElement& element)
+        { return self.FirstIndexOf(element).has_value(); }
+
+      // !!! Add utilities: ElementsMatch, etc.
     };
 
     template<typename TElement>

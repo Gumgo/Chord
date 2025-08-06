@@ -12,11 +12,11 @@ import :Containers.FixedArray;
 import :Core;
 import :Utilities.Bounds;
 
-namespace Chord
-{
-  export
+#if SIMD_AVX2
+  namespace Chord
   {
-    #if SIMD_AVX2
+    export
+    {
       inline constexpr s32 MmShuffle1Bit(s32 i3, s32 i2, s32 i1, s32 i0)
         { return (i3 << 3) | (i2 << 2) | (i1 << 1) | i0; }
 
@@ -206,16 +206,16 @@ namespace Chord
 
       inline __m128i MmAbsEpi64(const __m128i& v)
       {
-        // No 64-bit shift so extend the sign bit to 32 bits and then copy it
-        __m128i negativeMask = _mm_shuffle_epi32(_mm_srai_epi32(v, 31), _MM_SHUFFLE(3, 3, 1, 1));
-        return _mm_blendv_epi8(v, _mm_sub_epi64(_mm_setzero_si128(), v), negativeMask);
+        // The MSB of v serves as our mask bit
+        __m128d vF64 = _mm_castsi128_pd(v);
+        return _mm_castpd_si128(_mm_blendv_pd(vF64, _mm_castsi128_pd(_mm_sub_epi64(_mm_setzero_si128(), v)), vF64));
       }
 
       inline __m256i Mm256AbsEpi64(const __m256i& v)
       {
-        // No 64-bit shift so extend the sign bit to 32 bits and then copy it
-        __m256i negativeMask = _mm256_shuffle_epi32(_mm256_srai_epi32(v, 31), _MM_SHUFFLE(3, 3, 1, 1));
-        return _mm256_blendv_epi8(v, _mm256_sub_epi64(_mm256_setzero_si256(), v), negativeMask);
+        // The MSB of v serves as our mask bit
+        __m256d vF64 = _mm256_castsi256_pd(v);
+        return _mm256_castpd_si256(_mm256_blendv_pd(vF64, _mm256_castsi256_pd(_mm256_sub_epi64(_mm256_setzero_si256(), v)), vF64));
       }
 
       inline __m128i MmMinEpi64(const __m128i& a, const __m128i& b)
@@ -504,6 +504,6 @@ namespace Chord
         __m256 valueCast = _mm256_castsi256_ps(v);
         return _mm_castps_si128(_mm_shuffle_ps(_mm256_castps256_ps128(valueCast), _mm256_extractf128_ps(valueCast, 1), _MM_SHUFFLE(2, 0, 2, 0)));
       }
-    #endif
+    }
   }
-}
+#endif

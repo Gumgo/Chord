@@ -147,8 +147,11 @@ namespace Chord
         return *this;
       }
 
-      constexpr auto* Elements(this auto&& self)
-        { return self.m_elements; }
+      constexpr TElement* Elements()
+        { return m_elements; }
+
+      constexpr const TElement* Elements() const
+        { return m_elements; }
 
       constexpr usz Capacity() const
         { return m_capacity; }

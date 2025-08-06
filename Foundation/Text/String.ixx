@@ -1,4 +1,4 @@
-export module Chord.Foundation:String.String;
+export module Chord.Foundation:Text.String;
 
 import std;
 

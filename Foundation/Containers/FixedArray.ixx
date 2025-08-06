@@ -49,8 +49,11 @@ namespace Chord
         return *this;
       }
 
-      constexpr auto* Elements(this auto&& self)
-        { return self.m_storage.data(); }
+      constexpr TElement* Elements()
+        { return m_storage.data(); }
+
+      constexpr const TElement* Elements() const
+        { return m_storage.data(); }
 
       static constexpr usz Count()
         { return Length; }
@@ -145,8 +148,11 @@ namespace Chord
         return *this;
       }
 
-      constexpr auto* Elements(this auto&& self)
-        { return self.m_elements; }
+      constexpr TElement* Elements()
+        { return m_elements; }
+
+      constexpr const TElement* Elements() const
+        { return m_elements; }
 
       constexpr usz Count() const
         { return m_count; }
