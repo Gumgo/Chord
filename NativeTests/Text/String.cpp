@@ -103,6 +103,17 @@ namespace Chord
       EXPECT(str2 == "test");
     }
 
+    static void CreateForWrite()
+    {
+      auto [str, buffer] = TypedString::CreateForWrite(4);
+      EXPECT(buffer.Count() == 4);
+      buffer[0] = TChar('t');
+      buffer[1] = TChar('e');
+      buffer[2] = TChar('s');
+      buffer[3] = TChar('t');
+      EXPECT(str == "test");
+    }
+
     static void AsSpan()
     {
       TypedString str(Str("test").Pointer());
@@ -651,6 +662,12 @@ namespace Chord
     {
       SharedStringTests<char>::MoveAssign();
       SharedStringTests<char32_t>::MoveAssign();
+    }
+
+    TEST_METHOD(CreateForWrite)
+    {
+      SharedStringTests<char>::CreateForWrite();
+      SharedStringTests<char32_t>::CreateForWrite();
     }
 
     TEST_METHOD(AsSpan)

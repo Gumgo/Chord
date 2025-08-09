@@ -23,6 +23,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NativeTests", "NativeTests\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MathPrecisionTests", "MathPrecisionTests\MathPrecisionTests.vcxproj", "{79190C67-2458-4CA2-959D-EF4BDEA3514F}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Engine", "Engine\Engine.vcxproj", "{C108B7DF-3303-4EC9-B55F-9DA1CBC839C6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -60,6 +62,12 @@ Global
 		{79190C67-2458-4CA2-959D-EF4BDEA3514F}.Dev|Any CPU.Build.0 = Dev|x64
 		{79190C67-2458-4CA2-959D-EF4BDEA3514F}.Release|Any CPU.ActiveCfg = Release|x64
 		{79190C67-2458-4CA2-959D-EF4BDEA3514F}.Release|Any CPU.Build.0 = Release|x64
+		{C108B7DF-3303-4EC9-B55F-9DA1CBC839C6}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{C108B7DF-3303-4EC9-B55F-9DA1CBC839C6}.Debug|Any CPU.Build.0 = Debug|x64
+		{C108B7DF-3303-4EC9-B55F-9DA1CBC839C6}.Dev|Any CPU.ActiveCfg = Release|x64
+		{C108B7DF-3303-4EC9-B55F-9DA1CBC839C6}.Dev|Any CPU.Build.0 = Release|x64
+		{C108B7DF-3303-4EC9-B55F-9DA1CBC839C6}.Release|Any CPU.ActiveCfg = Release|x64
+		{C108B7DF-3303-4EC9-B55F-9DA1CBC839C6}.Release|Any CPU.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

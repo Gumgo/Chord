@@ -7,8 +7,6 @@ import :Utilities.Bounds;
 
 namespace Chord
 {
-  // !!! replace the ASSERTs with release failures
-
   template<fixed_char TChar>
   constexpr std::optional<std::tuple<usz, u32>> ParseParameterSpecInteger(const TChar* formatString, usz index)
   {
@@ -61,7 +59,7 @@ namespace Chord
     {
       // If the first character contained valid alignment data, it's possible that it actually represented a fill character. Check for this case by testing if
       // another alignment character follows.
-      auto nextAlignment = GetFormatStringParameterAlignment(formatString[index]);
+      auto nextAlignment = GetFormatStringParameterAlignment(formatString[index + 1]);
       return nextAlignment.has_value()
         ? std::make_tuple(index + 2, nextAlignment, formatString[index])
         : std::make_tuple(index + 1, alignment, TChar(' '));
@@ -87,7 +85,7 @@ namespace Chord
       return std::make_tuple(index + 1, FormatStringParameterSign::OnlyWhenNegative);
 
     case '+':
-      return std::make_tuple(index + 1, FormatStringParameterSign::AddSpace);
+      return std::make_tuple(index + 1, FormatStringParameterSign::Always);
 
     case ' ':
       return std::make_tuple(index + 1, FormatStringParameterSign::AddSpace);
@@ -190,7 +188,7 @@ namespace Chord
       TProcessParameter&& processParameter,
       std::type_identity<TArgs>...) // This is a parameter so that the template parameters don't need to be specified
     {
-      FixedArray<bool, sizeof...(TArgs)> argumentsUsed;
+      FixedArray<bool, Max(sizeof...(TArgs), 1_usz)> argumentsUsed;
       argumentsUsed.ZeroElements();
       usz usedArgumentCount = 0;
 

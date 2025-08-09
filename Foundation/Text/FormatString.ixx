@@ -34,7 +34,7 @@ namespace Chord
         m_formatString = formatString;
       }
 
-      const char* m_formatString = nullptr;
+      const TChar* m_formatString = nullptr;
     };
   }
 }

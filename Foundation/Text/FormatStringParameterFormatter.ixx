@@ -16,10 +16,21 @@ namespace Chord
   }
 
   template<fixed_char TChar>
-  void AlignBuffer(Span<TChar> buffer, usz count, const FormatStringParameterSpec<TChar>& parameterSpec, FormatStringParameterAlignment defaultAlignment)
+  usz AlignBuffer(Span<TChar> buffer, usz count, const FormatStringParameterSpec<TChar>& parameterSpec, FormatStringParameterAlignment defaultAlignment)
   {
     FormatStringParameterAlignment alignment = parameterSpec.m_alignment.has_value() ? parameterSpec.m_alignment.value() : defaultAlignment;
-    if (alignment == FormatStringParameterAlignment::Right && count < parameterSpec.m_minimumWidth)
+    if (count >= parameterSpec.m_minimumWidth)
+      { return count; }
+
+    if (alignment == FormatStringParameterAlignment::Left)
+    {
+      usz endIndex = Min(parameterSpec.m_minimumWidth, buffer.Count());
+      for (usz i = count; i < endIndex; i++)
+          { buffer[i] = parameterSpec.m_fillCharacter; }
+
+      return parameterSpec.m_minimumWidth;
+    }
+    else if (alignment == FormatStringParameterAlignment::Right)
     {
       // Shift content to the right
       usz shift = parameterSpec.m_minimumWidth - count;
@@ -36,14 +47,27 @@ namespace Chord
         if (i < buffer.Count())
           { buffer[i] = parameterSpec.m_fillCharacter; }
       }
+
+      return parameterSpec.m_minimumWidth;
+    }
+    else
+    {
+      ASSERT(alignment == FormatStringParameterAlignment::ZeroPad);
+      return count;
     }
   }
 
   template<fixed_char TChar, std::integral T>
   constexpr void ValidateIntegerParameterSpec(const FormatStringParameterSpec<TChar>& parameterSpec, FormatStringParameterType type)
   {
-    if (std::unsigned_integral<T> || type != FormatStringParameterType::Decimal)
+    if constexpr (std::unsigned_integral<T>)
       { ASSERT(!parameterSpec.m_sign.has_value()); }
+    else
+    {
+      if (type != FormatStringParameterType::Decimal)
+        { ASSERT(!parameterSpec.m_sign.has_value()); }
+    }
+
     ASSERT(!parameterSpec.m_precision.has_value());
   }
 
@@ -109,25 +133,34 @@ namespace Chord
           }
         }
 
+        index += digitCount;
+
         // Add digits from the right
         digitCount = 0;
         valueRemaining = value;
         do
         {
           digitCount++;
-          T digit = valueRemaining % radix.value;
+          T digit = T(valueRemaining % radix.value);
           if constexpr (std::signed_integral<T>)
-            { digit = Abs(digit); }
+            { digit = (digit < 0) ? -digit : digit; } // Don't use Abs() because this may be a char or char32_t, which is not a basic_numeric
+
           valueRemaining /= radix.value;
-          SetIfInBounds(buffer, index - digitCount, upper ? DigitCharactersUpper[digit] : DigitCharactersLower[digit]);
+          SetIfInBounds(buffer, index - digitCount, TChar(upper ? DigitCharactersUpper[digit] : DigitCharactersLower[digit]));
         }
         while (valueRemaining != 0);
       };
 
     switch (type)
     {
+    case FormatStringParameterType::String:
+    case FormatStringParameterType::Pointer:
+    case FormatStringParameterType::Character:
+      ASSERT(false);
+      break;
+
     case FormatStringParameterType::Binary:
-      WriteDigits(std::integral_constant<T, T(10)>(), false);
+      WriteDigits(std::integral_constant<T, T(2)>(), false);
       break;
 
     case FormatStringParameterType::Octal:
@@ -139,12 +172,26 @@ namespace Chord
       WriteDigits(std::integral_constant<T, T(16)>(), type == FormatStringParameterType::HexUpper);
       break;
 
+    case FormatStringParameterType::Decimal:
+      WriteDigits(std::integral_constant<T, T(10)>(), false);
+      break;
+
+    case FormatStringParameterType::ExponentLower:
+    case FormatStringParameterType::ExponentUpper:
+    case FormatStringParameterType::FloatHexLower:
+    case FormatStringParameterType::FloatHexUpper:
+    case FormatStringParameterType::FixedLower:
+    case FormatStringParameterType::FixedUpper:
+    case FormatStringParameterType::GeneralLower:
+    case FormatStringParameterType::GeneralUpper:
+      ASSERT(false);
+      break;
+
     default:
       ASSERT(false);
     }
 
-    AlignBuffer(buffer, index, parameterSpec, FormatStringParameterAlignment::Right);
-    return index;
+    return AlignBuffer(buffer, index, parameterSpec, FormatStringParameterAlignment::Right);
   }
 
   template<fixed_char TChar, std::integral T>
@@ -152,8 +199,7 @@ namespace Chord
   {
     TChar convertedValue = CanCoerce<TChar>(value) ? TChar(value) : DefaultReplacementCharacter<TChar>;
     SetIfInBounds(buffer, 0, convertedValue);
-    AlignBuffer(buffer, 1, parameterSpec, FormatStringParameterAlignment::Left);
-    return 1;
+    return AlignBuffer(buffer, 1, parameterSpec, FormatStringParameterAlignment::Left);
   }
 
   template<fixed_char TChar>
@@ -172,7 +218,7 @@ namespace Chord
   }
 
   template<fixed_char TChar>
-  void FormatPointerParameter(Span<TChar> buffer, const FormatStringParameterSpec<TChar>& parameterSpec, const void* value)
+  usz FormatPointerParameter(Span<TChar> buffer, const FormatStringParameterSpec<TChar>& parameterSpec, const void* value)
   {
     FormatStringParameterSpec<TChar> pointerParameterSpec =
     {
@@ -187,8 +233,7 @@ namespace Chord
 
     usz count = FormatIntegerParameter(buffer, pointerParameterSpec, FormatStringParameterType::HexLower, std::uintptr_t(value));
 
-    AlignBuffer(buffer, count, parameterSpec, FormatStringParameterAlignment::Left);
-    return count;
+    return AlignBuffer(buffer, count, parameterSpec, FormatStringParameterAlignment::Left);
   }
 
   template<fixed_char TChar>
@@ -199,7 +244,7 @@ namespace Chord
   }
 
   template<fixed_char TChar, fixed_char TStringChar>
-  void FormatStringParameter(Span<TChar> buffer, const FormatStringParameterSpec<TChar>& parameterSpec, Span<const TStringChar> value)
+  usz FormatStringParameter(Span<TChar> buffer, const FormatStringParameterSpec<TChar>& parameterSpec, Span<const TStringChar> value)
   {
     usz copyCount = Min(buffer.Count(), value.Count());
     if constexpr (std::same_as<TChar, TStringChar>)
@@ -213,8 +258,7 @@ namespace Chord
       }
     }
 
-    AlignBuffer(buffer, value.Count(), parameterSpec, FormatStringParameterAlignment::Left);
-    return value.Count();
+    return AlignBuffer(buffer, value.Count(), parameterSpec, FormatStringParameterAlignment::Left);
   }
 
   export
@@ -353,14 +397,14 @@ namespace Chord
 
         if (upper)
         {
-          for (usz i = 1; i < count; i++)
+          for (usz i = 1; i < count + 1; i++)
             { internalBuffer[i] = char(std::toupper(internalBuffer[i])); }
         }
 
         // Prepend a sign to the beginning of the buffer if necessary
         auto copySource = Span<char>(internalBuffer, 1, count);
         FormatStringParameterSign sign = parameterSpec.m_sign.has_value() ? parameterSpec.m_sign.value() : FormatStringParameterSign::OnlyWhenNegative;
-        if (internalBuffer[0] != '-' && sign != FormatStringParameterSign::OnlyWhenNegative)
+        if (internalBuffer[1] != '-' && sign != FormatStringParameterSign::OnlyWhenNegative)
         {
           internalBuffer[0] = (sign == FormatStringParameterSign::Always) ? '+' : ' ';
           count++;
@@ -376,46 +420,64 @@ namespace Chord
             { buffer[i] = CanCoerce<TChar>(copySource[i]) ? TChar(copySource[i]) : DefaultReplacementCharacter<TChar>; }
         }
 
-        AlignBuffer(buffer, count, parameterSpec, FormatStringParameterAlignment::Right);
-        return count;
+        return AlignBuffer(buffer, count, parameterSpec, FormatStringParameterAlignment::Right);
       }
     };
 
-    template<>
-    struct FormatStringParameterFormatter<const void*>
+    template<typename T>
+    struct FormatStringParameterFormatter<T*>
     {
       template<fixed_char TChar>
       static constexpr void ValidateParameterSpec(const FormatStringParameterSpec<TChar>& parameterSpec)
       {
-        FormatStringParameterType type = parameterSpec.m_type.has_value() ? parameterSpec.m_type.value() : FormatStringParameterType::Pointer;
-        ASSERT(type == FormatStringParameterType::Pointer);
-
-        ValidatePointerParameterSpec(parameterSpec);
+        FormatStringParameterType type;
+        if constexpr (fixed_char<T>)
+        {
+          type = parameterSpec.m_type.has_value() ? parameterSpec.m_type.value() : FormatStringParameterType::String;
+          if (type == FormatStringParameterType::String)
+            { ValidateStringParameterSpec(parameterSpec); }
+          else if (type == FormatStringParameterType::Pointer)
+            { ValidatePointerParameterSpec(parameterSpec); }
+          else
+            { ASSERT(false); }
+        }
+        else
+        {
+          type = parameterSpec.m_type.has_value() ? parameterSpec.m_type.value() : FormatStringParameterType::Pointer;
+          ASSERT(type == FormatStringParameterType::Pointer);
+          ValidatePointerParameterSpec(parameterSpec);
+        }
       }
 
       template<fixed_char TChar>
-      static usz Format(Span<TChar> buffer, const FormatStringParameterSpec<TChar>& parameterSpec, const void* value)
+      static usz Format(Span<TChar> buffer, const FormatStringParameterSpec<TChar>& parameterSpec, const T* value)
       {
-        FormatStringParameterSpec<TChar> pointerParameterSpec =
+        FormatStringParameterType type;
+        if constexpr (fixed_char<T>)
         {
-          .m_argumentIndex = parameterSpec.m_argumentIndex,
-          .m_alignment = FormatStringParameterAlignment::ZeroPad,
-          .m_fillCharacter = parameterSpec.m_fillCharacter,
-          .m_sign = FormatStringParameterSign::OnlyWhenNegative,
-          .m_minimumWidth = sizeof(const void*) / 4,
-          .m_precision = std::nullopt,
-          .m_type = FormatStringParameterType::Pointer,
-        };
+          type = parameterSpec.m_type.has_value() ? parameterSpec.m_type.value() : FormatStringParameterType::String;
 
-        usz count = FormatIntegerParameter(buffer, pointerParameterSpec, FormatStringParameterType::HexLower, std::uintptr_t(value));
-
-        AlignBuffer(buffer, count, parameterSpec, FormatStringParameterAlignment::Left);
-        return count;
+          if (type == FormatStringParameterType::String)
+            { return FormatStringParameter(buffer, parameterSpec, Span<const T>(value, NullTerminatedStringLength(value))); }
+          else if (type == FormatStringParameterType::Pointer)
+            { return FormatPointerParameter(buffer, parameterSpec, value); }
+          else
+          {
+            ASSERT(false);
+            return 0;
+          }
+        }
+        else
+        {
+          type = parameterSpec.m_type.has_value() ? parameterSpec.m_type.value() : FormatStringParameterType::Pointer;
+          ASSERT(type == FormatStringParameterType::Pointer);
+          return FormatPointerParameter(buffer, parameterSpec, value);
+        }
       }
     };
 
-    template<fixed_char T>
-    struct FormatStringParameterFormatter<T*>
+    template<fixed_char T, usz Length>
+    struct FormatStringParameterFormatter<T[Length]>
     {
       template<fixed_char TChar>
       static constexpr void ValidateParameterSpec(const FormatStringParameterSpec<TChar>& parameterSpec)
@@ -431,12 +493,12 @@ namespace Chord
       }
 
       template<fixed_char TChar>
-      static usz Format(Span<TChar> buffer, const FormatStringParameterSpec<TChar>& parameterSpec, T* value)
+      static usz Format(Span<TChar> buffer, const FormatStringParameterSpec<TChar>& parameterSpec, const T* value)
       {
         FormatStringParameterType type = parameterSpec.m_type.has_value() ? parameterSpec.m_type.value() : FormatStringParameterType::String;
 
         if (type == FormatStringParameterType::String)
-          { return FormatStringParameter(buffer, parameterSpec, Span<T>(value, NullTerminatedStringLength(value))); }
+          { return FormatStringParameter(buffer, parameterSpec, Span<const T>(value, NullTerminatedStringLength(value))); }
         else if (type == FormatStringParameterType::Pointer)
           { return FormatPointerParameter(buffer, parameterSpec, value); }
         else

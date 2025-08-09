@@ -96,6 +96,10 @@ namespace Chord
 
       constexpr ~String() noexcept;
 
+      // Allocate a string and also returns a writable Span containing its internal buffer. This is to be used so that the string's contents can be initialized
+      // directly rather than copied.
+      static constexpr std::tuple<String<TChar>, Span<TChar>> CreateForWrite(usz length);
+
       constexpr String& operator=(const String& other);
       constexpr String& operator=(String&& other) noexcept;
 
@@ -250,6 +254,19 @@ namespace Chord
     template<fixed_char TChar>
     constexpr String<TChar>::~String() noexcept
       { Clear(); }
+
+    template<fixed_char TChar>
+    constexpr std::tuple<String<TChar>, Span<TChar>> String<TChar>::CreateForWrite(usz length)
+    {
+      String<TChar> result;
+      if (length == 0)
+        { return std::make_tuple(result, Span<TChar>()); }
+
+      auto [modifyMode, stringData] = result.PrepareForModification(length);
+      ASSERT(modifyMode == ModifyMode::Copy);
+      result.SetStringData(stringData);
+      return std::make_tuple(result, Span<TChar>(stringData->m_pointer, stringData->m_length));
+    }
 
     template<fixed_char TChar>
     constexpr String<TChar>& String<TChar>::operator=(const String& other)
