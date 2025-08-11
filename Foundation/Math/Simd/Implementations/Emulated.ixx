@@ -745,10 +745,20 @@ namespace Chord
     {
       static constexpr FixedArray<TElement, ElementCount> Run(const FixedArray<TElement, ElementCount>& v)
       {
-        TElement sum = TElement(0);
-        Unroll<0, ElementCount>([&](auto i) { sum += v[i.value]; });
-        FixedArray<TElement, ElementCount> result;
-        result.Fill(sum);
+        // This is written in a non-intuitive order to match SIMD ordering to avoid floating point discrepancies
+        FixedArray<TElement, ElementCount> result = v;
+        usz skip = 2;
+        while (skip <= ElementCount)
+        {
+          for (usz i = 0; i < ElementCount; i += skip)
+            { result[i] += result[i + skip / 2]; }
+
+          skip *= 2;
+        }
+
+        for (usz i = 1; i < ElementCount; i++)
+          { result[i] = result[0]; }
+
         return result;
       }
     };

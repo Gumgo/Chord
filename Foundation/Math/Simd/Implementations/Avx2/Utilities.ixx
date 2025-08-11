@@ -158,50 +158,58 @@ import :Utilities.Bounds;
 
       inline __m128i MmCmpltEpu32(const __m128i &a, const __m128i &b)
       {
-        // Subtract and shift the MSB right to become a mask
-        return _mm_srai_epi32(_mm_sub_epi32(a, b), 31);
+        // Bias so that 0 becomes the smallest signed 32-bit integer value
+        __m128i bias = _mm_set1_epi32(0x80000000);
+        return _mm_cmplt_epi32(_mm_add_epi32(a, bias), _mm_add_epi32(b, bias));
       }
 
       inline __m128i MmCmpgtEpu32(const __m128i &a, const __m128i &b)
       {
-        // Subtract and shift the MSB right to become a mask
-        return _mm_srai_epi32(_mm_sub_epi32(b, a), 31);
+        // Bias so that 0 becomes the smallest signed 32-bit integer value
+        __m128i bias = _mm_set1_epi32(0x80000000);
+        return _mm_cmpgt_epi32(_mm_add_epi32(a, bias), _mm_add_epi32(b, bias));
       }
 
       inline __m256i Mm256CmpltEpu32(const __m256i &a, const __m256i &b)
       {
-        // Subtract and shift the MSB right to become a mask
-        return _mm256_srai_epi32(_mm256_sub_epi32(a, b), 31);
+        // Bias so that 0 becomes the smallest signed 32-bit integer value
+        __m256i bias = _mm256_set1_epi32(0x80000000);
+        return _mm256_cmpgt_epi32(_mm256_add_epi32(b, bias), _mm256_add_epi32(a, bias));
       }
 
       inline __m256i Mm256CmpgtEpu32(const __m256i &a, const __m256i &b)
       {
-        // Subtract and shift the MSB right to become a mask
-        return _mm256_srai_epi32(_mm256_sub_epi32(b, a), 31);
+        // Bias so that 0 becomes the smallest signed 32-bit integer value
+        __m256i bias = _mm256_set1_epi32(0x80000000);
+        return _mm256_cmpgt_epi32(_mm256_add_epi32(a, bias), _mm256_add_epi32(b, bias));
       }
 
       inline __m128i MmCmpltEpu64(const __m128i& a, const __m128i& b)
       {
-        // Subtract and compare against 0
-        return _mm_cmpgt_epi64(_mm_sub_epi64(b, a), _mm_setzero_si128());
+        // Bias so that 0 becomes the smallest signed 64-bit integer value
+        __m128i bias = _mm_set1_epi64x(0x8000000000000000);
+        return _mm_cmpgt_epi64(_mm_add_epi64(b, bias), _mm_add_epi64(a, bias));
       }
 
       inline __m128i MmCmpgtEpu64(const __m128i& a, const __m128i& b)
       {
-        // Subtract and compare against 0
-        return _mm_cmpgt_epi64(_mm_sub_epi64(a, b), _mm_setzero_si128());
+        // Bias so that 0 becomes the smallest signed 64-bit integer value
+        __m128i bias = _mm_set1_epi64x(0x8000000000000000);
+        return _mm_cmpgt_epi64(_mm_add_epi64(a, bias), _mm_add_epi64(b, bias));
       }
 
       inline __m256i Mm256CmpltEpu64(const __m256i& a, const __m256i& b)
       {
-        // Subtract and compare against 0
-        return _mm256_cmpgt_epi64(_mm256_sub_epi64(b, a), _mm256_setzero_si256());
+        // Bias so that 0 becomes the smallest signed 64-bit integer value
+        __m256i bias = _mm256_set1_epi64x(0x8000000000000000);
+        return _mm256_cmpgt_epi64(_mm256_add_epi64(b, bias), _mm256_add_epi64(a, bias));
       }
 
       inline __m256i Mm256CmpgtEpu64(const __m256i& a, const __m256i& b)
       {
-        // Subtract and compare against 0
-        return _mm256_cmpgt_epi64(_mm256_sub_epi64(a, b), _mm256_setzero_si256());
+        // Bias so that 0 becomes the smallest signed 64-bit integer value
+        __m256i bias = _mm256_set1_epi64x(0x8000000000000000);
+        return _mm256_cmpgt_epi64(_mm256_add_epi64(a, bias), _mm256_add_epi64(b, bias));
       }
 
       inline __m128i MmAbsEpi64(const __m128i& v)
