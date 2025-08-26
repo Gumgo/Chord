@@ -22,9 +22,9 @@ namespace Chord
       NativeLibraryRegistry(const NativeLibraryRegistry&) = delete;
       NativeLibraryRegistry& operator=(const NativeLibraryRegistry&) = delete;
 
-      ~NativeLibraryRegistry();
+      ~NativeLibraryRegistry() noexcept;
 
-      std::optional<std::tuple<const NativeModule*, void*>> TryGetNativeLibraryAndContext(Guid id) const;
+      std::optional<std::tuple<const NativeLibrary*, void*>> TryGetNativeLibraryAndContext(Guid id) const;
 
     private:
       struct NativeLibraryEntry

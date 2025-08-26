@@ -10,6 +10,7 @@ extern "C"
 #endif
 
 // Note: library and module names (and other char32_t* types without an accompanying size) should be null-terminated UTF32-encoded strings
+// $TODO we may want to make a native library function which queries "am I compatible with a program compiled using X.Y.Z version?"
 
 typedef enum
 {
@@ -437,6 +438,8 @@ typedef void (*NativeLibraryDeinitializeVoice)(void* context, void* voiceContext
 
 typedef struct
 {
+  // $TODO add an API version field that comes very first
+
   uint8_t m_id[16];
   NativeLibraryVersion m_version;
   const char32_t* m_name;

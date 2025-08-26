@@ -25,13 +25,17 @@ namespace Chord
     : m_reporting(reporting)
     { LoadNativeLibraries(nativeLibraryPath); }
 
-  NativeLibraryRegistry::~NativeLibraryRegistry()
+  NativeLibraryRegistry::~NativeLibraryRegistry() noexcept
     { UnloadNativeLibraries(); }
 
-  std::optional<std::tuple<const NativeModule*, void*>> NativeLibraryRegistry::TryGetNativeLibraryAndContext(Guid id) const
+  std::optional<std::tuple<const NativeLibrary*, void*>> NativeLibraryRegistry::TryGetNativeLibraryAndContext(Guid id) const
   {
-    // !!!
-    (void)id;
+    for (const NativeLibraryEntry& entry : m_nativeLibraryEntries)
+    {
+      if (Guid::FromBytes(entry.m_nativeLibrary.m_id) == id)
+        { return std::make_tuple(&entry.m_nativeLibrary, entry.m_nativeLibraryContext); }
+    }
+
     return std::nullopt;
   }
 

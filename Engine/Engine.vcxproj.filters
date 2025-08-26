@@ -51,6 +51,54 @@
     <ClCompile Include="Reporting\ReportingExtensions.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Program\Program.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Program\ProgramVariantProperties.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Program\ProgramGraph.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Program\ProgramGraphNodes\ProgramGraphNodes.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Program\ProgramGraphNodes\ArrayProgramGraphNode.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Program\ProgramGraphNodes\ConstantProgramGraphNode.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Program\ProgramGraphNodes\GraphInputProgramGraphNode.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Program\ProgramGraphNodes\GraphOutputProgramGraphNode.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Program\ProgramGraphNodes\IInputProgramGraphNode.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Program\ProgramGraphNodes\InputProgramGraphNode.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Program\ProgramGraphNodes\IOutputProgramGraphNode.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Program\ProgramGraphNodes\IProcessorProgramGraphNode.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Program\ProgramGraphNodes\NativeModuleCallProgramGraphNode.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Program\ProgramGraphNodes\OutputProgramGraphNode.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Program\ProgramGraphNodes\IProgramGraphNode.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Program\Program.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Macros.h">
