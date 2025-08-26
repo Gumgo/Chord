@@ -17,7 +17,7 @@ namespace Chord
       OnScopeExit(const OnScopeExit&) = delete;
       OnScopeExit& operator=(const OnScopeExit&) = delete;
 
-      ~OnScopeExit()
+      ~OnScopeExit() noexcept
         { m_func(); }
 
     private:

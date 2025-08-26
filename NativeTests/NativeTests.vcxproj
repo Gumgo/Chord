@@ -57,6 +57,7 @@
     <ClCompile Include="Containers\BoundedArray.cpp" />
     <ClCompile Include="Containers\FixedArray.cpp" />
     <ClCompile Include="Containers\UnboundedArray.cpp" />
+    <ClCompile Include="Core\Enum.cpp" />
     <ClCompile Include="Functional\Callable.cpp" />
     <ClCompile Include="Math\MathFunctions.cpp" />
     <ClCompile Include="Math\Simd.cpp" />

@@ -60,6 +60,7 @@
     <ClCompile Include="Core\Coerce.ixx" />
     <ClCompile Include="Core\Concepts.ixx" />
     <ClCompile Include="Core\Core.ixx" />
+    <ClCompile Include="Core\Enum.ixx" />
     <ClCompile Include="Core\FloatTraits.ixx" />
     <ClCompile Include="Core\ConstevalSafeCast.ixx" />
     <ClCompile Include="Foundation.ixx" />
@@ -104,6 +105,7 @@
     <ClCompile Include="Text\String.ixx" />
     <ClCompile Include="Text\Text.ixx" />
     <ClCompile Include="Utilities\Alignment.ixx" />
+    <ClCompile Include="Utilities\BinaryReader.ixx" />
     <ClCompile Include="Utilities\BitOperations.ixx" />
     <ClCompile Include="Utilities\Copy.ixx" />
     <ClCompile Include="Utilities\Bounds.ixx" />

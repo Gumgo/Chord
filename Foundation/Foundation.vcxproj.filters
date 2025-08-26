@@ -201,6 +201,12 @@
     <ClCompile Include="Text\Text.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Utilities\BinaryReader.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Enum.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Assert.Macros.h">

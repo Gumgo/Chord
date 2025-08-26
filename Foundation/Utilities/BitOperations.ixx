@@ -30,5 +30,22 @@ namespace Chord
     static_assert(NextPowerOfTwo(3) == 4);
     static_assert(NextPowerOfTwo(0x7fffffff_u32) == 0x80000000_u32);
     static_assert(NextPowerOfTwo(0x80000000_u32) == 0x80000000_u32);
+
+    template<typename T>
+    concept byte_order_swappable = sizeof(T) > 1 && (std::integral<T> || std::floating_point<T>);
+
+    // !!! unit test
+    template<byte_order_swappable T>
+    T SwapByteOrder(T t)
+    {
+      if constexpr (sizeof(T) == 2)
+        { return std::bit_cast<T>(std::byteswap(std::bit_cast<u16>(t))); }
+      else if constexpr (sizeof(T) == 4)
+        { return std::bit_cast<T>(std::byteswap(std::bit_cast<u32>(t))); }
+      else if constexpr (sizeof(T) == 8)
+        { return std::bit_cast<T>(std::byteswap(std::bit_cast<u64>(t))); }
+      else
+        { static_assert(AlwaysFalse<T>, "Unsupported swap byte order size"); }
+    }
   }
 }
