@@ -78,6 +78,7 @@
     <ClCompile Include="Utilities\Bounds.cpp" />
     <ClCompile Include="Utilities\Copy.cpp" />
     <ClCompile Include="TestUtilities\SimdTest.ixx" />
+    <ClCompile Include="Utilities\Sha256.cpp" />
     <ClCompile Include="Utilities\Unroll.cpp" />
   </ItemGroup>
   <ItemGroup>

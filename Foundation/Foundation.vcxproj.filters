@@ -207,6 +207,12 @@
     <ClCompile Include="Core\Enum.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Utilities\Sha256.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Utilities\Sha256.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Assert.Macros.h">

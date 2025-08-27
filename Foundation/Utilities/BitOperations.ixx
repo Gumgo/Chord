@@ -47,5 +47,18 @@ namespace Chord
       else
         { static_assert(AlwaysFalse<T>, "Unsupported swap byte order size"); }
     }
+
+    template<std::endian Endianness, byte_order_swappable T>
+    T SwapByteOrderTo(T t)
+    {
+      if constexpr (Endianness == std::endian::native)
+        { return t; }
+      else
+        { return SwapByteOrder(t); }
+    }
+
+    template<std::endian Endianness, byte_order_swappable T>
+    T SwapByteOrderFrom(T t)
+      { return SwapByteOrderTo<Endianness>(t); } // Same logic for to and from
   }
 }

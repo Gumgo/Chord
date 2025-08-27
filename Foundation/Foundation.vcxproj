@@ -111,6 +111,8 @@
     <ClCompile Include="Utilities\Bounds.ixx" />
     <ClCompile Include="Utilities\DisallowAllocationScope.ixx" />
     <ClCompile Include="Utilities\Guid.ixx" />
+    <ClCompile Include="Utilities\Sha256.cpp" />
+    <ClCompile Include="Utilities\Sha256.ixx" />
     <ClCompile Include="Utilities\Unroll.ixx" />
     <ClCompile Include="Utilities\Utilities.ixx" />
   </ItemGroup>
