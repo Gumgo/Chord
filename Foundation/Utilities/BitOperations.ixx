@@ -34,7 +34,6 @@ namespace Chord
     template<typename T>
     concept byte_order_swappable = sizeof(T) > 1 && (std::integral<T> || std::floating_point<T>);
 
-    // !!! unit test
     template<byte_order_swappable T>
     T SwapByteOrder(T t)
     {
