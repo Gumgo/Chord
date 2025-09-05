@@ -72,7 +72,7 @@ namespace Chord
     0xc67178f2_u32,
   };
 
-  FixedArray<u8, 256 / 8> CalculateSha256(Span<const u8> bytes)
+  FixedArray<u8, Sha256ByteCount> CalculateSha256(Span<const u8> bytes)
   {
     FixedArray<u32, 8> hashValues =
     {
@@ -171,7 +171,7 @@ namespace Chord
     for (u32& v : hashValues)
       { v = SwapByteOrderTo<std::endian::big>(v); }
 
-    FixedArray<u8, 256 / 8> result;
+    FixedArray<u8, Sha256ByteCount> result;
     CopyBytes(result.Elements(), hashValues.Elements(), result.Count());
     return result;
   }

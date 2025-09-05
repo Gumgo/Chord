@@ -7,6 +7,9 @@ namespace Chord
 {
   export
   {
-    FixedArray<u8, 256 / 8> CalculateSha256(Span<const u8> bytes);
+    constexpr usz Sha256BitCount = 256;
+    constexpr usz Sha256ByteCount = Sha256BitCount / 8;
+
+    FixedArray<u8, Sha256ByteCount> CalculateSha256(Span<const u8> bytes);
   }
 }
