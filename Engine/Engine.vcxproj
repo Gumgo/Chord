@@ -76,6 +76,12 @@
     <ClCompile Include="Reporting\IReporting.ixx" />
     <ClCompile Include="Reporting\Reporting.ixx" />
     <ClCompile Include="Reporting\ReportingExtensions.ixx" />
+    <ClCompile Include="TaskSystem\Task.ixx" />
+    <ClCompile Include="TaskSystem\TaskExecutor.cpp" />
+    <ClCompile Include="TaskSystem\TaskExecutor.ixx" />
+    <ClCompile Include="TaskSystem\TaskQueue.cpp" />
+    <ClCompile Include="TaskSystem\TaskQueue.ixx" />
+    <ClCompile Include="TaskSystem\TaskSystem.ixx" />
     <ClCompile Include="Windows\WindowsImplementation.cpp" />
     <ClCompile Include="Windows\WindowsImplementation.ixx" />
     <ClCompile Include="Windows\Windows.cpp" />

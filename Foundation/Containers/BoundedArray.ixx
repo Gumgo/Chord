@@ -85,7 +85,6 @@ namespace Chord
     };
 
     template<typename TElement>
-      requires (std::is_move_assignable_v<TElement>)
     class BoundedArray<TElement, 0> : public ResizableArrayBase<TElement>
     {
     public:

@@ -59,7 +59,8 @@ namespace Chord
     }
     catch (const std::filesystem::filesystem_error&)
     {
-      // !!! error
+      m_reporting.Error(U"Failed to scan for native libraries in '${}'", nativeLibraryPath.native().c_str());
+      return;
     }
 
     for (auto& nativeLibraryDllPath : nativeLibraryDllPaths)
