@@ -15,15 +15,18 @@ namespace Chord
       using Super = SpanBase<TElement>;
 
     public:
-      constexpr FixedArray() requires (std::is_default_constructible_v<TElement>)
+      constexpr FixedArray()
+        requires (std::is_default_constructible_v<TElement>)
         : m_storage()
         { }
 
-      constexpr FixedArray(const FixedArray& other) requires (std::is_copy_constructible_v<TElement>)
+      constexpr FixedArray(const FixedArray& other)
+        requires (std::copyable<TElement>)
         : m_storage(other.m_storage)
         { }
 
-      constexpr FixedArray(FixedArray&& other) requires (std::is_move_constructible_v<TElement>)
+      constexpr FixedArray(FixedArray&& other)
+        requires (std::movable<TElement>)
         : m_storage(std::move(other.m_storage))
         { }
 
@@ -35,14 +38,16 @@ namespace Chord
 
       constexpr ~FixedArray() noexcept = default;
 
-      constexpr FixedArray& operator=(const FixedArray& other) requires (std::is_copy_assignable_v<TElement>)
+      constexpr FixedArray& operator=(const FixedArray& other)
+        requires (std::copyable<TElement>)
       {
         if (this != &other)
           { this->CopyElementsFrom(other); }
         return *this;
       }
 
-      constexpr FixedArray& operator=(FixedArray&& other) noexcept requires (std::is_move_assignable_v<TElement>)
+      constexpr FixedArray& operator=(FixedArray&& other) noexcept
+        requires (std::movable<TElement>)
       {
         ASSERT(this != &other);
         this->MoveElementsFrom(other);
@@ -68,7 +73,8 @@ namespace Chord
     public:
       constexpr FixedArray() = default;
 
-      constexpr FixedArray(const FixedArray& other) requires (std::is_copy_constructible_v<TElement>)
+      constexpr FixedArray(const FixedArray& other)
+        requires (std::copyable<TElement>)
         : m_elements(std::allocator<TElement>().allocate(other.Count()))
         , m_count(other.Count())
       {
@@ -81,7 +87,8 @@ namespace Chord
         , m_count(std::exchange(other.m_count, 0_usz))
         { }
 
-      constexpr FixedArray(usz count) requires (std::is_default_constructible_v<TElement>)
+      constexpr FixedArray(usz count)
+        requires (std::is_default_constructible_v<TElement>)
         : m_elements(std::allocator<TElement>().allocate(count))
         , m_count(count)
       {
@@ -89,7 +96,8 @@ namespace Chord
           { std::construct_at(&m_elements[i]); }
       }
 
-      constexpr FixedArray(usz count, const TElement& fillValue) requires (std::is_copy_constructible_v<TElement>)
+      constexpr FixedArray(usz count, const TElement& fillValue)
+        requires (std::copyable<TElement>)
         : m_elements(std::allocator<TElement>().allocate(count))
         , m_count(count)
       {
@@ -97,7 +105,8 @@ namespace Chord
           { std::construct_at(&m_elements[i], fillValue); }
       }
 
-      constexpr FixedArray(const std::initializer_list<TElement> &values) requires (std::is_copy_constructible_v<TElement>)
+      constexpr FixedArray(const std::initializer_list<TElement> &values)
+        requires (std::copyable<TElement>)
         : m_elements(std::allocator<TElement>().allocate(values.size()))
         , m_count(values.size())
       {
@@ -112,7 +121,8 @@ namespace Chord
       constexpr ~FixedArray() noexcept
         { FreeElements(); }
 
-      constexpr FixedArray& operator=(const FixedArray& other) requires (std::is_copy_constructible_v<TElement>)
+      constexpr FixedArray& operator=(const FixedArray& other)
+        requires (std::copyable<TElement>)
       {
         if (this != &other)
         {

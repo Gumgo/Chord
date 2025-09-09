@@ -19,14 +19,16 @@ namespace Chord
     public:
       constexpr BoundedArray() = default;
 
-      constexpr BoundedArray(const BoundedArray& other) requires (std::is_copy_constructible_v<TElement>)
+      constexpr BoundedArray(const BoundedArray& other)
+        requires (std::copyable<TElement>)
       {
         this->m_count = other.m_count;
         for (usz i = 0; i < this->m_count; i++)
           { std::construct_at(&Elements()[i], other.Elements()[i]); }
       }
 
-      constexpr BoundedArray(BoundedArray&& other) requires (std::is_move_constructible_v<TElement>)
+      constexpr BoundedArray(BoundedArray&& other)
+        requires (std::movable<TElement>)
       {
         this->m_count = std::exchange(other.m_count, 0_usz);
         for (usz i = 0; i < this->m_count; i++)
@@ -39,7 +41,8 @@ namespace Chord
       constexpr ~BoundedArray() noexcept
         { this->Clear(); }
 
-      constexpr BoundedArray& operator=(const BoundedArray& other) requires (std::is_copy_assignable_v<TElement>)
+      constexpr BoundedArray& operator=(const BoundedArray& other)
+        requires (std::copyable<TElement>)
       {
         if (this != &other)
         {
@@ -52,7 +55,8 @@ namespace Chord
         return *this;
       }
 
-      constexpr BoundedArray& operator=(BoundedArray&& other) noexcept requires (std::is_move_assignable_v<TElement>)
+      constexpr BoundedArray& operator=(BoundedArray&& other) noexcept
+        requires (std::movable<TElement>)
       {
         if (this != &other)
         {
@@ -90,7 +94,8 @@ namespace Chord
     public:
       constexpr BoundedArray() = default;
 
-      constexpr BoundedArray(const BoundedArray& other) requires (std::is_copy_constructible_v<TElement>)
+      constexpr BoundedArray(const BoundedArray& other)
+        requires (std::is_copy_constructible_v<TElement>)
         : m_elements(std::allocator<TElement>().allocate(other.m_capacity))
         , m_capacity(other.m_capacity)
       {
@@ -112,7 +117,8 @@ namespace Chord
       constexpr ~BoundedArray() noexcept
         { FreeElements(); }
 
-      constexpr BoundedArray& operator=(const BoundedArray& other) requires (std::is_copy_assignable_v<TElement>)
+      constexpr BoundedArray& operator=(const BoundedArray& other)
+        requires (std::copyable<TElement>)
       {
         if (this != &other)
         {

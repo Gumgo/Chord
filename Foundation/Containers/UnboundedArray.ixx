@@ -12,13 +12,14 @@ namespace Chord
   export
   {
     template<typename TElement>
-      requires (std::is_move_assignable_v<TElement>)
+      requires (std::movable<TElement>)
     class UnboundedArray : public ResizableArrayBase<TElement>
     {
     public:
       constexpr UnboundedArray() = default;
 
-      constexpr UnboundedArray(const UnboundedArray& other) requires (std::is_copy_constructible_v<TElement>)
+      constexpr UnboundedArray(const UnboundedArray& other)
+        requires (std::copyable<TElement>)
         : m_elements(std::allocator<TElement>().allocate(other.m_capacity))
         , m_capacity(other.m_capacity)
       {
@@ -40,7 +41,8 @@ namespace Chord
       constexpr ~UnboundedArray() noexcept
         { FreeElements(); }
 
-      constexpr UnboundedArray& operator=(const UnboundedArray& other) requires (std::is_copy_assignable_v<TElement>)
+      constexpr UnboundedArray& operator=(const UnboundedArray& other)
+        requires (std::copyable<TElement>)
       {
         if (this != &other)
         {

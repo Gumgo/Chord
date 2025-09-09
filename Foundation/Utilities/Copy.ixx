@@ -73,7 +73,7 @@ namespace Chord
       { CopyOverlapping(static_cast<u8*>(destination), static_cast<const u8*>(source), count); }
 
     template<typename TSource, std::same_as<std::remove_const_t<TSource>> TDestination>
-      requires (std::is_move_assignable_v<TDestination>)
+      requires (std::movable<TDestination>)
     constexpr void Move(TDestination* destination, TSource* source, usz count)
     {
       ASSERT(!IsOverlapping(destination, source, count));
@@ -81,7 +81,7 @@ namespace Chord
     }
 
     template<typename TSource, std::same_as<std::remove_const_t<TSource>> TDestination>
-      requires (std::is_move_assignable_v<TDestination>)
+      requires (std::movable<TDestination>)
     constexpr void MoveOverlapping(TDestination* destination, TSource* source, usz count)
     {
       if (IsABeforeB(destination, source, count))

@@ -42,49 +42,49 @@ namespace Chord
       constexpr void SetCount(this non_const_self auto& self, usz count)
         requires (std::is_default_constructible_v<TElement>);
       constexpr void SetCount(this non_const_self auto& self, usz count, const TElement& fillValue)
-        requires (std::is_copy_constructible_v<TElement>);
+        requires (std::copyable<TElement>);
 
       constexpr TElement& Append(this non_const_self auto& self, const TElement& value)
-        requires (std::is_copy_constructible_v<TElement>);
+        requires (std::copyable<TElement>);
       constexpr TElement& Append(this non_const_self auto& self, TElement&& value)
-        requires (std::is_move_constructible_v<TElement>);
+        requires (std::movable<TElement>);
 
       template<typename... TArgs>
       constexpr TElement& AppendNew(this non_const_self auto& self, TArgs&&... args)
         requires (std::is_constructible_v<TElement, TArgs...>);
       constexpr Span<TElement> AppendFill(this non_const_self auto& self, usz count, const TElement& fillValue)
-        requires (std::is_copy_constructible_v<TElement>);
+        requires (std::copyable<TElement>);
       constexpr Span<TElement> AppendMultiple(this non_const_self auto& self, const std::initializer_list<TElement>& list)
-        requires (std::is_copy_constructible_v<TElement>);
+        requires (std::copyable<TElement>);
       template<typename TView>
         requires (std::ranges::viewable_range<TView> && std::same_as<std::remove_cv_t<std::ranges::range_value_t<TView>>, std::remove_cv_t<TElement>>)
       constexpr Span<TElement> AppendMultiple(this non_const_self auto& self, TView&& view)
-        requires (std::is_copy_constructible_v<TElement>);
+        requires (std::copyable<TElement>);
 
       constexpr TElement& Insert(this non_const_self auto& self, basic_integral auto index, const TElement& value)
-        requires (std::is_copy_constructible_v<TElement>);
+        requires (std::copyable<TElement>);
       constexpr TElement& Insert(this non_const_self auto& self, basic_integral auto index, TElement&& value)
-        requires (std::is_move_constructible_v<TElement>);
+        requires (std::movable<TElement>);
       template<typename... TArgs>
       constexpr TElement& InsertNew(this non_const_self auto& self, basic_integral auto index, TArgs&&... args)
         requires (std::is_constructible_v<TElement, TArgs...>);
       constexpr Span<TElement> InsertFill(this non_const_self auto& self, basic_integral auto index, usz count, const TElement& fillValue)
-        requires (std::is_copy_constructible_v<TElement>);
+        requires (std::copyable<TElement>);
       constexpr Span<TElement> InsertMultiple(this non_const_self auto& self, basic_integral auto index, const std::initializer_list<TElement>& list)
-        requires (std::is_copy_constructible_v<TElement>);
+        requires (std::copyable<TElement>);
       template<typename TView>
         requires (std::ranges::viewable_range<TView>&& std::same_as<std::remove_cv_t<std::ranges::range_value_t<TView>>, std::remove_cv_t<TElement>>)
       constexpr Span<TElement> InsertMultiple(this non_const_self auto& self, basic_integral auto index, TView&& view)
-        requires (std::is_copy_constructible_v<TElement> && std::is_move_constructible_v<TElement>);
+        requires (std::copyable<TElement> && std::movable<TElement>);
 
       constexpr void RemoveByIndex(this non_const_self auto& self, basic_integral auto index)
-        requires (std::is_move_constructible_v<TElement>);
+        requires (std::movable<TElement>);
       constexpr void RemoveByIndex(this non_const_self auto& self, basic_integral auto index, subspan_count auto count)
-        requires (std::is_move_constructible_v<TElement>);
+        requires (std::movable<TElement>);
       constexpr void RemoveByIndexUnordered(this non_const_self auto& self, basic_integral auto index)
-        requires (std::is_move_constructible_v<TElement>);
+        requires (std::movable<TElement>);
       constexpr void RemoveByIndexUnordered(this non_const_self auto& self, basic_integral auto index, subspan_count auto count = 1)
-        requires (std::is_move_constructible_v<TElement>);
+        requires (std::movable<TElement>);
       // !!! maybe add remove-by-value?
 
     protected:
@@ -129,7 +129,7 @@ namespace Chord
 
     template<typename TElement> requires (!std::is_const_v<TElement>)
     constexpr void ResizableArrayBase<TElement>::SetCount(this non_const_self auto& self, usz count, const TElement& fillValue)
-      requires (std::is_copy_constructible_v<TElement>)
+      requires (std::copyable<TElement>)
     {
       self.EnsureCapacity(count);
       if (self.m_count < count)
@@ -149,7 +149,7 @@ namespace Chord
 
     template<typename TElement> requires (!std::is_const_v<TElement>)
     constexpr TElement& ResizableArrayBase<TElement>::Append(this non_const_self auto& self, const TElement& value)
-      requires (std::is_copy_constructible_v<TElement>)
+      requires (std::copyable<TElement>)
     {
       usz oldCount = self.m_count;
       usz newCount = oldCount + 1;
@@ -161,7 +161,7 @@ namespace Chord
 
     template<typename TElement> requires (!std::is_const_v<TElement>)
     constexpr TElement& ResizableArrayBase<TElement>::Append(this non_const_self auto& self, TElement&& value)
-      requires (std::is_move_constructible_v<TElement>)
+      requires (std::movable<TElement>)
     {
       usz oldCount = self.m_count;
       usz newCount = oldCount + 1;
@@ -186,7 +186,7 @@ namespace Chord
 
     template<typename TElement> requires (!std::is_const_v<TElement>)
     constexpr Span<TElement> ResizableArrayBase<TElement>::AppendFill(this non_const_self auto& self, usz count, const TElement& fillValue)
-      requires (std::is_copy_constructible_v<TElement>)
+      requires (std::copyable<TElement>)
     {
       usz oldCount = self.m_count;
       usz newCount = oldCount + count;
@@ -199,14 +199,14 @@ namespace Chord
 
     template<typename TElement> requires (!std::is_const_v<TElement>)
     constexpr Span<TElement> ResizableArrayBase<TElement>::AppendMultiple(this non_const_self auto& self, const std::initializer_list<TElement>& list)
-      requires (std::is_copy_constructible_v<TElement>)
+      requires (std::copyable<TElement>)
       { return self.AppendMultiple(Span<TElement>(list)); }
 
     template<typename TElement> requires (!std::is_const_v<TElement>)
     template<typename TView>
       requires (std::ranges::viewable_range<TView> && std::same_as<std::remove_cv_t<std::ranges::range_value_t<TView>>, std::remove_cv_t<TElement>>)
     constexpr Span<TElement> ResizableArrayBase<TElement>::AppendMultiple(this non_const_self auto& self, TView&& view)
-      requires (std::is_copy_constructible_v<TElement>)
+      requires (std::copyable<TElement>)
     {
       if constexpr (requires (TView v) { std::ranges::size(v); } || requires (TView v) { v.Count(); })
       {
@@ -239,7 +239,7 @@ namespace Chord
 
     template<typename TElement> requires (!std::is_const_v<TElement>)
     constexpr TElement& ResizableArrayBase<TElement>::Insert(this non_const_self auto& self, basic_integral auto index, const TElement& value)
-      requires (std::is_copy_constructible_v<TElement>)
+      requires (std::copyable<TElement>)
     {
       usz evaluatedIndex = self.EvaluateSubspanStart(index);
       usz oldCount = self.m_count;
@@ -253,7 +253,7 @@ namespace Chord
 
     template<typename TElement> requires (!std::is_const_v<TElement>)
     constexpr TElement& ResizableArrayBase<TElement>::Insert(this non_const_self auto& self, basic_integral auto index, TElement&& value)
-      requires (std::is_move_constructible_v<TElement>)
+      requires (std::movable<TElement>)
     {
       usz evaluatedIndex = self.EvaluateSubspanStart(index);
       usz oldCount = self.m_count;
@@ -286,7 +286,7 @@ namespace Chord
       basic_integral auto index,
       usz count,
       const TElement& fillValue)
-      requires (std::is_copy_constructible_v<TElement>)
+      requires (std::copyable<TElement>)
     {
       usz evaluatedIndex = self.EvaluateSubspanStart(index);
       usz oldCount = self.m_count;
@@ -305,14 +305,14 @@ namespace Chord
       this non_const_self auto& self,
       basic_integral auto index,
       const std::initializer_list<TElement>& list)
-      requires (std::is_copy_constructible_v<TElement>)
+      requires (std::copyable<TElement>)
       { return self.InsertMultiple(index, Span<TElement>(list)); }
 
     template<typename TElement> requires (!std::is_const_v<TElement>)
     template<typename TView>
       requires (std::ranges::viewable_range<TView>&& std::same_as<std::remove_cv_t<std::ranges::range_value_t<TView>>, std::remove_cv_t<TElement>>)
     constexpr Span<TElement> ResizableArrayBase<TElement>::InsertMultiple(this non_const_self auto& self, basic_integral auto index, TView&& view)
-      requires (std::is_copy_constructible_v<TElement> && std::is_move_constructible_v<TElement>)
+      requires (std::copyable<TElement> && std::movable<TElement>)
     {
       usz evaluatedIndex = self.EvaluateSubspanStart(index);
       if constexpr (requires (TView v) { std::ranges::size(v); } || requires (TView v) { v.Count(); })
@@ -355,12 +355,12 @@ namespace Chord
 
     template<typename TElement> requires (!std::is_const_v<TElement>)
     constexpr void ResizableArrayBase<TElement>::RemoveByIndex(this non_const_self auto& self, basic_integral auto index)
-      requires (std::is_move_constructible_v<TElement>)
+      requires (std::movable<TElement>)
       { self.RemoveByIndex(index, 1); }
 
     template<typename TElement> requires (!std::is_const_v<TElement>)
     constexpr void ResizableArrayBase<TElement>::RemoveByIndex(this non_const_self auto& self, basic_integral auto index, subspan_count auto count)
-      requires (std::is_move_constructible_v<TElement>)
+      requires (std::movable<TElement>)
     {
       usz evaluatedIndex = self.EvaluateSubspanStart(index);
       usz evaluatedCount = self.EvaluateSubspanCount(evaluatedIndex, count);
@@ -380,12 +380,12 @@ namespace Chord
 
     template<typename TElement> requires (!std::is_const_v<TElement>)
     constexpr void ResizableArrayBase<TElement>::RemoveByIndexUnordered(this non_const_self auto& self, basic_integral auto index)
-      requires (std::is_move_constructible_v<TElement>)
+      requires (std::movable<TElement>)
       { self.RemoveByIndexUnordered(index, 1); }
 
     template<typename TElement> requires (!std::is_const_v<TElement>)
     constexpr void ResizableArrayBase<TElement>::RemoveByIndexUnordered(this non_const_self auto& self, basic_integral auto index, subspan_count auto count)
-      requires (std::is_move_constructible_v<TElement>)
+      requires (std::movable<TElement>)
     {
       usz evaluatedIndex = self.EvaluateSubspanStart(index);
       usz evaluatedCount = self.EvaluateSubspanCount(evaluatedIndex, count);

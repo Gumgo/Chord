@@ -231,14 +231,16 @@ namespace Chord
       class FunctionImplementation : public ImplementationBase
       {
       public:
-        constexpr FunctionImplementation(TFunction& function) requires (std::is_copy_constructible_v<TFunction> && std::is_function_v<TFunction>)
+        constexpr FunctionImplementation(TFunction& function)
+          requires (std::is_copy_constructible_v<TFunction> && std::is_function_v<TFunction>)
           : m_function(function)
         {
           static_assert(sizeof(FunctionImplementation) <= MaxByteCount);
           static_assert(alignof(FunctionImplementation) <= alignof(void*));
         }
 
-        constexpr FunctionImplementation(const TFunction& function) requires (std::is_copy_constructible_v<TFunction> && !std::is_function_v<TFunction>)
+        constexpr FunctionImplementation(const TFunction& function)
+          requires (std::is_copy_constructible_v<TFunction> && !std::is_function_v<TFunction>)
           : m_function(function)
         {
           static_assert(sizeof(FunctionImplementation) <= MaxByteCount);

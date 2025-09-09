@@ -133,16 +133,16 @@ namespace Chord
         { return self.Elements()[self.EvaluateIndex(index)]; }
 
       constexpr void CopyElementsFrom(this has_writable_elements auto&& self, Span<const TElement> other)
-        requires (std::is_copy_assignable_v<TElement>);
+        requires (std::copyable<TElement>);
 
       constexpr void MoveElementsFrom(this has_writable_elements auto&& self, Span<TElement> other)
-        requires (std::is_move_assignable_v<TElement>);
+        requires (std::movable<TElement>);
 
       constexpr void CopyOverlappingElementsFrom(this has_writable_elements auto&& self, Span<const TElement> other)
-        requires (std::is_copy_assignable_v<TElement>);
+        requires (std::copyable<TElement>);
 
       constexpr void MoveOverlappingElementsFrom(this has_writable_elements auto&& self, Span<TElement> other)
-        requires (std::is_move_assignable_v<TElement>);
+        requires (std::movable<TElement>);
 
       constexpr void ZeroElements(this has_writable_elements auto&& self)
         requires (std::is_trivially_copyable_v<std::remove_const_t<TElement>>
@@ -156,7 +156,7 @@ namespace Chord
       }
 
       constexpr void Fill(this has_writable_elements auto&& self, const TElement& v)
-        requires (std::is_copy_assignable_v<TElement>)
+        requires (std::copyable<TElement>)
         { std::ranges::fill(self, v); }
 
       constexpr std::optional<usz> FirstIndexOf(this const auto& self, TElement& element)
@@ -257,7 +257,7 @@ namespace Chord
 
     template<typename TElement>
     constexpr void SpanBase<TElement>::CopyElementsFrom(this has_writable_elements auto&& self, Span<const TElement> other)
-      requires (std::is_copy_assignable_v<TElement>)
+      requires (std::copyable<TElement>)
     {
       ASSERT(self.Count() == other.Count());
       Copy(self.Elements(), other.Elements(), other.Count());
@@ -265,7 +265,7 @@ namespace Chord
 
     template<typename TElement>
     constexpr void SpanBase<TElement>::MoveElementsFrom(this has_writable_elements auto&& self, Span<TElement> other)
-      requires (std::is_move_assignable_v<TElement>)
+      requires (std::movable<TElement>)
     {
       ASSERT(self.Count() == other.Count());
       Move(self.Elements(), other.Elements(), other.Count());
@@ -273,7 +273,7 @@ namespace Chord
 
     template<typename TElement>
     constexpr void SpanBase<TElement>::CopyOverlappingElementsFrom(this has_writable_elements auto&& self, Span<const TElement> other)
-      requires (std::is_copy_assignable_v<TElement>)
+      requires (std::copyable<TElement>)
     {
       ASSERT(self.Count() == other.Count());
       CopyOverlapping(self.Elements(), other.Elements(), other.Count());
@@ -281,7 +281,7 @@ namespace Chord
 
     template<typename TElement>
     constexpr void SpanBase<TElement>::MoveOverlappingElementsFrom(this has_writable_elements auto&& self, Span<TElement> other)
-      requires (std::is_move_assignable_v<TElement>)
+      requires (std::movable<TElement>)
     {
       ASSERT(self.Count() == other.Count());
       MoveOverlapping(self.Elements(), other.Elements(), other.Count());
