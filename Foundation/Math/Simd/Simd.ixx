@@ -8,6 +8,7 @@ export import :Math.Simd.SimdImplementations;
 export import :Math.Simd.SimdOperation;
 export import :Math.Simd.SimdUnderlyingType;
 export import :Math.Simd.Vector;
+export import :Utilities.Bounds;
 
 namespace Chord
 {
@@ -78,6 +79,25 @@ namespace Chord
   template<basic_numeric TElement> using SimdVectorMaxAlias = typename SimdVectorAliasData<TElement>::TypeMax;
   template<basic_numeric TElement> using SimdVectorHalfMaxAlias = typename SimdVectorAliasData<TElement>::TypeHalfMax;
 
+  template<usz ElementCount>
+  consteval usz CalculateMaxSimdAlignmentForElementCount()
+  {
+    usz alignment = 0;
+    if constexpr (IsSimdTypeSupported<f32, ElementCount>)
+      { alignment = Max(alignment, alignof(Vector<f32, ElementCount>)); }
+    if constexpr (IsSimdTypeSupported<f64, ElementCount>)
+      { alignment = Max(alignment, alignof(Vector<f64, ElementCount>)); }
+    if constexpr (IsSimdTypeSupported<s32, ElementCount>)
+      { alignment = Max(alignment, alignof(Vector<s32, ElementCount>)); }
+    if constexpr (IsSimdTypeSupported<s64, ElementCount>)
+      { alignment = Max(alignment, alignof(Vector<s64, ElementCount>)); }
+    if constexpr (IsSimdTypeSupported<u32, ElementCount>)
+      { alignment = Max(alignment, alignof(Vector<u32, ElementCount>)); }
+    if constexpr (IsSimdTypeSupported<u64, ElementCount>)
+      { alignment = Max(alignment, alignof(Vector<u64, ElementCount>)); }
+    return alignment;
+  }
+
   export
   {
     using f32x4 = SimdVector4Alias<f32>;
@@ -106,6 +126,16 @@ namespace Chord
     using s64xHM = SimdVectorHalfMaxAlias<s64>;
     using u32xHM = SimdVectorHalfMaxAlias<u32>;
     using u64xHM = SimdVectorHalfMaxAlias<u64>;
+
+    constexpr usz MaxSimdAlignment =
+      []()
+      {
+        usz alignment = 0;
+        alignment = Max(alignment, CalculateMaxSimdAlignmentForElementCount<2>());
+        alignment = Max(alignment, CalculateMaxSimdAlignmentForElementCount<4>());
+        alignment = Max(alignment, CalculateMaxSimdAlignmentForElementCount<8>());
+        return alignment;
+      }();
 
     template<typename T>
     struct IsVectorData
