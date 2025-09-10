@@ -219,6 +219,9 @@
     <ClCompile Include="Containers\HashMap.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Utilities\HashKey.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Assert.Macros.h">

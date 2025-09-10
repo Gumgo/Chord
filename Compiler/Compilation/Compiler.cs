@@ -176,6 +176,7 @@ internal class Compiler(CompilerContext context) : ICompiler
 
     return new CompileResult()
     {
+      InstrumentProperties = instrumentProperties,
       NativeLibraries = [..sourceFiles
         .SelectMany((v) => v.Value.NativeImports.Select((nativeImport) => nativeImport.ResolvedPath))
         .ToHashSet()

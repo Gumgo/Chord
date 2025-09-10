@@ -5,6 +5,7 @@ import std;
 import :Containers.Span;
 import :Core;
 import :Utilities.Copy;
+import :Utilities.HashKey;
 
 namespace Chord
 {
@@ -821,6 +822,17 @@ namespace Chord
       String<BiggerChar<TCharA, TCharB>> result(strA);
       result += strB;
       return result;
+    }
+
+    template<fixed_char TChar>
+    HashKey CalculateHashKey(const String<TChar>& value)
+    {
+      HashGenerator generator;
+      auto span = value.AsSpan();
+      usz count = span.Count();
+      generator.Append(Span(&count, 1));
+      generator.Append(span);
+      return generator.GetHashKey();
     }
 
     using AsciiString = String<char>;

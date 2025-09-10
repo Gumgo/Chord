@@ -1,4 +1,5 @@
-﻿using Compiler.Native;
+﻿using Compiler.InstrumentProperty;
+using Compiler.Native;
 using Compiler.Program;
 using Compiler.Program.ProgramGraphNodes;
 using Compiler.ProgramGraphOptimization;
@@ -71,6 +72,7 @@ file static class ProgramSerialization
 internal class BuildProgramResult : IBuildProgramResult
 {
   public required ProgramVariantProperties ProgramVariantProperties { get; init; }
+  public required InstrumentProperties InstrumentProperties { get; init; }
   public required ProgramGraph ProgramGraph { get; init; }
 
   // Note: data is serialized in little-endian byte order
@@ -107,6 +109,11 @@ internal class BuildProgramResult : IBuildProgramResult
     contentWriter.Write(ProgramVariantProperties.SampleRate);
     contentWriter.Write(ProgramVariantProperties.InputChannelCount);
     contentWriter.Write(ProgramVariantProperties.OutputChannelCount);
+
+    // Write instrument properties
+    contentWriter.Write((uint)InstrumentProperties.MaxVoiceCount);
+    contentWriter.Write((uint)InstrumentProperties.EffectActivationMode);
+    contentWriter.Write(InstrumentProperties.EffectActivationThreshold);
 
     // Assign a unique index for each node
     var nodeIndices = new Dictionary<object, uint>();

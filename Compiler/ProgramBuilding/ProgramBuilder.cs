@@ -237,6 +237,7 @@ internal class ProgramBuilder(ProgramBuilderContext context) : IProgramBuilder
       return new BuildProgramResult()
       {
         ProgramVariantProperties = programVariantProperties,
+        InstrumentProperties = compileResultTyped.InstrumentProperties,
         ProgramGraph = programGraph,
       };
     }

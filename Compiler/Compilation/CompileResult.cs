@@ -1,11 +1,15 @@
 ﻿using Compiler.Ast;
 using Compiler.EntryPoint;
+using Compiler.InstrumentProperty;
 using Compiler.Native;
 
 namespace Compiler.Compilation;
 
 internal class CompileResult : ICompileResult
 {
+  // Instrument properties
+  public required InstrumentProperties InstrumentProperties { get; init; }
+
   // List of all imported native libraries
   public required IReadOnlyList<string> NativeLibraries { get; init; }
 

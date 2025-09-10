@@ -1,4 +1,5 @@
-﻿using Compiler.Program.ProgramGraphNodes;
+﻿using Compiler.InstrumentProperty;
+using Compiler.Program.ProgramGraphNodes;
 
 namespace Compiler.Program;
 

@@ -168,7 +168,7 @@ namespace Chord
         { return m_count; }
 
     private:
-      void FreeElements()
+      constexpr void FreeElements()
       {
         for (usz i = 0; i < m_count; i++)
           { std::destroy_at(&m_elements[m_count - i - 1]); }

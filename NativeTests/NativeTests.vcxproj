@@ -56,6 +56,8 @@
     <ClCompile Include="ConsoleCommand.ixx" />
     <ClCompile Include="Containers\BoundedArray.cpp" />
     <ClCompile Include="Containers\FixedArray.cpp" />
+    <ClCompile Include="Containers\HashMap.cpp" />
+    <ClCompile Include="Containers\HashSet.cpp" />
     <ClCompile Include="Containers\UnboundedArray.cpp" />
     <ClCompile Include="Core\Enum.cpp" />
     <ClCompile Include="Functional\Callable.cpp" />
