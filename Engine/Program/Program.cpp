@@ -25,6 +25,14 @@ namespace Chord
   static constexpr u32 Version = 0;
   static constexpr u8 HashSalt[] = { 0x8b, 0xe1, 0x53, 0x2f, 0x41, 0x16, 0xc9, 0x8d, 0x1a, 0x2a, 0xb4, 0x3c, 0x0b, 0x34, 0xae, 0xdf };
 
+  template<typename TNode>
+  usz GetNodeIndex(const BoundedArray<TNode> &nodes, IProgramGraphNode* node)
+  {
+    TNode* typedNode = static_cast<TNode*>(node);
+    ASSERT(typedNode >= nodes.Elements() && typedNode < nodes.Elements() + nodes.Count());
+    return usz(typedNode - nodes.Elements());
+  }
+
   std::optional<Program> Program::Deserialize(Span<const u8> bytes)
   {
     Program program;
@@ -70,6 +78,18 @@ namespace Chord
       || program.m_programVariantProperties.m_inputChannelCount < 0
       || program.m_programVariantProperties.m_outputChannelCount < 0)
       { return std::nullopt; }
+
+    u32 effectActivationMode;
+    if (!reader.Read(&program.m_instrumentProperties.m_maxVoices)
+      || !reader.Read(&effectActivationMode)
+      || !reader.Read(&program.m_instrumentProperties.m_effectActivationThreshold))
+      { return std::nullopt; }
+
+    if (effectActivationMode >= EnumCount<EffectActivationMode>()
+      || program.m_instrumentProperties.m_effectActivationThreshold < 0.0)
+      { return std::nullopt; }
+
+    program.m_instrumentProperties.m_effectActivationMode = EffectActivationMode(effectActivationMode);
 
     u32 nodeCount;
     if (!reader.Read(&nodeCount))
@@ -255,196 +275,196 @@ namespace Chord
         break;
 
       case SerializedNodeType::Output:
-      {
-        u32 connectionCount;
-        if (!reader.Read(&connectionCount))
-          { return std::nullopt; }
-
-        OutputProgramGraphNode& node = program.m_outputNodes.AppendNew(connectionCount);
-        for (u32 i = 0; i < connectionCount; i++)
         {
-          u32 connectionNodeIndex;
-          if (!reader.Read(&connectionNodeIndex)
-            || connectionNodeIndex >= nodeCount
-            || nodeTypes[connectionNodeIndex] != SerializedNodeType::Input)
+          u32 connectionCount;
+          if (!reader.Read(&connectionCount))
             { return std::nullopt; }
-          node.m_connections[i] = static_cast<InputProgramGraphNode*>(nodesFromIndices[connectionNodeIndex]);
-        }
 
-        break;
-      }
+          OutputProgramGraphNode& node = program.m_outputNodes.AppendNew(connectionCount);
+          for (u32 i = 0; i < connectionCount; i++)
+          {
+            u32 connectionNodeIndex;
+            if (!reader.Read(&connectionNodeIndex)
+              || connectionNodeIndex >= nodeCount
+              || nodeTypes[connectionNodeIndex] != SerializedNodeType::Input)
+              { return std::nullopt; }
+            node.m_connections[i] = static_cast<InputProgramGraphNode*>(nodesFromIndices[connectionNodeIndex]);
+          }
+
+          break;
+        }
 
       case SerializedNodeType::FloatConstant:
-      {
-        u32 outputNodeIndex;
-        f32 value;
-        if (!reader.Read(&outputNodeIndex) || !reader.Read(&value))
-          { return std::nullopt; }
-
-        FloatConstantProgramGraphNode& node = program.m_floatConstantNodes.AppendNew(value);
-        if (!AttachProcessorOutputNode(outputNodeIndex, &node, &node.m_output))
-          { return std::nullopt; }
-
-        break;
-      }
-
-      case SerializedNodeType::DoubleConstant:
-      {
-        u32 outputNodeIndex;
-        f64 value;
-        if (!reader.Read(&outputNodeIndex) || !reader.Read(&value))
-          { return std::nullopt; }
-
-        DoubleConstantProgramGraphNode& node = program.m_doubleConstantNodes.AppendNew(value);
-        if (!AttachProcessorOutputNode(outputNodeIndex, &node, &node.m_output))
-          { return std::nullopt; }
-
-        break;
-      }
-
-      case SerializedNodeType::IntConstant:
-      {
-        u32 outputNodeIndex;
-        s32 value;
-        if (!reader.Read(&outputNodeIndex) || !reader.Read(&value))
-          { return std::nullopt; }
-
-        IntConstantProgramGraphNode& node = program.m_intConstantNodes.AppendNew(value);
-        if (!AttachProcessorOutputNode(outputNodeIndex, &node, &node.m_output))
-          { return std::nullopt; }
-
-        break;
-      }
-
-      case SerializedNodeType::BoolConstant:
-      {
-        u32 outputNodeIndex;
-        u8 value;
-        if (!reader.Read(&outputNodeIndex) || !reader.Read(&value) || value > 1)
-          { return std::nullopt; }
-
-        BoolConstantProgramGraphNode& node = program.m_boolConstantNodes.AppendNew(value != 0);
-        if (!AttachProcessorOutputNode(outputNodeIndex, &node, &node.m_output))
-          { return std::nullopt; }
-
-        break;
-      }
-
-      case SerializedNodeType::StringConstant:
-      {
-        u32 outputNodeIndex;
-        u32 length;
-        if (!reader.Read(&outputNodeIndex) || !reader.Read(&length))
-          { return std::nullopt; }
-
-        auto [value, buffer] = UnicodeString::CreateForWrite(length);
-        if (!reader.Read(buffer))
-          { return std::nullopt; }
-
-        StringConstantProgramGraphNode& node = program.m_stringConstantNodes.AppendNew(value);
-        if (!AttachProcessorOutputNode(outputNodeIndex, &node, &node.m_output))
-          { return std::nullopt; }
-
-        break;
-      }
-
-      case SerializedNodeType::Array:
-      {
-        u32 elementCount;
-        if (!reader.Read(&elementCount))
-          { return std::nullopt; }
-
-        ArrayProgramGraphNode& node = program.m_arrayNodes.AppendNew(elementCount);
-        for (u32 i = 0; i < elementCount; i++)
-        {
-          u32 elementNodeIndex;
-          if (!reader.Read(&elementNodeIndex) || !AttachProcessorInputNode(elementNodeIndex, &node, &node.m_elements[i]))
-            { return std::nullopt; }
-        }
-
-        u32 outputNodeIndex;
-        if (!reader.Read(&outputNodeIndex) || !AttachProcessorOutputNode(outputNodeIndex, &node, &node.m_output))
-          { return std::nullopt; }
-
-        break;
-      }
-
-      case SerializedNodeType::NativeModuleCall:
-      {
-        FixedArray<u8, Guid::ByteCount> nativeLibraryIdBytes;
-        FixedArray<u8, Guid::ByteCount> nativeModuleIdBytes;
-        u32 inputCount;
-        u32 outputCount;
-        s32 upsampleFactor;
-        if (!reader.Read(Span<u8>(nativeLibraryIdBytes))
-          || !reader.Read(Span<u8>(nativeModuleIdBytes))
-          || !reader.Read(&inputCount)
-          || !reader.Read(&outputCount)
-          || !reader.Read(&upsampleFactor)
-          || upsampleFactor <= 0)
-          { return std::nullopt; }
-
-        // Make sure the native library was declared in the dependency list
-        Guid nativeLibraryId = Guid::FromBytes(nativeLibraryIdBytes);
-        Guid nativeModuleId = Guid::FromBytes(nativeModuleIdBytes);
-        bool found = false;
-        for (const auto& nativeLibraryDependency : program.m_nativeLibraryDependencies)
-        {
-          if (nativeLibraryDependency.m_id == nativeLibraryId)
-          {
-            found = true;
-            break;
-          }
-        }
-
-        if (!found)
-          { return std::nullopt; }
-
-        NativeModuleCallProgramGraphNode& node = program.m_nativeModuleCallNodes.AppendNew(
-          nativeLibraryId,
-          nativeModuleId,
-          inputCount,
-          outputCount,
-          upsampleFactor);
-
-        for (u32 i = 0; i < inputCount; i++)
-        {
-          u32 inputNodeIndex;
-          if (!reader.Read(&inputNodeIndex) || !AttachProcessorInputNode(inputNodeIndex, &node, &node.m_inputs[i]))
-            { return std::nullopt; }
-        }
-
-        for (u32 i = 0; i < outputCount; i++)
         {
           u32 outputNodeIndex;
-          if (!reader.Read(&outputNodeIndex) || !AttachProcessorOutputNode(outputNodeIndex, &node, &node.m_outputs[i]))
+          f32 value;
+          if (!reader.Read(&outputNodeIndex) || !reader.Read(&value))
             { return std::nullopt; }
+
+          FloatConstantProgramGraphNode& node = program.m_floatConstantNodes.AppendNew(value);
+          if (!AttachProcessorOutputNode(outputNodeIndex, &node, &node.m_output))
+            { return std::nullopt; }
+
+          break;
         }
 
-        break;
-      }
+      case SerializedNodeType::DoubleConstant:
+        {
+          u32 outputNodeIndex;
+          f64 value;
+          if (!reader.Read(&outputNodeIndex) || !reader.Read(&value))
+            { return std::nullopt; }
+
+          DoubleConstantProgramGraphNode& node = program.m_doubleConstantNodes.AppendNew(value);
+          if (!AttachProcessorOutputNode(outputNodeIndex, &node, &node.m_output))
+            { return std::nullopt; }
+
+          break;
+        }
+
+      case SerializedNodeType::IntConstant:
+        {
+          u32 outputNodeIndex;
+          s32 value;
+          if (!reader.Read(&outputNodeIndex) || !reader.Read(&value))
+            { return std::nullopt; }
+
+          IntConstantProgramGraphNode& node = program.m_intConstantNodes.AppendNew(value);
+          if (!AttachProcessorOutputNode(outputNodeIndex, &node, &node.m_output))
+            { return std::nullopt; }
+
+          break;
+        }
+
+      case SerializedNodeType::BoolConstant:
+        {
+          u32 outputNodeIndex;
+          u8 value;
+          if (!reader.Read(&outputNodeIndex) || !reader.Read(&value) || value > 1)
+            { return std::nullopt; }
+
+          BoolConstantProgramGraphNode& node = program.m_boolConstantNodes.AppendNew(value != 0);
+          if (!AttachProcessorOutputNode(outputNodeIndex, &node, &node.m_output))
+            { return std::nullopt; }
+
+          break;
+        }
+
+      case SerializedNodeType::StringConstant:
+        {
+          u32 outputNodeIndex;
+          u32 length;
+          if (!reader.Read(&outputNodeIndex) || !reader.Read(&length))
+            { return std::nullopt; }
+
+          auto [value, buffer] = UnicodeString::CreateForWrite(length);
+          if (!reader.Read(buffer))
+            { return std::nullopt; }
+
+          StringConstantProgramGraphNode& node = program.m_stringConstantNodes.AppendNew(value);
+          if (!AttachProcessorOutputNode(outputNodeIndex, &node, &node.m_output))
+            { return std::nullopt; }
+
+          break;
+        }
+
+      case SerializedNodeType::Array:
+        {
+          u32 elementCount;
+          if (!reader.Read(&elementCount))
+            { return std::nullopt; }
+
+          ArrayProgramGraphNode& node = program.m_arrayNodes.AppendNew(elementCount);
+          for (u32 i = 0; i < elementCount; i++)
+          {
+            u32 elementNodeIndex;
+            if (!reader.Read(&elementNodeIndex) || !AttachProcessorInputNode(elementNodeIndex, &node, &node.m_elements[i]))
+              { return std::nullopt; }
+          }
+
+          u32 outputNodeIndex;
+          if (!reader.Read(&outputNodeIndex) || !AttachProcessorOutputNode(outputNodeIndex, &node, &node.m_output))
+            { return std::nullopt; }
+
+          break;
+        }
+
+      case SerializedNodeType::NativeModuleCall:
+        {
+          FixedArray<u8, Guid::ByteCount> nativeLibraryIdBytes;
+          FixedArray<u8, Guid::ByteCount> nativeModuleIdBytes;
+          u32 inputCount;
+          u32 outputCount;
+          s32 upsampleFactor;
+          if (!reader.Read(Span<u8>(nativeLibraryIdBytes))
+            || !reader.Read(Span<u8>(nativeModuleIdBytes))
+            || !reader.Read(&inputCount)
+            || !reader.Read(&outputCount)
+            || !reader.Read(&upsampleFactor)
+            || upsampleFactor <= 0)
+            { return std::nullopt; }
+
+          // Make sure the native library was declared in the dependency list
+          Guid nativeLibraryId = Guid::FromBytes(nativeLibraryIdBytes);
+          Guid nativeModuleId = Guid::FromBytes(nativeModuleIdBytes);
+          bool found = false;
+          for (const auto& nativeLibraryDependency : program.m_nativeLibraryDependencies)
+          {
+            if (nativeLibraryDependency.m_id == nativeLibraryId)
+            {
+              found = true;
+              break;
+            }
+          }
+
+          if (!found)
+            { return std::nullopt; }
+
+          NativeModuleCallProgramGraphNode& node = program.m_nativeModuleCallNodes.AppendNew(
+            nativeLibraryId,
+            nativeModuleId,
+            inputCount,
+            outputCount,
+            upsampleFactor);
+
+          for (u32 i = 0; i < inputCount; i++)
+          {
+            u32 inputNodeIndex;
+            if (!reader.Read(&inputNodeIndex) || !AttachProcessorInputNode(inputNodeIndex, &node, &node.m_inputs[i]))
+              { return std::nullopt; }
+          }
+
+          for (u32 i = 0; i < outputCount; i++)
+          {
+            u32 outputNodeIndex;
+            if (!reader.Read(&outputNodeIndex) || !AttachProcessorOutputNode(outputNodeIndex, &node, &node.m_outputs[i]))
+              { return std::nullopt; }
+          }
+
+          break;
+        }
 
       case SerializedNodeType::GraphInput:
-      {
-        GraphInputProgramGraphNode& node = program.m_graphInputNodes.AppendNew();
+        {
+          GraphInputProgramGraphNode& node = program.m_graphInputNodes.AppendNew();
 
-        u32 outputNodeIndex;
-        if (!reader.Read(&outputNodeIndex) || !AttachProcessorOutputNode(outputNodeIndex, &node, &node.m_output))
-          { return std::nullopt; }
+          u32 outputNodeIndex;
+          if (!reader.Read(&outputNodeIndex) || !AttachProcessorOutputNode(outputNodeIndex, &node, &node.m_output))
+            { return std::nullopt; }
 
-        break;
-      }
+          break;
+        }
 
       case SerializedNodeType::GraphOutput:
-      {
-        GraphOutputProgramGraphNode& node = program.m_graphOutputNodes.AppendNew();
+        {
+          GraphOutputProgramGraphNode& node = program.m_graphOutputNodes.AppendNew();
 
-        u32 inputNodeIndex;
-        if (!reader.Read(&inputNodeIndex) || !AttachProcessorInputNode(inputNodeIndex, &node, &node.m_input))
-          { return std::nullopt; }
+          u32 inputNodeIndex;
+          if (!reader.Read(&inputNodeIndex) || !AttachProcessorInputNode(inputNodeIndex, &node, &node.m_input))
+            { return std::nullopt; }
 
-        break;
-      }
+          break;
+        }
 
       default:
         ASSERT(false);
@@ -537,10 +557,28 @@ namespace Chord
       program.m_programGraph.m_effectRemainActive = static_cast<const GraphOutputProgramGraphNode*>(nodesFromIndices[nodeIndex]);
     }
 
-    u32 voiceToEffectOutputsCount;
-    if (!reader.Read(&voiceToEffectOutputsCount))
+    u32 voiceToEffectCount;
+    if (!reader.Read(&voiceToEffectCount))
       { return std::nullopt; }
-    program.m_voiceToEffectOutputs = { voiceToEffectOutputsCount };
+
+    program.m_voiceToEffectPrimitiveTypes = { voiceToEffectCount };
+    program.m_programGraph.m_voiceToEffectPrimitiveTypes = program.m_voiceToEffectPrimitiveTypes;
+    for (PrimitiveType& primitiveType : program.m_voiceToEffectPrimitiveTypes)
+    {
+      u8 primitiveTypeU8;
+      if (!reader.Read<u8>(&primitiveTypeU8))
+        { return std::nullopt; }
+
+      if (primitiveType != PrimitiveTypeFloat
+        && primitiveType != PrimitiveTypeDouble
+        && primitiveType != PrimitiveTypeInt
+        && primitiveType != PrimitiveTypeBool)
+        { return std::nullopt; }
+
+      primitiveType = PrimitiveType(primitiveTypeU8);
+    }
+
+    program.m_voiceToEffectOutputs = { voiceToEffectCount };
     program.m_programGraph.m_voiceToEffectOutputs = program.m_voiceToEffectOutputs;
     for (const GraphOutputProgramGraphNode*& nodePointer : program.m_voiceToEffectOutputs)
     {
@@ -550,10 +588,7 @@ namespace Chord
       nodePointer = static_cast<const GraphOutputProgramGraphNode*>(nodesFromIndices[nodeIndex]);
     }
 
-    u32 voiceToEffectInputsCount;
-    if (!reader.Read(&voiceToEffectInputsCount))
-      { return std::nullopt; }
-    program.m_voiceToEffectInputs = { voiceToEffectInputsCount };
+    program.m_voiceToEffectInputs = { voiceToEffectCount };
     program.m_programGraph.m_voiceToEffectInputs = program.m_voiceToEffectInputs;
     for (const GraphInputProgramGraphNode*& nodePointer : program.m_voiceToEffectInputs)
     {

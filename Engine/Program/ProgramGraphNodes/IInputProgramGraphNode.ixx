@@ -1,6 +1,7 @@
 export module Chord.Engine:Program.ProgramGraphNodes.IInputProgramGraphNode;
 
 import Chord.Foundation;
+import :Program.ProgramGraphNodes.IProgramGraphNode;
 
 namespace Chord
 {
@@ -9,10 +10,9 @@ namespace Chord
     class IProcessorProgramGraphNode;
     class IOutputProgramGraphNode;
 
-    class IInputProgramGraphNode
+    class IInputProgramGraphNode : public IProgramGraphNode
     {
     public:
-      virtual ~IInputProgramGraphNode() noexcept = default;
       IInputProgramGraphNode(const IInputProgramGraphNode&) = delete;
       IInputProgramGraphNode& operator=(const IInputProgramGraphNode&) = delete;
 

@@ -273,13 +273,21 @@ internal class BuildProgramResult : IBuildProgramResult
       contentWriter.Write(nodeIndices[ProgramGraph.EffectRemainActive]);
     }
 
+    Debug.Assert(ProgramGraph.VoiceToEffectOutputs.Count == ProgramGraph.VoiceToEffectInputs.Count);
     contentWriter.Write((uint)ProgramGraph.VoiceToEffectOutputs.Count);
+
+    foreach (var node in ProgramGraph.VoiceToEffectInputs)
+    {
+      Debug.Assert(node.Output.DataType.PrimitiveType != null);
+      Debug.Assert(node.Output.DataType.UpsampleFactor == 1);
+      contentWriter.Write((byte)node.Output.DataType.PrimitiveType.Value);
+    }
+
     foreach (var node in ProgramGraph.VoiceToEffectOutputs)
     {
       contentWriter.Write(nodeIndices[node]);
     }
 
-    contentWriter.Write((uint)ProgramGraph.VoiceToEffectInputs.Count);
     foreach (var node in ProgramGraph.VoiceToEffectInputs)
     {
       contentWriter.Write(nodeIndices[node]);

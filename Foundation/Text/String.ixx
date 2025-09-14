@@ -197,6 +197,7 @@ namespace Chord
       //     This is an unmanaged string; m_pointer points to the actual string data and m_length is the actual character count
       // - m_pointer != nullptr && m_length == 0:
       //     This is a managed string; m_pointer points to a StringData instance
+      // !!! change this to a union to make it constexpr-compatible, perhaps?
       void* m_pointer = nullptr;
       usz m_length = 0;
     };
@@ -829,8 +830,7 @@ namespace Chord
     {
       HashGenerator generator;
       auto span = value.AsSpan();
-      usz count = span.Count();
-      generator.Append(Span(&count, 1));
+      generator.Append(span.Count());
       generator.Append(span);
       return generator.GetHashKey();
     }

@@ -7,5 +7,6 @@ export import :Utilities.Bounds;
 export import :Utilities.Copy;
 export import :Utilities.DisallowAllocationScope;
 export import :Utilities.Guid;
+export import :Utilities.HashKey;
 export import :Utilities.Sha256;
 export import :Utilities.Unroll;

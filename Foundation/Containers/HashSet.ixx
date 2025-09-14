@@ -75,6 +75,22 @@ namespace Chord
       // This is declared at the top so that IteratorValue can see it
       struct Bucket
       {
+        Bucket() = default;
+        Bucket(const Bucket&) = delete;
+        Bucket& operator=(const Bucket&) = delete;
+
+        Bucket(Bucket&& other) noexcept
+          : m_key(std::exchange(other.m_key, {}))
+          , m_hash(std::exchange(other.m_hash, 0))
+          { }
+
+        Bucket& operator=(Bucket&& other) noexcept
+        {
+          m_key = std::exchange(other.m_key, {});
+          m_hash = std::exchange(other.m_hash, 0);
+          return *this;
+        }
+
         std::optional<TKey> m_key;
         u64 m_hash = 0;
       };
@@ -146,6 +162,9 @@ namespace Chord
 
       constexpr void Clear();
 
+      // This exists so that the actual key stored in the hash set is accessible (i.e. so the same memory can be referenced)
+      constexpr const TKey* TryGet(const TKey& k) const;
+
       constexpr bool Contains(const TKey& k) const;
 
       constexpr void Insert(const TKey& k)
@@ -153,6 +172,7 @@ namespace Chord
 
       constexpr void Insert(TKey&& k);
 
+      // Returns true if the key was added
       constexpr bool Ensure(const TKey& k)
         requires (std::copyable<TKey>);
 
@@ -166,7 +186,7 @@ namespace Chord
 
       // This exists so that the HashMap class can look up values without needing to specify the value portion as part of the lookup key
       template<typename TOtherKey>
-      constexpr const TKey* TryGet(const TOtherKey& k) const;
+      constexpr const TKey* TryGetInternal(const TOtherKey& k) const;
 
       constexpr const TKey* InsertInternal(TKey&& k);
 
@@ -310,6 +330,10 @@ namespace Chord
     }
 
     template<hash_set_key TKey>
+    constexpr const TKey* HashSet<TKey>::TryGet(const TKey& k) const
+      { return TryGetInternal(k); }
+
+    template<hash_set_key TKey>
     constexpr bool HashSet<TKey>::Contains(const TKey& k) const
       { return TryGet(k) != nullptr; }
 
@@ -354,7 +378,7 @@ namespace Chord
 
     template<hash_set_key TKey>
     template<typename TOtherKey>
-    constexpr const TKey* HashSet<TKey>::TryGet(const TOtherKey& k) const
+    constexpr const TKey* HashSet<TKey>::TryGetInternal(const TOtherKey& k) const
     {
       if (m_count == 0)
         { return nullptr; }

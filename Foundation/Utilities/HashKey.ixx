@@ -15,7 +15,7 @@ namespace Chord
     {
     public:
       template<typename T>
-        requires (std::integral<T> || std::floating_point<T> || any_char<T>)
+        requires (std::integral<T> || std::floating_point<T> || any_char<T> || std::is_pointer_v<T>)
       constexpr void Append(Span<T> values)
       {
         // FNV-1a implementation
@@ -42,6 +42,11 @@ namespace Chord
         }
       }
 
+      template<typename T>
+        requires (std::integral<T> || std::floating_point<T> || any_char<T> || std::is_pointer_v<T>)
+      constexpr void Append(T value)
+        { Append(Span(&value, 1)); }
+
       constexpr HashKey GetHashKey() const
         { return HashKey(m_state); }
 
@@ -50,17 +55,27 @@ namespace Chord
     };
 
     template<typename T>
-    constexpr HashKey CalculateHashKey(T value)
+    constexpr HashKey CalculateHashKey(const T& value)
       { static_assert(AlwaysFalse<T>, "CalculateHashKey not implemented"); };
 
     // This should be overridden for types with custom hash logic
     template<typename T>
-      requires (std::integral<T> || std::floating_point<T> || any_char<T>)
-    constexpr HashKey CalculateHashKey(T value)
+      requires (std::integral<T> || std::floating_point<T> || any_char<T> || std::is_pointer_v<T>)
+    constexpr HashKey CalculateHashKey(const T& value)
     {
       HashGenerator generator;
-      generator.Append(Span(&value, 1));
+      generator.Append(value);
       return generator.GetHashKey();
+    }
+
+    template<typename... T>
+    constexpr HashKey CalculateHashKey(const std::tuple<T...>& value)
+    {
+      HashKey result = HashKey(0);
+      Unroll<0, std::tuple_size_v<std::tuple<T...>>>(
+        [&](auto i)
+          { result = HashKey(u64(result) ^ u64(CalculateHashKey(std::get<decltype(i)::value>(value)))); });
+      return result;
     }
   }
 }

@@ -4,7 +4,6 @@ import std;
 
 import Chord.Foundation;
 import :Program.ProgramGraphNodes.IProcessorProgramGraphNode;
-import :Program.ProgramGraphNodes.IProgramGraphNode;
 
 namespace Chord
 {
@@ -13,10 +12,10 @@ namespace Chord
     class IInputProgramGraphNode;
     class IOutputProgramGraphNode;
 
-    class ArrayProgramGraphNode : public IProgramGraphNode, public IProcessorProgramGraphNode
+    class ArrayProgramGraphNode : public IProcessorProgramGraphNode
     {
     public:
-      ArrayProgramGraphNode(usz elementCount) // !!! do we even need primitive type?
+      ArrayProgramGraphNode(usz elementCount)
         : m_elements(elementCount)
         { m_elements.Fill(nullptr); }
 

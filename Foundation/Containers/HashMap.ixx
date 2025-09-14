@@ -10,6 +10,26 @@ namespace Chord
   template<typename TKey, typename TValue>
   struct HashMapEntry
   {
+    HashMapEntry(TKey&& key, TValue&& value)
+      : m_key(std::move(key))
+      , m_value(std::move(value))
+      { }
+
+    HashMapEntry(const HashMapEntry&) = delete;
+    HashMapEntry& operator=(const HashMapEntry&) = delete;
+
+    HashMapEntry(HashMapEntry&& other) noexcept
+      : m_key(std::move(other.m_key))
+      , m_value(std::move(other.m_value))
+      { }
+
+    HashMapEntry& operator=(HashMapEntry&& other) noexcept
+    {
+      m_key = std::move(other.m_key);
+      m_value = std::move(other.m_value);
+      return *this;
+    }
+
     TKey m_key;
     TValue m_value;
 
@@ -221,19 +241,19 @@ namespace Chord
 
     template<hash_map_key TKey, hash_map_value TValue>
     constexpr bool HashMap<TKey, TValue>::ContainsKey(const TKey& k) const
-      { return m_hashSet.TryGet(k) != nullptr; }
+      { return m_hashSet.TryGetInternal(k) != nullptr; }
 
     template<hash_map_key TKey, hash_map_value TValue>
     constexpr const TValue* HashMap<TKey, TValue>::TryGet(const TKey& k) const
     {
-      const HashMapEntry<TKey, TValue>* entry = m_hashSet.TryGet(k);
+      const HashMapEntry<TKey, TValue>* entry = m_hashSet.TryGetInternal(k);
       return entry == nullptr ? nullptr : &entry->m_value;
     }
 
     template<hash_map_key TKey, hash_map_value TValue>
     constexpr TValue* HashMap<TKey, TValue>::TryGet(const TKey& k)
     {
-      const HashMapEntry<TKey, TValue>* entry = m_hashSet.TryGet(k);
+      const HashMapEntry<TKey, TValue>* entry = m_hashSet.TryGetInternal(k);
       return entry == nullptr ? nullptr : const_cast<TValue*>(&entry->m_value);
     }
 
@@ -275,14 +295,14 @@ namespace Chord
       requires (std::copyable<TKey>)
     {
       TKey keyCopy = k;
-      return Insert(std::move(keyCopy), v);
+      return Insert(std::move(keyCopy), std::move(v));
     }
 
     template<hash_map_key TKey, hash_map_value TValue>
     constexpr TValue* HashMap<TKey, TValue>::Insert(TKey&& k, TValue&& v)
     {
       m_hashSet.EnsureCapacity(m_hashSet.Count() + 1);
-      const HashMapEntry<TKey, TValue>* insertedEntry = m_hashSet.InsertInternal({ .m_key = std::move(k), .m_value = std::move(v) });
+      const HashMapEntry<TKey, TValue>* insertedEntry = m_hashSet.InsertInternal({ std::move(k), std::move(v) });
       ASSERT(insertedEntry != nullptr);
       return const_cast<TValue*>(&insertedEntry->m_value);
     }

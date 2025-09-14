@@ -2,7 +2,6 @@ export module Chord.Engine:Program.ProgramGraphNodes.NativeModuleCallProgramGrap
 
 import Chord.Foundation;
 import :Program.ProgramGraphNodes.IProcessorProgramGraphNode;
-import :Program.ProgramGraphNodes.IProgramGraphNode;
 
 namespace Chord
 {
@@ -11,7 +10,7 @@ namespace Chord
     class IInputProgramGraphNode;
     class IOutputProgramGraphNode;
 
-    class NativeModuleCallProgramGraphNode : public IProgramGraphNode, public IProcessorProgramGraphNode
+    class NativeModuleCallProgramGraphNode : public IProcessorProgramGraphNode
     {
     public:
       NativeModuleCallProgramGraphNode(const Guid &nativeLibraryId, const Guid &nativeModuleId, usz inputCount, usz outputCount, s32 upsampleFactor)

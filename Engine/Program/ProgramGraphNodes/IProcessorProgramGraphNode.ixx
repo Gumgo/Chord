@@ -1,15 +1,15 @@
 export module Chord.Engine:Program.ProgramGraphNodes.IProcessorProgramGraphNode;
 
 import Chord.Foundation;
+import :Program.ProgramGraphNodes.IProgramGraphNode;
 
 namespace Chord
 {
   export
   {
-    class IProcessorProgramGraphNode
+    class IProcessorProgramGraphNode : public IProgramGraphNode
     {
     public:
-      virtual ~IProcessorProgramGraphNode() noexcept = default;
       IProcessorProgramGraphNode(const IProcessorProgramGraphNode&) = delete;
       IProcessorProgramGraphNode& operator=(const IProcessorProgramGraphNode&) = delete;
 

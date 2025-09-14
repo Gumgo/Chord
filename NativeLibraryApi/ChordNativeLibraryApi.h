@@ -120,7 +120,8 @@ typedef struct
 } InputStringConstantArray;
 
 // For buffer argument types, when native module callbacks are invoked at compile time (Prepare, InitializeVoice, Invoke, etc.), a m_samples will contain a
-// constant value if the argument value is a compile-time constant. Otherwise, m_samples will be null.
+// constant value if the argument value is a compile-time constant. Otherwise, m_samples will be null. If m_isConstant is true, only the first SIMD vector worth
+// of samples within the buffer is provided and only these samples should be accessed. The remaining samples are implicitly equal to the first sample value.
 
 typedef struct
 {
@@ -225,10 +226,10 @@ typedef struct
 
     int m_intConstantIn;
     int m_intConstantOut;
-    InputDoubleConstantArray m_intConstantArrayIn;
-    InputDoubleBuffer m_intBufferIn;
-    OutputDoubleBuffer m_intBufferOut;
-    InputDoubleBufferArray m_intBufferArrayIn;
+    InputIntConstantArray m_intConstantArrayIn;
+    InputIntBuffer m_intBufferIn;
+    OutputIntBuffer m_intBufferOut;
+    InputIntBufferArray m_intBufferArrayIn;
 
     bool m_boolConstantIn;
     bool m_boolConstantOut;

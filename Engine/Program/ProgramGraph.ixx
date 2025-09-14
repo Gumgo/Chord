@@ -1,3 +1,7 @@
+module;
+
+#include "../../NativeLibraryApi/ChordNativeLibraryApi.h"
+
 export module Chord.Engine:Program.ProgramGraph;
 
 import std;
@@ -25,6 +29,9 @@ namespace Chord
 
       // This is not null if an effect graph is present and returns a remain-active result
       const GraphOutputProgramGraphNode* m_effectRemainActive = nullptr;
+
+      // Voice-to-effect primitive types
+      Span<const PrimitiveType> m_voiceToEffectPrimitiveTypes;
 
       // Voice-to-effect outputs from the voice graph
       Span<const GraphOutputProgramGraphNode*> m_voiceToEffectOutputs;

@@ -144,6 +144,25 @@ namespace Chord
       EXPECT(hashSet.IsEmpty());
     }
 
+    TEST_METHOD_CONSTEXPR(TryGet)
+    {
+      HashSet<s32> hashSet;
+      hashSet.Insert(5);
+      hashSet.Insert(7);
+      hashSet.Insert(9);
+
+      EXPECT(!hashSet.Contains(4));
+      EXPECT(hashSet.Contains(5));
+      EXPECT(*hashSet.TryGet(5) == 5);
+      EXPECT(!hashSet.Contains(6));
+      EXPECT(hashSet.Contains(7));
+      EXPECT(*hashSet.TryGet(7) == 7);
+      EXPECT(!hashSet.Contains(8));
+      EXPECT(hashSet.Contains(9));
+      EXPECT(*hashSet.TryGet(9) == 9);
+      EXPECT(!hashSet.Contains(10));
+    }
+
     TEST_METHOD_CONSTEXPR(Contains)
     {
       HashSet<s32> hashSet;

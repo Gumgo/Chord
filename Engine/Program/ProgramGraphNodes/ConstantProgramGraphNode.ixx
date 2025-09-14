@@ -4,7 +4,6 @@ import std;
 
 import Chord.Foundation;
 import :Program.ProgramGraphNodes.IProcessorProgramGraphNode;
-import :Program.ProgramGraphNodes.IProgramGraphNode;
 
 namespace Chord
 {
@@ -12,7 +11,7 @@ namespace Chord
   {
     class IOutputProgramGraphNode;
 
-    class FloatConstantProgramGraphNode : public IProgramGraphNode, public IProcessorProgramGraphNode
+    class FloatConstantProgramGraphNode : public IProcessorProgramGraphNode
     {
     public:
       FloatConstantProgramGraphNode(f32 value)
@@ -37,6 +36,9 @@ namespace Chord
       virtual ProgramGraphNodeType Type() const override
         { return ProgramGraphNodeType::FloatConstant; }
 
+      const IOutputProgramGraphNode* Output() const
+        { return m_output; }
+
       f32 Value() const
         { return m_value; }
 
@@ -47,7 +49,7 @@ namespace Chord
       const IOutputProgramGraphNode* m_output = nullptr;
     };
 
-    class DoubleConstantProgramGraphNode : public IProgramGraphNode, public IProcessorProgramGraphNode
+    class DoubleConstantProgramGraphNode : public IProcessorProgramGraphNode
     {
     public:
       DoubleConstantProgramGraphNode(f64 value)
@@ -72,6 +74,9 @@ namespace Chord
       virtual ProgramGraphNodeType Type() const override
         { return ProgramGraphNodeType::DoubleConstant; }
 
+      const IOutputProgramGraphNode* Output() const
+        { return m_output; }
+
       f64 Value() const
         { return m_value; }
 
@@ -82,7 +87,7 @@ namespace Chord
       const IOutputProgramGraphNode* m_output = nullptr;
     };
 
-    class IntConstantProgramGraphNode : public IProgramGraphNode, public IProcessorProgramGraphNode
+    class IntConstantProgramGraphNode : public IProcessorProgramGraphNode
     {
     public:
       IntConstantProgramGraphNode(s32 value)
@@ -107,6 +112,9 @@ namespace Chord
       virtual ProgramGraphNodeType Type() const override
         { return ProgramGraphNodeType::IntConstant; }
 
+      const IOutputProgramGraphNode* Output() const
+        { return m_output; }
+
       s32 Value() const
         { return m_value; }
 
@@ -117,7 +125,7 @@ namespace Chord
       const IOutputProgramGraphNode* m_output = nullptr;
     };
 
-    class BoolConstantProgramGraphNode : public IProgramGraphNode, public IProcessorProgramGraphNode
+    class BoolConstantProgramGraphNode : public IProcessorProgramGraphNode
     {
     public:
       BoolConstantProgramGraphNode(bool value)
@@ -142,6 +150,9 @@ namespace Chord
       virtual ProgramGraphNodeType Type() const override
         { return ProgramGraphNodeType::BoolConstant; }
 
+      const IOutputProgramGraphNode* Output() const
+        { return m_output; }
+
       bool Value() const
         { return m_value; }
 
@@ -152,7 +163,7 @@ namespace Chord
       const IOutputProgramGraphNode* m_output = nullptr;
     };
 
-    class StringConstantProgramGraphNode : public IProgramGraphNode, public IProcessorProgramGraphNode
+    class StringConstantProgramGraphNode : public IProcessorProgramGraphNode
     {
     public:
       StringConstantProgramGraphNode(UnicodeString value)
@@ -176,6 +187,9 @@ namespace Chord
 
       virtual ProgramGraphNodeType Type() const override
         { return ProgramGraphNodeType::StringConstant; }
+
+      const IOutputProgramGraphNode* Output() const
+        { return m_output; }
 
       const UnicodeString &Value() const
         { return m_value; }

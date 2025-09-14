@@ -4,6 +4,7 @@ import std;
 
 import Chord.Foundation;
 
+export import :Program.InstrumentProperties;
 export import :Program.ProgramGraph;
 export import :Program.ProgramGraphNodes;
 export import :Program.ProgramVariantProperties;
@@ -78,10 +79,15 @@ namespace Chord
 
       static std::optional<Program> Deserialize(Span<const u8> bytes);
 
+      // !!! we probably want something like
+      // bool Validate(NativeLibraryRegistry* nativeLibraryRegistry) const;
+
       Span<const NativeLibraryDependency> NativeLibraryDependencies() const
         { return m_nativeLibraryDependencies; }
-      const ProgramVariantProperties &ProgramVariantProperties() const
+      const ProgramVariantProperties& ProgramVariantProperties() const
         { return m_programVariantProperties; }
+      const InstrumentProperties& InstrumentProperties() const
+        { return m_instrumentProperties; }
       const ProgramGraph& ProgramGraph() const
         { return m_programGraph; }
 
@@ -90,6 +96,7 @@ namespace Chord
 
       FixedArray<NativeLibraryDependency> m_nativeLibraryDependencies;
       Chord::ProgramVariantProperties m_programVariantProperties;
+      Chord::InstrumentProperties m_instrumentProperties;
       Chord::ProgramGraph m_programGraph;
 
       BoundedArray<InputProgramGraphNode> m_inputNodes;
@@ -107,6 +114,7 @@ namespace Chord
       FixedArray<const GraphInputProgramGraphNode*> m_inputChannelsFloat;
       FixedArray<const GraphInputProgramGraphNode*> m_inputChannelsDouble;
       FixedArray<const GraphOutputProgramGraphNode*> m_outputChannels;
+      FixedArray<PrimitiveType> m_voiceToEffectPrimitiveTypes;
       FixedArray<const GraphOutputProgramGraphNode*> m_voiceToEffectOutputs;
       FixedArray<const GraphInputProgramGraphNode*> m_voiceToEffectInputs;
       FixedArray<const IProcessorProgramGraphNode*> m_voiceGraph;

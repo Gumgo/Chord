@@ -4,7 +4,6 @@ import std;
 
 import Chord.Foundation;
 import :Program.ProgramGraphNodes.IProcessorProgramGraphNode;
-import :Program.ProgramGraphNodes.IProgramGraphNode;
 
 namespace Chord
 {
@@ -12,7 +11,7 @@ namespace Chord
   {
     class IInputProgramGraphNode;
 
-    class GraphOutputProgramGraphNode : public IProgramGraphNode, public IProcessorProgramGraphNode
+    class GraphOutputProgramGraphNode : public IProcessorProgramGraphNode
     {
     public:
       GraphOutputProgramGraphNode() = default;

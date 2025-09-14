@@ -4,13 +4,12 @@ import std;
 
 import Chord.Foundation;
 import :Program.ProgramGraphNodes.IOutputProgramGraphNode;
-import :Program.ProgramGraphNodes.IProgramGraphNode;
 
 namespace Chord
 {
   export
   {
-    class OutputProgramGraphNode : public IProgramGraphNode, public IOutputProgramGraphNode
+    class OutputProgramGraphNode : public IOutputProgramGraphNode
     {
     public:
       OutputProgramGraphNode(usz connectionCount)

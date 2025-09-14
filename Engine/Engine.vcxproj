@@ -50,6 +50,7 @@
   <ImportGroup Label="ExtensionTargets" />
   <ItemGroup>
     <ClInclude Include="Macros.h" />
+    <ClInclude Include="ProgramProcessing\BufferGuards.h" />
     <ClInclude Include="WindowsHeaders.h" />
   </ItemGroup>
   <ItemGroup>
@@ -57,6 +58,17 @@
     <ClCompile Include="Native\Native.ixx" />
     <ClCompile Include="Native\NativeLibraryRegistry.cpp" />
     <ClCompile Include="Native\NativeLibraryRegistry.ixx" />
+    <ClCompile Include="ProgramProcessing\BufferManager.cpp" />
+    <ClCompile Include="ProgramProcessing\BufferManager.ixx" />
+    <ClCompile Include="ProgramProcessing\BufferMemory.ixx" />
+    <ClCompile Include="ProgramProcessing\ConstantManager.cpp" />
+    <ClCompile Include="ProgramProcessing\ConstantManager.ixx" />
+    <ClCompile Include="ProgramProcessing\ProgramGraphUtilities.cpp" />
+    <ClCompile Include="ProgramProcessing\ProgramGraphUtilities.ixx" />
+    <ClCompile Include="ProgramProcessing\ProgramProcessing.ixx" />
+    <ClCompile Include="ProgramProcessing\ProgramProcessor.cpp" />
+    <ClCompile Include="ProgramProcessing\ProgramProcessor.ixx" />
+    <ClCompile Include="Program\InstrumentProperties.ixx" />
     <ClCompile Include="Program\Program.cpp" />
     <ClCompile Include="Program\Program.ixx" />
     <ClCompile Include="Program\ProgramGraph.ixx" />
