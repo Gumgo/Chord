@@ -31,14 +31,14 @@ namespace Chord
 
     // Instantiate each graph
     if (programGraph.m_voiceGraph.has_value())
-      { m_voices = { program->InstrumentProperties().m_maxVoices }; }
+      { m_voices = InitializeCapacity(program->InstrumentProperties().m_maxVoices); }
     if (programGraph.m_effectGraph.has_value())
       { m_effect.emplace(); }
 
     // Reserve input buffers, assigning output node lookups for each graph
     if (programGraph.m_inputChannelsFloat.has_value())
     {
-      m_inputChannelBuffersFloat.emplace(programGraph.m_inputChannelsFloat->Count());
+      m_inputChannelBuffersFloat.emplace(InitializeCapacity(programGraph.m_inputChannelsFloat->Count()));
       for (usz inputChannelIndex = 0; inputChannelIndex < inputChannelCount; inputChannelIndex++)
       {
         auto bufferIndex = m_bufferManager.AddBuffer(PrimitiveTypeFloat, m_bufferSampleCount, 1);
@@ -54,7 +54,7 @@ namespace Chord
 
     if (programGraph.m_inputChannelsDouble.has_value())
     {
-      m_inputChannelBuffersDouble.emplace(programGraph.m_inputChannelsDouble->Count());
+      m_inputChannelBuffersDouble.emplace(InitializeCapacity(programGraph.m_inputChannelsDouble->Count()));
       for (usz inputChannelIndex = 0; inputChannelIndex < inputChannelCount; inputChannelIndex++)
       {
         auto bufferIndex = m_bufferManager.AddBuffer(PrimitiveTypeDouble, m_bufferSampleCount, 1);
@@ -75,13 +75,13 @@ namespace Chord
         ? programGraph.m_voiceToEffectOutputs.Count()
         : outputChannelCount;
       for (VoiceData &voice : m_voices)
-        { voice.m_outputs = { voiceGraphOutputCount }; }
+        { voice.m_outputs = InitializeCapacity(voiceGraphOutputCount); }
     }
 
     if (programGraph.m_effectGraph.has_value())
     {
       // Reserve voice-to-effect accumulation buffers
-      m_effect->m_voiceToEffectBuffers = { programGraph.m_voiceToEffectInputs.Count() };
+      m_effect->m_voiceToEffectBuffers = InitializeCapacity(programGraph.m_voiceToEffectInputs.Count());
       for (usz voiceToEffectIndex = 0; voiceToEffectIndex < programGraph.m_voiceToEffectInputs.Count(); voiceToEffectIndex++)
       {
         m_effect->m_voiceToEffectBuffers[voiceToEffectIndex] = m_bufferManager.AddBuffer(
@@ -91,7 +91,7 @@ namespace Chord
       }
 
       // Reserve space to hold graph outputs
-      m_effect->m_outputs = { outputChannelCount };
+      m_effect->m_outputs = InitializeCapacity(outputChannelCount);
     }
 
     // Iterate over each graph
@@ -119,7 +119,7 @@ namespace Chord
         FixedArray<NativeModuleCallTask>& nativeModuleCallTasks = isVoiceGraph
           ? m_voices[voiceIndex].m_nativeModuleCallTasks
           : m_effect->m_nativeModuleCallTasks;
-        nativeModuleCallTasks = { nativeModuleCallNodeCount };
+        nativeModuleCallTasks = InitializeCapacity(nativeModuleCallNodeCount);
 
         usz nextNativeModuleCallIndex = 0;
         IterateGraphTopological(

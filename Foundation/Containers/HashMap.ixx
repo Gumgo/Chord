@@ -3,6 +3,7 @@ export module Chord.Foundation:Containers.HashMap;
 import std;
 
 import :Containers.HashSet;
+import :Containers.Initializers;
 import :Core;
 
 namespace Chord
@@ -125,7 +126,7 @@ namespace Chord
 
       constexpr HashMap(HashMap&& other) noexcept;
 
-      constexpr HashMap(usz capacity);
+      constexpr HashMap(InitializeCapacity capacity);
 
       constexpr HashMap& operator=(const HashMap& other)
         requires (std::copyable<TKey> && std::copyable<TValue>);
@@ -193,7 +194,7 @@ namespace Chord
       { }
 
     template<hash_map_key TKey, hash_map_value TValue>
-    constexpr HashMap<TKey, TValue>::HashMap(usz capacity)
+    constexpr HashMap<TKey, TValue>::HashMap(InitializeCapacity capacity)
       : m_hashSet(capacity)
       { }
 

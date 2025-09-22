@@ -3,6 +3,7 @@ export module Chord.Foundation:Containers.HashSet;
 import std;
 
 import :Containers.FixedArray;
+import :Containers.Initializers;
 import :Core;
 import :Utilities.HashKey;
 
@@ -156,7 +157,7 @@ namespace Chord
 
       constexpr HashSet(HashSet&& other) noexcept;
 
-      constexpr HashSet(usz capacity);
+      constexpr HashSet(InitializeCapacity capacity);
 
       constexpr HashSet& operator=(const HashSet& other)
         requires (std::copyable<TKey>);
@@ -215,7 +216,7 @@ namespace Chord
     template<hash_set_key TKey>
     constexpr HashSet<TKey>::HashSet(const HashSet& other)
       requires (std::copyable<TKey>)
-      : m_buckets(other.m_buckets.Count())
+      : m_buckets(InitializeCapacity(other.m_buckets.Count()))
       , m_capacity(other.m_capacity)
       , m_count(other.m_count)
       , m_maxIdealBucketDistance(other.m_maxIdealBucketDistance)
@@ -233,8 +234,8 @@ namespace Chord
       { }
 
     template<hash_set_key TKey>
-    constexpr HashSet<TKey>::HashSet(usz capacity)
-      { EnsureCapacity(capacity); }
+    constexpr HashSet<TKey>::HashSet(InitializeCapacity capacity)
+      { EnsureCapacity(usz(capacity)); }
 
     template<hash_set_key TKey>
     constexpr HashSet<TKey>& HashSet<TKey>::operator=(const HashSet& other)
@@ -242,7 +243,7 @@ namespace Chord
     {
       if (this != &other)
       {
-        m_buckets = { other.m_buckets.Count() };
+        m_buckets = InitializeCapacity(other.m_buckets.Count());
         m_capacity = other.m_capacity;
         m_count = other.m_count;
         m_maxIdealBucketDistance = other.m_maxIdealBucketDistance;
@@ -309,7 +310,7 @@ namespace Chord
       ASSERT(requiredBucketCount > m_buckets.Count());
 
       FixedArray<Bucket> oldBuckets = std::move(m_buckets);
-      m_buckets = { requiredBucketCount };
+      m_buckets = InitializeCapacity(requiredBucketCount);
       m_capacity = actualCapacity;
       m_maxIdealBucketDistance = 0;
 

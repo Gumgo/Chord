@@ -13,7 +13,7 @@ namespace Chord
     {
     public:
       OutputProgramGraphNode(usz connectionCount)
-        : m_connections(connectionCount)
+        : m_connections(InitializeCapacity(connectionCount))
         { m_connections.Fill(nullptr); }
 
       OutputProgramGraphNode(const OutputProgramGraphNode&) = delete;

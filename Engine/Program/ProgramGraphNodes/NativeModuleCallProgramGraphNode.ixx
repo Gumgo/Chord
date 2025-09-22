@@ -16,8 +16,8 @@ namespace Chord
       NativeModuleCallProgramGraphNode(const Guid &nativeLibraryId, const Guid &nativeModuleId, usz inputCount, usz outputCount, s32 upsampleFactor)
         : m_nativeLibraryId(nativeLibraryId)
         , m_nativeModuleId(nativeModuleId)
-        , m_inputs(inputCount)
-        , m_outputs(outputCount)
+        , m_inputs(InitializeCapacity(inputCount))
+        , m_outputs(InitializeCapacity(outputCount))
         , m_upsampleFactor(upsampleFactor)
       {
         m_inputs.Fill(nullptr);

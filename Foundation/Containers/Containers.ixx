@@ -6,6 +6,7 @@ export import :Containers.BoundedArray;
 export import :Containers.FixedArray;
 export import :Containers.HashMap;
 export import :Containers.HashSet;
+export import :Containers.Initializers;
 export import :Containers.ResizableArrayBase;
 export import :Containers.Span;
 export import :Containers.UnboundedArray;

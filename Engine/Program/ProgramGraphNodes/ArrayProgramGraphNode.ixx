@@ -16,7 +16,7 @@ namespace Chord
     {
     public:
       ArrayProgramGraphNode(usz elementCount)
-        : m_elements(elementCount)
+        : m_elements(InitializeCapacity(elementCount))
         { m_elements.Fill(nullptr); }
 
       ArrayProgramGraphNode(const ArrayProgramGraphNode&) = delete;

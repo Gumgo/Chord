@@ -46,7 +46,7 @@ namespace Chord
 
     TEST_METHOD_CONSTEXPR(ConstructWithCapacity)
     {
-      HashSet<s32> hashSet = { 10 };
+      HashSet<s32> hashSet = InitializeCapacity(10);
       ASSERT(hashSet.Capacity() >= 10);
       ASSERT(hashSet.Count() == 0);
     }
@@ -111,7 +111,7 @@ namespace Chord
 
     TEST_METHOD_CONSTEXPR(Capacity)
     {
-      HashSet<s32> hashSet = { 10 };
+      HashSet<s32> hashSet = InitializeCapacity(10);
       EXPECT(hashSet.Capacity() >= 10);
 
       for (s32 i = 0; i < 20; i++)

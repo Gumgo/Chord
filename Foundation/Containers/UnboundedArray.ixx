@@ -2,6 +2,7 @@ export module Chord.Foundation:Containers.UnboundedArray;
 
 import std;
 
+import :Containers.Initializers;
 import :Containers.ResizableArrayBase;
 import :Core;
 import :Utilities.BitOperations;
@@ -33,9 +34,9 @@ namespace Chord
         , m_capacity(std::exchange(other.m_capacity, 0_usz))
         { this->m_count = std::exchange(other.m_count, 0_usz); }
 
-      constexpr UnboundedArray(usz capacity)
-        : m_elements(std::allocator<TElement>().allocate(capacity))
-        , m_capacity(capacity)
+      constexpr UnboundedArray(InitializeCapacity capacity)
+        : m_elements(std::allocator<TElement>().allocate(usz(capacity)))
+        , m_capacity(usz(capacity))
         { }
 
       constexpr ~UnboundedArray() noexcept

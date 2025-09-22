@@ -53,7 +53,7 @@ namespace Chord
 
         TaskExecutor* m_taskExecutor = nullptr;
         FixedArray<Task, ThreadCount> m_tasks;
-        FixedArray<u32> m_values = FixedArray<u32>(ValueCount);
+        FixedArray<u32> m_values = InitializeCapacity(ValueCount);
         std::atomic<u32> m_setValueCount = 0;
       };
 

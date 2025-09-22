@@ -54,6 +54,7 @@
     <ClCompile Include="Containers\FixedArray.ixx" />
     <ClCompile Include="Containers\HashMap.ixx" />
     <ClCompile Include="Containers\HashSet.ixx" />
+    <ClCompile Include="Containers\Initializers.ixx" />
     <ClCompile Include="Containers\ResizableArrayBase.ixx" />
     <ClCompile Include="Containers\Span.ixx" />
     <ClCompile Include="Containers\UnboundedArray.ixx" />

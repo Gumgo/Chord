@@ -2,6 +2,7 @@ export module Chord.Foundation:Containers.FixedArray;
 
 import std;
 
+import :Containers.Initializers;
 import :Containers.Span;
 import :Core;
 
@@ -87,10 +88,10 @@ namespace Chord
         , m_count(std::exchange(other.m_count, 0_usz))
         { }
 
-      constexpr FixedArray(usz count)
+      constexpr FixedArray(InitializeCapacity count)
         requires (std::is_default_constructible_v<TElement>)
-        : m_elements(std::allocator<TElement>().allocate(count))
-        , m_count(count)
+        : m_elements(std::allocator<TElement>().allocate(usz(count)))
+        , m_count(usz(count))
       {
         for (usz i = 0; i < m_count; i++)
           { std::construct_at(&m_elements[i]); }

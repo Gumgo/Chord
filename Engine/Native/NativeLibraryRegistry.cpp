@@ -163,7 +163,7 @@ namespace Chord
 
     // $TODO we could validate the native library here if we want
 
-    auto nativeModules = std::make_unique<FixedArray<NativeModule*>>(nativeLibraryCopy.m_nativeModuleCount);
+    auto nativeModules = std::make_unique<FixedArray<NativeModule*>>(InitializeCapacity(nativeLibraryCopy.m_nativeModuleCount));
     usz validNativeModuleCount = 0;
     for (usz nativeModuleIndex = 0; nativeModuleIndex < nativeLibraryCopy.m_nativeModuleCount; nativeModuleIndex++)
     {
@@ -188,7 +188,7 @@ namespace Chord
       nativeModule->m_signature.m_name = nativeModuleName.get();
       m_stringAllocations.Append(std::move(nativeModuleName));
 
-      auto parameters = std::make_unique<FixedArray<NativeModuleParameter>>(nativeModule->m_signature.m_parameterCount);
+      auto parameters = std::make_unique<FixedArray<NativeModuleParameter>>(InitializeCapacity(nativeModule->m_signature.m_parameterCount));
       for (usz parameterIndex = 0; parameterIndex < nativeModule->m_signature.m_parameterCount; parameterIndex++)
       {
         NativeModuleParameter parameter = nativeModule->m_signature.m_parameters[parameterIndex];

@@ -43,7 +43,7 @@ namespace Chord
   UnboundedArray<const IProcessorProgramGraphNode*> FindGraphRootNodes(Span<const IProcessorProgramGraphNode*> outputNodes)
   {
     HashSet<const IProcessorProgramGraphNode*> visitedNodes;
-    UnboundedArray<const IProcessorProgramGraphNode*> nodeStack = { outputNodes.Count() };
+    UnboundedArray<const IProcessorProgramGraphNode*> nodeStack = InitializeCapacity(outputNodes.Count());
     for (const IProcessorProgramGraphNode* node : outputNodes)
     {
       if (visitedNodes.Ensure(node))

@@ -12,7 +12,7 @@ namespace Chord
     usz threadCount = settings.m_threadCount == 0
       ? std::thread::hardware_concurrency()
       : settings.m_threadCount;
-    m_taskThreadContexts = { threadCount };
+    m_taskThreadContexts = InitializeCapacity(threadCount);
     for (usz i = 0; i < threadCount; i++)
       { m_taskThreadContexts[i].m_thread = std::thread([this, threadIndex = i]() { TaskThreadEntryPoint(threadIndex); }); }
   }

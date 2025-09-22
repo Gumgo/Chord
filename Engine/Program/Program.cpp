@@ -56,7 +56,7 @@ namespace Chord
     if (!reader.Read(&nativeLibraryDependencyCount))
       { return std::nullopt; }
 
-    program.m_nativeLibraryDependencies = { nativeLibraryDependencyCount };
+    program.m_nativeLibraryDependencies = InitializeCapacity(nativeLibraryDependencyCount);
     for (u32 i = 0; i < nativeLibraryDependencyCount; i++)
     {
       FixedArray<u8, Guid::ByteCount> idBytes;
@@ -96,7 +96,7 @@ namespace Chord
       { return std::nullopt; }
 
     // Read node types and count up the number of each node
-    FixedArray<SerializedNodeType> nodeTypes(nodeCount);
+    FixedArray<SerializedNodeType> nodeTypes = InitializeCapacity(nodeCount);
     FixedArray<usz, EnumCount<SerializedNodeType>()> nodeCounts;
     nodeCounts.ZeroElements();
     for (u32 nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
@@ -112,20 +112,20 @@ namespace Chord
       nodeCounts[EnumValue(nodeType)]++;
     }
 
-    program.m_inputNodes = { nodeCounts[EnumValue(SerializedNodeType::Input)] };
-    program.m_outputNodes = { nodeCounts[EnumValue(SerializedNodeType::Output)] };
-    program.m_floatConstantNodes = { nodeCounts[EnumValue(SerializedNodeType::FloatConstant)] };
-    program.m_doubleConstantNodes = { nodeCounts[EnumValue(SerializedNodeType::DoubleConstant)] };
-    program.m_intConstantNodes = { nodeCounts[EnumValue(SerializedNodeType::IntConstant)] };
-    program.m_boolConstantNodes = { nodeCounts[EnumValue(SerializedNodeType::BoolConstant)] };
-    program.m_stringConstantNodes = { nodeCounts[EnumValue(SerializedNodeType::StringConstant)] };
-    program.m_arrayNodes = { nodeCounts[EnumValue(SerializedNodeType::Array)] };
-    program.m_nativeModuleCallNodes = { nodeCounts[EnumValue(SerializedNodeType::NativeModuleCall)] };
-    program.m_graphInputNodes = { nodeCounts[EnumValue(SerializedNodeType::GraphInput)] };
-    program.m_graphOutputNodes = { nodeCounts[EnumValue(SerializedNodeType::GraphOutput)] };
+    program.m_inputNodes = InitializeCapacity(nodeCounts[EnumValue(SerializedNodeType::Input)]);
+    program.m_outputNodes = InitializeCapacity(nodeCounts[EnumValue(SerializedNodeType::Output)]);
+    program.m_floatConstantNodes = InitializeCapacity(nodeCounts[EnumValue(SerializedNodeType::FloatConstant)]);
+    program.m_doubleConstantNodes = InitializeCapacity(nodeCounts[EnumValue(SerializedNodeType::DoubleConstant)]);
+    program.m_intConstantNodes = InitializeCapacity(nodeCounts[EnumValue(SerializedNodeType::IntConstant)]);
+    program.m_boolConstantNodes = InitializeCapacity(nodeCounts[EnumValue(SerializedNodeType::BoolConstant)]);
+    program.m_stringConstantNodes = InitializeCapacity(nodeCounts[EnumValue(SerializedNodeType::StringConstant)]);
+    program.m_arrayNodes = InitializeCapacity(nodeCounts[EnumValue(SerializedNodeType::Array)]);
+    program.m_nativeModuleCallNodes = InitializeCapacity(nodeCounts[EnumValue(SerializedNodeType::NativeModuleCall)]);
+    program.m_graphInputNodes = InitializeCapacity(nodeCounts[EnumValue(SerializedNodeType::GraphInput)]);
+    program.m_graphOutputNodes = InitializeCapacity(nodeCounts[EnumValue(SerializedNodeType::GraphOutput)]);
 
     // Now, we can go through and pre-resolve all node pointers even though the nodes themselves haven't been allocated because we know where they will live
-    FixedArray<IProgramGraphNode*> nodesFromIndices(nodeCount);
+    FixedArray<IProgramGraphNode*> nodesFromIndices = InitializeCapacity(nodeCount);
     nodeCounts.ZeroElements();
     for (u32 nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
     {
@@ -498,7 +498,7 @@ namespace Chord
       { return std::nullopt; }
     if (hasInputChannelsFloat != 0)
     {
-      program.m_inputChannelsFloat = { usz(program.m_programVariantProperties.m_inputChannelCount) };
+      program.m_inputChannelsFloat = InitializeCapacity(usz(program.m_programVariantProperties.m_inputChannelCount));
       program.m_programGraph.m_inputChannelsFloat = program.m_inputChannelsFloat;
       for (const GraphInputProgramGraphNode*& nodePointer : program.m_inputChannelsFloat)
       {
@@ -514,7 +514,7 @@ namespace Chord
       { return std::nullopt; }
     if (hasInputChannelsDouble != 0)
     {
-      program.m_inputChannelsDouble = { usz(program.m_programVariantProperties.m_inputChannelCount) };
+      program.m_inputChannelsDouble = InitializeCapacity(usz(program.m_programVariantProperties.m_inputChannelCount));
       program.m_programGraph.m_inputChannelsDouble = program.m_inputChannelsDouble;
       for (const GraphInputProgramGraphNode*& nodePointer : program.m_inputChannelsDouble)
       {
@@ -525,7 +525,7 @@ namespace Chord
       }
     }
 
-    program.m_outputChannels = { usz(program.m_programVariantProperties.m_outputChannelCount) };
+    program.m_outputChannels = InitializeCapacity(usz(program.m_programVariantProperties.m_outputChannelCount));
     program.m_programGraph.m_outputChannels = program.m_outputChannels;
     for (const GraphOutputProgramGraphNode*& nodePointer : program.m_outputChannels)
     {
@@ -561,7 +561,7 @@ namespace Chord
     if (!reader.Read(&voiceToEffectCount))
       { return std::nullopt; }
 
-    program.m_voiceToEffectPrimitiveTypes = { voiceToEffectCount };
+    program.m_voiceToEffectPrimitiveTypes = InitializeCapacity(voiceToEffectCount);
     program.m_programGraph.m_voiceToEffectPrimitiveTypes = program.m_voiceToEffectPrimitiveTypes;
     for (PrimitiveType& primitiveType : program.m_voiceToEffectPrimitiveTypes)
     {
@@ -578,7 +578,7 @@ namespace Chord
       primitiveType = PrimitiveType(primitiveTypeU8);
     }
 
-    program.m_voiceToEffectOutputs = { voiceToEffectCount };
+    program.m_voiceToEffectOutputs = InitializeCapacity(voiceToEffectCount);
     program.m_programGraph.m_voiceToEffectOutputs = program.m_voiceToEffectOutputs;
     for (const GraphOutputProgramGraphNode*& nodePointer : program.m_voiceToEffectOutputs)
     {
@@ -588,7 +588,7 @@ namespace Chord
       nodePointer = static_cast<const GraphOutputProgramGraphNode*>(nodesFromIndices[nodeIndex]);
     }
 
-    program.m_voiceToEffectInputs = { voiceToEffectCount };
+    program.m_voiceToEffectInputs = InitializeCapacity(voiceToEffectCount);
     program.m_programGraph.m_voiceToEffectInputs = program.m_voiceToEffectInputs;
     for (const GraphInputProgramGraphNode*& nodePointer : program.m_voiceToEffectInputs)
     {
@@ -606,7 +606,7 @@ namespace Chord
       u32 voiceGraphCount;
       if (!reader.Read(&voiceGraphCount))
         { return std::nullopt; }
-      program.m_voiceGraph = { voiceGraphCount };
+      program.m_voiceGraph = InitializeCapacity(voiceGraphCount);
       program.m_programGraph.m_voiceGraph = program.m_voiceGraph;
       for (const IProcessorProgramGraphNode*& nodePointer : program.m_voiceGraph)
       {
@@ -624,7 +624,7 @@ namespace Chord
       u32 effectGraphCount;
       if (!reader.Read(&effectGraphCount))
         { return std::nullopt; }
-      program.m_effectGraph = { effectGraphCount };
+      program.m_effectGraph = InitializeCapacity(effectGraphCount);
       program.m_programGraph.m_effectGraph = program.m_effectGraph;
       for (const IProcessorProgramGraphNode*& nodePointer : program.m_effectGraph)
       {
@@ -640,7 +640,7 @@ namespace Chord
     // For simplicity, append the content bytes and the hash salt bytes together so we can do a non-incremental SHA256 hash in a single call
     static constexpr usz HeaderByteCount = sizeof(Header) + sizeof(u32) + Sha256ByteCount;
     usz contentByteCount = bytes.Count() - HeaderByteCount;
-    auto hashInputBytes = FixedArray<u8>(contentByteCount + sizeof(HashSalt));
+    FixedArray<u8> hashInputBytes = InitializeCapacity(contentByteCount + sizeof(HashSalt));
     Span<u8>(hashInputBytes, 0, contentByteCount).CopyElementsFrom(Span(bytes, HeaderByteCount, contentByteCount));
     Span<u8>(hashInputBytes, contentByteCount, sizeof(HashSalt)).CopyElementsFrom(HashSalt);
     auto computedContentHash = CalculateSha256(hashInputBytes);

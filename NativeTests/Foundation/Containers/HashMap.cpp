@@ -52,7 +52,7 @@ namespace Chord
 
     TEST_METHOD_CONSTEXPR(ConstructWithCapacity)
     {
-      HashMap<s32, f32> hashMap = { 10 };
+      HashMap<s32, f32> hashMap = InitializeCapacity(10);
       ASSERT(hashMap.Capacity() >= 10);
       ASSERT(hashMap.Count() == 0);
     }
@@ -150,7 +150,7 @@ namespace Chord
 
     TEST_METHOD_CONSTEXPR(Capacity)
     {
-      HashMap<s32, f32> hashMap = { 10 };
+      HashMap<s32, f32> hashMap = InitializeCapacity(10);
       EXPECT(hashMap.Capacity() >= 10);
 
       for (s32 i = 0; i < 20; i++)

@@ -151,7 +151,7 @@ namespace Chord
       EXPECT(arrayA.Capacity() == 0);
       EXPECT(arrayA.IsEmpty());
 
-      BoundedArray<s32> arrayB(4);
+      BoundedArray<s32> arrayB = InitializeCapacity(4);
       arrayB.Append(4);
       arrayB.Append(5);
       EXPECT(arrayB.Capacity() == 4);
@@ -165,7 +165,7 @@ namespace Chord
       EXPECT(arrayC[0] == 4);
       EXPECT(arrayC[1] == 5);
 
-      BoundedArray<MovableObject> arrayD(4);
+      BoundedArray<MovableObject> arrayD = InitializeCapacity(4);
       arrayD.Append(4);
       arrayD.Append(5);
       BoundedArray<MovableObject> arrayE = std::move(arrayD);
@@ -179,10 +179,10 @@ namespace Chord
 
     TEST_METHOD(CopyAssign)
     {
-      BoundedArray<s32> arrayA(4);
+      BoundedArray<s32> arrayA = InitializeCapacity(4);
       arrayA.Append(4);
       arrayA.Append(5);
-      BoundedArray<s32> arrayB(6);
+      BoundedArray<s32> arrayB = InitializeCapacity(6);
       arrayB = arrayA;
       EXPECT(arrayB.Capacity() == 4);
       EXPECT(arrayB.Count() == 2);
@@ -192,10 +192,10 @@ namespace Chord
 
     TEST_METHOD(MoveAssign)
     {
-      BoundedArray<MovableObject> arrayA(4);
+      BoundedArray<MovableObject> arrayA = InitializeCapacity(4);
       arrayA.Append(4);
       arrayA.Append(5);
-      BoundedArray<MovableObject> arrayB(6);
+      BoundedArray<MovableObject> arrayB = InitializeCapacity(6);
       arrayB = std::move(arrayA);
       EXPECT(arrayA.Capacity() == 0);
       EXPECT(arrayA.IsEmpty());
@@ -207,7 +207,7 @@ namespace Chord
 
     TEST_METHOD(Capacity)
     {
-      BoundedArray<MovableObject> array(4);
+      BoundedArray<MovableObject> array = InitializeCapacity(4);
       EXPECT(array.IsEmpty());
       EXPECT(!array.IsFull());
       EXPECT(array.Count() == 0);
@@ -234,7 +234,7 @@ namespace Chord
     }
 
     static auto CreateContainer(auto type, auto capacity)
-      { return BoundedArray<typename decltype(type)::type>(decltype(capacity)::value); }
+      { return BoundedArray<typename decltype(type)::type>(InitializeCapacity(decltype(capacity)::value)); }
 
     TEST_METHOD(Clear)
       { ResizableArrayBaseTests::Clear([](auto t, auto c) { return CreateContainer(t, c); }); }

@@ -197,20 +197,20 @@ namespace Chord
     { return m_buffers[usz(bufferIndex)]; }
 
   Span<InputFloatBuffer> BufferManager::AddFloatBufferArray(usz count)
-    { return m_inputFloatBufferArrays.AppendNew(count); }
+    { return m_inputFloatBufferArrays.AppendNew(InitializeCapacity(count)); }
 
   Span<InputDoubleBuffer> BufferManager::AddDoubleBufferArray(usz count)
-    { return m_inputDoubleBufferArrays.AppendNew(count); }
+    { return m_inputDoubleBufferArrays.AppendNew(InitializeCapacity(count)); }
 
   Span<InputIntBuffer> BufferManager::AddIntBufferArray(usz count)
-    { return m_inputIntBufferArrays.AppendNew(count); }
+    { return m_inputIntBufferArrays.AppendNew(InitializeCapacity(count)); }
 
   Span<InputBoolBuffer> BufferManager::AddBoolBufferArray(usz count)
-    { return m_inputBoolBufferArrays.AppendNew(count); }
+    { return m_inputBoolBufferArrays.AppendNew(InitializeCapacity(count)); }
 
   void BufferManager::InitializeBufferConcurrency()
   {
-    m_bufferConcurrencyMatrix = FixedArray<bool>(m_buffers.Count() * m_buffers.Count());
+    m_bufferConcurrencyMatrix = InitializeCapacity(m_buffers.Count() * m_buffers.Count());
     m_bufferConcurrencyMatrix.ZeroElements();
   }
 
@@ -356,7 +356,7 @@ namespace Chord
     m_bufferMemory = { totalByteCount };
     auto bufferMemory = m_bufferMemory.AsType<u8>();
 
-    m_sharedBufferMemoryEntries = { sharedBufferMemoryCount };
+    m_sharedBufferMemoryEntries = InitializeCapacity(sharedBufferMemoryCount);
 
     usz sharedBufferMemoryIndex = 0;
     usz totalByteOffset = 0;

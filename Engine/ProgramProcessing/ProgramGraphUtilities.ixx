@@ -14,7 +14,7 @@ namespace Chord
     template<callable_as<void(const IProcessorProgramGraphNode*)> VisitNode>
     void IterateGraphTopological(Span<const IProcessorProgramGraphNode*> rootNodes, VisitNode&& visitNode)
     {
-      UnboundedArray<const IProcessorProgramGraphNode*> nodeStack = { rootNodes.Count() };
+      UnboundedArray<const IProcessorProgramGraphNode*> nodeStack = InitializeCapacity(rootNodes.Count());
       for (const IProcessorProgramGraphNode* node : rootNodes)
         { nodeStack.Append(node); }
 
