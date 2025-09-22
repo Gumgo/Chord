@@ -18,7 +18,7 @@ namespace Chord
       void Initialize(const Callable<void()>& execute)
       {
         ASSERT(execute.IsValid());
-        ASSERT(m_execute.IsValid(), "The task is already initialized or in use");
+        ASSERT(!m_execute.IsValid(), "The task is already initialized or in use");
         m_execute = execute;
       }
 

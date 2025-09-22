@@ -69,6 +69,7 @@ namespace Chord
     {
       task->m_next = m_back;
       m_back->m_previous = task;
+      m_back = task;
     }
   }
 

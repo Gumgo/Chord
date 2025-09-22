@@ -54,6 +54,7 @@
   <ItemGroup>
     <ClCompile Include="ConsoleCommand.cpp" />
     <ClCompile Include="ConsoleCommand.ixx" />
+    <ClCompile Include="Engine\TaskSystem\TaskSystem.cpp" />
     <ClCompile Include="Foundation\Containers\BoundedArray.cpp" />
     <ClCompile Include="Foundation\Containers\FixedArray.cpp" />
     <ClCompile Include="Foundation\Containers\HashMap.cpp" />
@@ -87,6 +88,9 @@
     <ClInclude Include="Macros.h" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Engine\Engine.vcxproj">
+      <Project>{c108b7df-3303-4ec9-b55f-9da1cbc839c6}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\Foundation\Foundation.vcxproj">
       <Project>{a95efdcc-40d3-4094-9a26-6783eb2ac1b8}</Project>
     </ProjectReference>

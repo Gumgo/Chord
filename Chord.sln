@@ -19,6 +19,7 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NativeTests", "NativeTests\NativeTests.vcxproj", "{E706E556-E3F4-41F1-B267-F66A83DD77E8}"
 	ProjectSection(ProjectDependencies) = postProject
 		{A95EFDCC-40D3-4094-9A26-6783EB2AC1B8} = {A95EFDCC-40D3-4094-9A26-6783EB2AC1B8}
+		{C108B7DF-3303-4EC9-B55F-9DA1CBC839C6} = {C108B7DF-3303-4EC9-B55F-9DA1CBC839C6}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MathPrecisionTests", "MathPrecisionTests\MathPrecisionTests.vcxproj", "{79190C67-2458-4CA2-959D-EF4BDEA3514F}"

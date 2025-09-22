@@ -110,5 +110,8 @@
     <ClCompile Include="Foundation\Text\String.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\TaskSystem\TaskSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
