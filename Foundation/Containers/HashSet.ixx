@@ -75,19 +75,31 @@ namespace Chord
       // This is declared at the top so that IteratorValue can see it
       struct Bucket
       {
-        Bucket() = default;
-        Bucket(const Bucket&) = delete;
-        Bucket& operator=(const Bucket&) = delete;
+        constexpr Bucket() = default;
 
-        Bucket(Bucket&& other) noexcept
-          : m_key(std::exchange(other.m_key, {}))
-          , m_hash(std::exchange(other.m_hash, 0))
+        constexpr Bucket(const Bucket& other)
+          requires (std::copyable<TKey>)
+          : m_key(other.m_key)
+          , m_hash(other.m_hash)
           { }
 
-        Bucket& operator=(Bucket&& other) noexcept
+        constexpr Bucket& operator=(const Bucket& other)
+          requires (std::copyable<TKey>)
+        {
+          m_key = other.m_key;
+          m_hash = other.m_hash;
+          return *this;
+        }
+
+        constexpr Bucket(Bucket&& other) noexcept
+          : m_key(std::exchange(other.m_key, {}))
+          , m_hash(std::exchange(other.m_hash, 0_u64))
+          { }
+
+        constexpr Bucket& operator=(Bucket&& other) noexcept
         {
           m_key = std::exchange(other.m_key, {});
-          m_hash = std::exchange(other.m_hash, 0);
+          m_hash = std::exchange(other.m_hash, 0_u64);
           return *this;
         }
 

@@ -10,33 +10,44 @@ namespace Chord
   template<typename TKey, typename TValue>
   struct HashMapEntry
   {
-    HashMapEntry(TKey&& key, TValue&& value)
+    constexpr HashMapEntry(TKey&& key, TValue&& value)
       : m_key(std::move(key))
       , m_value(std::move(value))
       { }
 
-    HashMapEntry(const HashMapEntry&) = delete;
-    HashMapEntry& operator=(const HashMapEntry&) = delete;
+    constexpr HashMapEntry(const HashMapEntry& other)
+      requires (std::copyable<TKey> && std::copyable<TValue>)
+      : m_key(other.m_key)
+      , m_value(other.m_value)
+      { }
 
-    HashMapEntry(HashMapEntry&& other) noexcept
+    constexpr HashMapEntry& operator=(const HashMapEntry& other)
+      requires (std::copyable<TKey>&& std::copyable<TValue>)
+    {
+      m_key = other.m_key;
+      m_value = other.m_value;
+      return *this;
+    }
+
+    constexpr HashMapEntry(HashMapEntry&& other) noexcept
       : m_key(std::move(other.m_key))
       , m_value(std::move(other.m_value))
       { }
 
-    HashMapEntry& operator=(HashMapEntry&& other) noexcept
+    constexpr HashMapEntry& operator=(HashMapEntry&& other) noexcept
     {
       m_key = std::move(other.m_key);
       m_value = std::move(other.m_value);
       return *this;
     }
 
-    TKey m_key;
-    TValue m_value;
-
     constexpr bool operator==(const HashMapEntry& other) const
       { return m_key == other.m_key; }
     constexpr bool operator==(const TKey& otherKey) const
       { return m_key == otherKey; }
+
+    TKey m_key;
+    TValue m_value;
   };
 
   template<typename TKey, typename TValue>
@@ -110,7 +121,7 @@ namespace Chord
       constexpr HashMap() = default;
 
       constexpr HashMap(const HashMap& other)
-        requires (std::copyable<TKey>);
+        requires (std::copyable<TKey> && std::copyable<TValue>);
 
       constexpr HashMap(HashMap&& other) noexcept;
 
@@ -172,7 +183,7 @@ namespace Chord
 
     template<hash_map_key TKey, hash_map_value TValue>
     constexpr HashMap<TKey, TValue>::HashMap(const HashMap& other)
-      requires (std::copyable<TKey>)
+      requires (std::copyable<TKey> && std::copyable<TValue>)
       : m_hashSet(other.m_hashSet)
       { }
 
