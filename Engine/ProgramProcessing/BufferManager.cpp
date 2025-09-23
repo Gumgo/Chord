@@ -98,12 +98,15 @@ namespace Chord
       usz currentNodeIndex = sourceGroup.m_firstNodeIndex;
       if (currentNodeIndex == InvalidNodeIndex)
         { return; }
-      m_bufferGroupIndices[m_groupNodes[currentNodeIndex].m_bufferIndex] = destinationGroupIndex;
-      usz nextNodeIndex = m_groupNodes[currentNodeIndex].m_nextNodeIndex;
-      while (nextNodeIndex != InvalidNodeIndex)
+
+      while (true)
       {
-        m_bufferGroupIndices[m_groupNodes[nextNodeIndex].m_bufferIndex] = destinationGroupIndex;
-        currentNodeIndex = nextNodeIndex;
+        m_bufferGroupIndices[m_groupNodes[currentNodeIndex].m_bufferIndex] = destinationGroupIndex;
+        usz nextNodeIndex = m_groupNodes[currentNodeIndex].m_nextNodeIndex;
+        if (nextNodeIndex != InvalidNodeIndex)
+          { currentNodeIndex = nextNodeIndex; }
+        else
+          { break; }
       }
 
       // Link it to the first node in the destination group
@@ -238,12 +241,14 @@ namespace Chord
     SharedBufferMemoryGroupManager groupManager(m_buffers.Count());
 
     // First, we handle condition (2). We're going to determine which buffers can be shared across an input and an output of the same native module call. Start
-    // by building up the set of input buffers which may be shareable within each task.
+    // by building up the set of input buffers which may be shareable within each task. Note that we also check that the buffer's output task is not null
+    // because buffers not produced by tasks (e.g. graph input buffers) cannot be shared in this manner (because we don't keep track of how these buffers might
+    // branch to other tasks or other parts of the graph).
     HashMap<const void*, UnboundedArray<usz>> shareableTaskInputBuffers;
     for (usz bufferIndex = 0; bufferIndex < m_buffers.Count(); bufferIndex++)
     {
       const BufferData& buffer = m_buffers[bufferIndex];
-      if (buffer.m_inputTaskUsageCount == 1 && buffer.m_inputTaskForSharing != nullptr)
+      if (buffer.m_inputTaskUsageCount == 1 && buffer.m_inputTaskForSharing != nullptr && buffer.m_outputTaskForSharing != nullptr)
       {
         auto entry = shareableTaskInputBuffers.TryGet(buffer.m_inputTaskForSharing);
         if (entry == nullptr)
@@ -362,27 +367,30 @@ namespace Chord
     usz totalByteOffset = 0;
     for (usz groupIndex = 0; groupIndex < groupManager.GroupCount(); groupIndex++)
     {
-      bool anyBuffers = false;
+      std::optional<usz> groupSharedBufferMemoryIndex;
       groupManager.ForEachBuffer(
         SharedBufferMemoryGroupManager::GroupIndex(groupIndex),
         [&](usz bufferIndex)
         {
           BufferData& buffer = m_buffers[bufferIndex];
-          buffer.m_sharedBufferMemoryIndex = sharedBufferMemoryIndex;
-          if (anyBuffers)
-            { return; }
+          if (!groupSharedBufferMemoryIndex.has_value())
+          {
+            groupSharedBufferMemoryIndex = sharedBufferMemoryIndex;
+            SharedBufferMemory& sharedBufferMemory = m_sharedBufferMemoryEntries[sharedBufferMemoryIndex];
+            sharedBufferMemory.m_memory = Span(bufferMemory, totalByteOffset, buffer.m_byteCount);
 
-          SharedBufferMemory& sharedBufferMemory = m_sharedBufferMemoryEntries[sharedBufferMemoryIndex];
-          sharedBufferMemory.m_memory = Span(bufferMemory, totalByteOffset, buffer.m_byteCount);
+            #if BUFFER_GUARDS_ENABLED
+            sharedBufferMemory.m_memoryWithGuard = Span(bufferMemory, totalByteOffset, buffer.m_byteCount + BufferGuardByteCount);
+              totalByteOffset += BufferGuardByteCount;
+            #endif
+            totalByteOffset += buffer.m_byteCount;
+
+            sharedBufferMemoryIndex++;
+          }
+
+          SharedBufferMemory& sharedBufferMemory = m_sharedBufferMemoryEntries[groupSharedBufferMemoryIndex.value()];
+          buffer.m_sharedBufferMemoryIndex = groupSharedBufferMemoryIndex.value();
           buffer.m_memory = sharedBufferMemory.m_memory.Elements();
-
-          #if BUFFER_GUARDS_ENABLED
-          sharedBufferMemory.m_memoryWithGuard = Span(bufferMemory, totalByteOffset, buffer.m_byteCount + BufferGuardByteCount);
-            totalByteOffset += BufferGuardByteCount;
-          #endif
-          totalByteOffset += buffer.m_byteCount;
-
-          sharedBufferMemoryIndex++;
         });
     }
 

@@ -116,5 +116,11 @@
     <ClCompile Include="Engine\ProgramProcessing\ConstantManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\ProgramProcessing\BufferMemory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\ProgramProcessing\BufferManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

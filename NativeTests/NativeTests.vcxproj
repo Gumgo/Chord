@@ -54,6 +54,8 @@
   <ItemGroup>
     <ClCompile Include="ConsoleCommand.cpp" />
     <ClCompile Include="ConsoleCommand.ixx" />
+    <ClCompile Include="Engine\ProgramProcessing\BufferManager.cpp" />
+    <ClCompile Include="Engine\ProgramProcessing\BufferMemory.cpp" />
     <ClCompile Include="Engine\ProgramProcessing\ConstantManager.cpp" />
     <ClCompile Include="Engine\TaskSystem\TaskSystem.cpp" />
     <ClCompile Include="Foundation\Containers\BoundedArray.cpp" />

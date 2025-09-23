@@ -91,7 +91,7 @@ namespace Chord
         if (capacity <= m_capacity)
           { return; }
 
-        usz newCapacity = NextPowerOfTwo(Max(m_capacity, 1));
+        usz newCapacity = NextPowerOfTwo(Max(capacity, 1));
         TElement* newElements = std::allocator<TElement>().allocate(newCapacity);
         for (usz i = 0; i < this->m_count; i++)
         {

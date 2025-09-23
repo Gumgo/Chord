@@ -88,7 +88,7 @@ namespace Chord
 
       struct SharedBufferMemory
       {
-        SharedBufferMemory();
+        SharedBufferMemory() = default;
         SharedBufferMemory(const SharedBufferMemory&) = delete;
         SharedBufferMemory& operator=(const SharedBufferMemory&) = delete;
 
