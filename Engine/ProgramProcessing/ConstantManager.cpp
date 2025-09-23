@@ -44,7 +44,7 @@ namespace Chord
     }
 
     // No matching array already existed so allocate a new one
-    FixedArray<TElement> newArray = arraysForKey->AppendNew(InitializeCapacity(node->Elements().Count()));
+    FixedArray<TElement>& newArray = arraysForKey->AppendNew(InitializeCapacity(node->Elements().Count()));
     for (usz i = 0; i < node->Elements().Count(); i++)
       { newArray[i] = static_cast<const TConstantNode*>(node->Elements()[i]->Connection()->Processor())->Value(); }
 

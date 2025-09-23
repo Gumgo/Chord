@@ -43,7 +43,7 @@ namespace Chord
         { return m_value; }
 
     private:
-      friend class Program;
+      friend class ProgramGraphNodeModifier;
 
       f32 m_value = 0.0f;
       const IOutputProgramGraphNode* m_output = nullptr;
@@ -81,7 +81,7 @@ namespace Chord
         { return m_value; }
 
     private:
-      friend class Program;
+      friend class ProgramGraphNodeModifier;
 
       f64 m_value = 0.0;
       const IOutputProgramGraphNode* m_output = nullptr;
@@ -119,7 +119,7 @@ namespace Chord
         { return m_value; }
 
     private:
-      friend class Program;
+      friend class ProgramGraphNodeModifier;
 
       s32 m_value = 0;
       const IOutputProgramGraphNode* m_output = nullptr;
@@ -157,7 +157,7 @@ namespace Chord
         { return m_value; }
 
     private:
-      friend class Program;
+      friend class ProgramGraphNodeModifier;
 
       bool m_value = false;
       const IOutputProgramGraphNode* m_output = nullptr;
@@ -195,7 +195,7 @@ namespace Chord
         { return m_value; }
 
     private:
-      friend class Program;
+      friend class ProgramGraphNodeModifier;
 
       UnicodeString m_value;
       const IOutputProgramGraphNode* m_output = nullptr;

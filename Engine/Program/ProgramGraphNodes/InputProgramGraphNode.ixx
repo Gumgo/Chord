@@ -42,7 +42,7 @@ namespace Chord
         { return m_connection; }
 
     private:
-      friend class Program;
+      friend class ProgramGraphNodeModifier;
 
       const IProcessorProgramGraphNode* m_processor = nullptr;
       const IOutputProgramGraphNode* m_connection = nullptr;

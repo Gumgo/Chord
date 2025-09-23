@@ -113,5 +113,8 @@
     <ClCompile Include="Engine\TaskSystem\TaskSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\ProgramProcessing\ConstantManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

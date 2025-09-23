@@ -150,6 +150,9 @@
     <ClCompile Include="ProgramProcessing\BufferMemory.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Program\ProgramGraphNodes\ProgramGraphNodeModifier.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Macros.h">

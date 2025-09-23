@@ -64,7 +64,7 @@ namespace Chord
         { return m_upsampleFactor; }
 
     private:
-      friend class Program;
+      friend class ProgramGraphNodeModifier;
 
       Guid m_nativeLibraryId = Guid::Empty();
       Guid m_nativeModuleId = Guid::Empty();

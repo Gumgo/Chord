@@ -36,7 +36,7 @@ namespace Chord
         { return m_input; }
 
     private:
-      friend class Program;
+      friend class ProgramGraphNodeModifier;
 
       const IInputProgramGraphNode* m_input = nullptr;
     };

@@ -41,7 +41,7 @@ namespace Chord
         { return m_connections; }
 
     private:
-      friend class Program;
+      friend class ProgramGraphNodeModifier;
 
       const IProcessorProgramGraphNode* m_processor = nullptr;
       FixedArray<const IInputProgramGraphNode*> m_connections;

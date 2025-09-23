@@ -11,3 +11,4 @@ export import :Program.ProgramGraphNodes.IProcessorProgramGraphNode;
 export import :Program.ProgramGraphNodes.IProgramGraphNode;
 export import :Program.ProgramGraphNodes.NativeModuleCallProgramGraphNode;
 export import :Program.ProgramGraphNodes.OutputProgramGraphNode;
+export import :Program.ProgramGraphNodes.ProgramGraphNodeModifier;

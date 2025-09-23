@@ -83,6 +83,7 @@
     <ClCompile Include="Program\ProgramGraphNodes\IProgramGraphNode.ixx" />
     <ClCompile Include="Program\ProgramGraphNodes\NativeModuleCallProgramGraphNode.ixx" />
     <ClCompile Include="Program\ProgramGraphNodes\OutputProgramGraphNode.ixx" />
+    <ClCompile Include="Program\ProgramGraphNodes\ProgramGraphNodeModifier.ixx" />
     <ClCompile Include="Program\ProgramGraphNodes\ProgramGraphNodes.ixx" />
     <ClCompile Include="Program\ProgramVariantProperties.ixx" />
     <ClCompile Include="Reporting\IReporting.ixx" />

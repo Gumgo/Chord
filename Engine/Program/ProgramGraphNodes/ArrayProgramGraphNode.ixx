@@ -44,7 +44,7 @@ namespace Chord
         { return m_output; }
 
     private:
-      friend class Program;
+      friend class ProgramGraphNodeModifier;
 
       FixedArray<const IInputProgramGraphNode*> m_elements;
       const IOutputProgramGraphNode* m_output = nullptr;

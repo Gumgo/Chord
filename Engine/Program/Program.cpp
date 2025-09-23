@@ -181,32 +181,32 @@ namespace Chord
     }
 
     auto AttachProcessorInputNode =
-      [&](u32 inputNodeIndex, IProcessorProgramGraphNode* processorNode, const IInputProgramGraphNode** inputNodePointer) -> bool
+      [&](u32 inputNodeIndex, IProcessorProgramGraphNode* processorNode, auto&& setInput) -> bool
       {
         if (inputNodeIndex >= nodeCount || nodeTypes[inputNodeIndex] != SerializedNodeType::Input)
           { return false; }
 
         InputProgramGraphNode* inputNode = static_cast<InputProgramGraphNode*>(nodesFromIndices[inputNodeIndex]);
-        if (inputNode->m_processor != nullptr)
+        if (inputNode->Processor() != nullptr)
           { return false; }
 
-        inputNode->m_processor = processorNode;
-        *inputNodePointer = inputNode;
+        ProgramGraphNodeModifier::SetInputNodeProcessor(inputNode, processorNode);
+        setInput(inputNode);
         return true;
       };
 
     auto AttachProcessorOutputNode =
-      [&](u32 outputNodeIndex, IProcessorProgramGraphNode* processorNode, const IOutputProgramGraphNode** outputNodePointer) -> bool
+      [&](u32 outputNodeIndex, IProcessorProgramGraphNode* processorNode, auto&& setOutput) -> bool
       {
         if (outputNodeIndex >= nodeCount || nodeTypes[outputNodeIndex] != SerializedNodeType::Output)
           { return false; }
 
         OutputProgramGraphNode* outputNode = static_cast<OutputProgramGraphNode*>(nodesFromIndices[outputNodeIndex]);
-        if (outputNode->m_processor != nullptr)
+        if (outputNode->Processor() != nullptr)
           { return false; }
 
-        outputNode->m_processor = processorNode;
-        *outputNodePointer = outputNode;
+        ProgramGraphNodeModifier::SetOutputNodeProcessor(outputNode, processorNode);
+        setOutput(outputNode);
         return true;
       };
 
@@ -288,7 +288,7 @@ namespace Chord
               || connectionNodeIndex >= nodeCount
               || nodeTypes[connectionNodeIndex] != SerializedNodeType::Input)
               { return std::nullopt; }
-            node.m_connections[i] = static_cast<InputProgramGraphNode*>(nodesFromIndices[connectionNodeIndex]);
+            ProgramGraphNodeModifier::SetOutputNodeConnection(&node, i, static_cast<InputProgramGraphNode*>(nodesFromIndices[connectionNodeIndex]));
           }
 
           break;
@@ -302,7 +302,10 @@ namespace Chord
             { return std::nullopt; }
 
           FloatConstantProgramGraphNode& node = program.m_floatConstantNodes.AppendNew(value);
-          if (!AttachProcessorOutputNode(outputNodeIndex, &node, &node.m_output))
+          if (!AttachProcessorOutputNode(
+            outputNodeIndex,
+            &node,
+            [&](const IOutputProgramGraphNode* outputNode) { ProgramGraphNodeModifier::SetConstantNodeOutput(&node, outputNode); }))
             { return std::nullopt; }
 
           break;
@@ -316,7 +319,10 @@ namespace Chord
             { return std::nullopt; }
 
           DoubleConstantProgramGraphNode& node = program.m_doubleConstantNodes.AppendNew(value);
-          if (!AttachProcessorOutputNode(outputNodeIndex, &node, &node.m_output))
+          if (!AttachProcessorOutputNode(
+            outputNodeIndex,
+            &node,
+            [&](const IOutputProgramGraphNode* outputNode) { ProgramGraphNodeModifier::SetConstantNodeOutput(&node, outputNode); }))
             { return std::nullopt; }
 
           break;
@@ -330,7 +336,10 @@ namespace Chord
             { return std::nullopt; }
 
           IntConstantProgramGraphNode& node = program.m_intConstantNodes.AppendNew(value);
-          if (!AttachProcessorOutputNode(outputNodeIndex, &node, &node.m_output))
+          if (!AttachProcessorOutputNode(
+            outputNodeIndex,
+            &node,
+            [&](const IOutputProgramGraphNode* outputNode) { ProgramGraphNodeModifier::SetConstantNodeOutput(&node, outputNode); }))
             { return std::nullopt; }
 
           break;
@@ -344,7 +353,10 @@ namespace Chord
             { return std::nullopt; }
 
           BoolConstantProgramGraphNode& node = program.m_boolConstantNodes.AppendNew(value != 0);
-          if (!AttachProcessorOutputNode(outputNodeIndex, &node, &node.m_output))
+          if (!AttachProcessorOutputNode(
+            outputNodeIndex,
+            &node,
+            [&](const IOutputProgramGraphNode* outputNode) { ProgramGraphNodeModifier::SetConstantNodeOutput(&node, outputNode); }))
             { return std::nullopt; }
 
           break;
@@ -362,7 +374,10 @@ namespace Chord
             { return std::nullopt; }
 
           StringConstantProgramGraphNode& node = program.m_stringConstantNodes.AppendNew(value);
-          if (!AttachProcessorOutputNode(outputNodeIndex, &node, &node.m_output))
+          if (!AttachProcessorOutputNode(
+            outputNodeIndex,
+            &node,
+            [&](const IOutputProgramGraphNode* outputNode) { ProgramGraphNodeModifier::SetConstantNodeOutput(&node, outputNode); }))
             { return std::nullopt; }
 
           break;
@@ -378,12 +393,20 @@ namespace Chord
           for (u32 i = 0; i < elementCount; i++)
           {
             u32 elementNodeIndex;
-            if (!reader.Read(&elementNodeIndex) || !AttachProcessorInputNode(elementNodeIndex, &node, &node.m_elements[i]))
+            if (!reader.Read(&elementNodeIndex)
+              || !AttachProcessorInputNode(
+                elementNodeIndex,
+                &node,
+                [&](const IInputProgramGraphNode* inputNode) { ProgramGraphNodeModifier::SetArrayNodeElement(&node, i, inputNode); }))
               { return std::nullopt; }
           }
 
           u32 outputNodeIndex;
-          if (!reader.Read(&outputNodeIndex) || !AttachProcessorOutputNode(outputNodeIndex, &node, &node.m_output))
+          if (!reader.Read(&outputNodeIndex)
+            || !AttachProcessorOutputNode(
+              outputNodeIndex,
+              &node,
+              [&](const IOutputProgramGraphNode* outputNode) { ProgramGraphNodeModifier::SetArrayNodeOutput(&node, outputNode); }))
             { return std::nullopt; }
 
           break;
@@ -430,14 +453,22 @@ namespace Chord
           for (u32 i = 0; i < inputCount; i++)
           {
             u32 inputNodeIndex;
-            if (!reader.Read(&inputNodeIndex) || !AttachProcessorInputNode(inputNodeIndex, &node, &node.m_inputs[i]))
+            if (!reader.Read(&inputNodeIndex)
+              || !AttachProcessorInputNode(
+                inputNodeIndex,
+                &node,
+                [&](const IInputProgramGraphNode* inputNode) { ProgramGraphNodeModifier::SetNativeModuleCallNodeInput(&node, i, inputNode); }))
               { return std::nullopt; }
           }
 
           for (u32 i = 0; i < outputCount; i++)
           {
             u32 outputNodeIndex;
-            if (!reader.Read(&outputNodeIndex) || !AttachProcessorOutputNode(outputNodeIndex, &node, &node.m_outputs[i]))
+            if (!reader.Read(&outputNodeIndex)
+              || !AttachProcessorOutputNode(
+                outputNodeIndex,
+                &node,
+                [&](const IOutputProgramGraphNode* outputNode) { ProgramGraphNodeModifier::SetNativeModuleCallNodeOutput(&node, i, outputNode); }))
               { return std::nullopt; }
           }
 
@@ -449,7 +480,11 @@ namespace Chord
           GraphInputProgramGraphNode& node = program.m_graphInputNodes.AppendNew();
 
           u32 outputNodeIndex;
-          if (!reader.Read(&outputNodeIndex) || !AttachProcessorOutputNode(outputNodeIndex, &node, &node.m_output))
+          if (!reader.Read(&outputNodeIndex)
+            || !AttachProcessorOutputNode(
+              outputNodeIndex,
+              &node,
+              [&](const IOutputProgramGraphNode* outputNode) { ProgramGraphNodeModifier::SetGraphInputNodeOutput(&node, outputNode); }))
             { return std::nullopt; }
 
           break;
@@ -460,7 +495,11 @@ namespace Chord
           GraphOutputProgramGraphNode& node = program.m_graphOutputNodes.AppendNew();
 
           u32 inputNodeIndex;
-          if (!reader.Read(&inputNodeIndex) || !AttachProcessorInputNode(inputNodeIndex, &node, &node.m_input))
+          if (!reader.Read(&inputNodeIndex)
+            || !AttachProcessorInputNode(
+              inputNodeIndex,
+              &node,
+              [&](const IInputProgramGraphNode* inputNode) { ProgramGraphNodeModifier::SetGraphOutputNodeInput(&node, inputNode); }))
             { return std::nullopt; }
 
           break;
@@ -475,21 +514,21 @@ namespace Chord
     // Fill in the input side of connections
     for (const OutputProgramGraphNode& outputNode : program.m_outputNodes)
     {
-      if (outputNode.m_processor == nullptr)
+      if (outputNode.Processor() == nullptr)
         { return std::nullopt; }
 
-      for (const IInputProgramGraphNode* inputNode : outputNode.m_connections)
+      for (const IInputProgramGraphNode* inputNode : outputNode.Connections())
       {
         InputProgramGraphNode* typedInputNode = static_cast<InputProgramGraphNode*>(const_cast<IInputProgramGraphNode*>(inputNode));
-        if (typedInputNode->m_connection != nullptr)
+        if (typedInputNode->Connection() != nullptr)
           { return std::nullopt; }
-        typedInputNode->m_connection = &outputNode;
+        ProgramGraphNodeModifier::SetInputNodeConnection(typedInputNode, &outputNode);
       }
     }
 
     for (const InputProgramGraphNode& inputNode : program.m_inputNodes)
     {
-      if (inputNode.m_processor == nullptr || inputNode.m_connection == nullptr)
+      if (inputNode.Processor() == nullptr || inputNode.Connection() == nullptr)
         { return std::nullopt; }
     }
 
