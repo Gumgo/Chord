@@ -57,6 +57,7 @@
     <ClCompile Include="Engine\ProgramProcessing\BufferManager.cpp" />
     <ClCompile Include="Engine\ProgramProcessing\BufferMemory.cpp" />
     <ClCompile Include="Engine\ProgramProcessing\ConstantManager.cpp" />
+    <ClCompile Include="Engine\TaskSystem\StaticTaskGraph.cpp" />
     <ClCompile Include="Engine\TaskSystem\TaskSystem.cpp" />
     <ClCompile Include="Foundation\Containers\BoundedArray.cpp" />
     <ClCompile Include="Foundation\Containers\FixedArray.cpp" />

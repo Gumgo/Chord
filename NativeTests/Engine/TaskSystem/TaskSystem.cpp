@@ -20,7 +20,7 @@ namespace Chord
 
       TaskExecutorSettings settings =
       {
-        .m_threadCount = 4,
+        .m_threadCount = ThreadCount,
         .m_initializeTaskThread = [&]() { initializedThreadCount.fetch_add(1); },
         .m_deinitializeTaskThread = [&]() { deinitializedThreadCount.fetch_add(1); },
       };

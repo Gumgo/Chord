@@ -151,7 +151,7 @@ namespace Chord
             // In non-consteval branches, the implementation of 'other' will replace itself with an UnassignedImplementation during the move. At consteval time,
             // we do this manually here.
             delete other.Implementation();
-            other.m_implementation = new UnassignedImplementation();
+            other.m_implementation[0] = new UnassignedImplementation();
           }
           else
           {

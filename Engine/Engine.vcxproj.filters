@@ -153,6 +153,12 @@
     <ClCompile Include="Program\ProgramGraphNodes\ProgramGraphNodeModifier.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="TaskSystem\StaticTaskGraph.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TaskSystem\StaticTaskGraph.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Macros.h">

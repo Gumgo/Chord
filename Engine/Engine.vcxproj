@@ -89,6 +89,8 @@
     <ClCompile Include="Reporting\IReporting.ixx" />
     <ClCompile Include="Reporting\Reporting.ixx" />
     <ClCompile Include="Reporting\ReportingExtensions.ixx" />
+    <ClCompile Include="TaskSystem\StaticTaskGraph.cpp" />
+    <ClCompile Include="TaskSystem\StaticTaskGraph.ixx" />
     <ClCompile Include="TaskSystem\Task.ixx" />
     <ClCompile Include="TaskSystem\TaskExecutor.cpp" />
     <ClCompile Include="TaskSystem\TaskExecutor.ixx" />
