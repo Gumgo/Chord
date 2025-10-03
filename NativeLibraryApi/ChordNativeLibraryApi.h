@@ -148,7 +148,7 @@ typedef struct
 {
   int32_t m_sampleCount;
   bool m_isConstant;
-  const int32_t* m_samples;
+  const int32_t* m_samples; // !!! we might want to just make this u8 to avoid endian ambiguity
 } InputBoolBuffer;
 
 typedef struct
@@ -298,7 +298,7 @@ typedef void (*NativeModuleInvokeCompileTime)(const NativeModuleContext* context
 
 // Called to invoke a native module at runtime or compile time if InvokeCompileTime was not provided.
 typedef void (*NativeModuleInvoke)(
-  const NativeModuleContext* context,
+  const NativeModuleContext* context, // !!! we probably want sample count provided
   const NativeModuleArguments* arguments,
   void* scratchMemory,
   size_t scratchMemorySize);

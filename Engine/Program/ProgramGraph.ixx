@@ -21,6 +21,9 @@ namespace Chord
       // This is not null if either program stage graph uses input channels as doubles
       std::optional<Span<const GraphInputProgramGraphNode*>> m_inputChannelsDouble;
 
+      // Primitive type for each output channel
+      PrimitiveType m_outputChannelPrimitiveType;
+
       // This is an array of either float or double output nodes, one for each output channel
       Span<const GraphOutputProgramGraphNode*> m_outputChannels;
 

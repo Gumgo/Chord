@@ -564,6 +564,15 @@ namespace Chord
       }
     }
 
+    u8 outputChannelPrimitiveTypeU8;
+    if (!reader.Read<u8>(&outputChannelPrimitiveTypeU8))
+      { return std::nullopt; }
+
+    if (outputChannelPrimitiveTypeU8 != PrimitiveTypeFloat && outputChannelPrimitiveTypeU8 != PrimitiveTypeDouble)
+      { return std::nullopt; }
+
+    program.m_programGraph.m_outputChannelPrimitiveType = PrimitiveType(outputChannelPrimitiveTypeU8);
+
     program.m_outputChannels = InitializeCapacity(usz(program.m_programVariantProperties.m_outputChannelCount));
     program.m_programGraph.m_outputChannels = program.m_outputChannels;
     for (const GraphOutputProgramGraphNode*& nodePointer : program.m_outputChannels)
@@ -608,10 +617,10 @@ namespace Chord
       if (!reader.Read<u8>(&primitiveTypeU8))
         { return std::nullopt; }
 
-      if (primitiveType != PrimitiveTypeFloat
-        && primitiveType != PrimitiveTypeDouble
-        && primitiveType != PrimitiveTypeInt
-        && primitiveType != PrimitiveTypeBool)
+      if (primitiveTypeU8 != PrimitiveTypeFloat
+        && primitiveTypeU8 != PrimitiveTypeDouble
+        && primitiveTypeU8 != PrimitiveTypeInt
+        && primitiveTypeU8 != PrimitiveTypeBool)
         { return std::nullopt; }
 
       primitiveType = PrimitiveType(primitiveTypeU8);

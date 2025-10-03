@@ -79,7 +79,7 @@ namespace Chord
 
       static std::optional<Program> Deserialize(Span<const u8> bytes);
 
-      // !!! we probably want something like
+      // !!! we probably want something like this to make sure all required native libraries are present and versions are compatible
       // bool Validate(NativeLibraryRegistry* nativeLibraryRegistry) const;
 
       Span<const NativeLibraryDependency> NativeLibraryDependencies() const

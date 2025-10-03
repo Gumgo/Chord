@@ -28,8 +28,6 @@ struct ThreadTestData
   mpfr_t m_output;
 };
 
-static thread_local ThreadTestData m_threadTestData;
-
 template<typename TFunc>
 static inline f32 EvaluateMpfrFunction(ThreadTestData& d, f32 v, TFunc&& func)
 {

@@ -255,6 +255,11 @@ internal class BuildProgramResult : IBuildProgramResult
       }
     }
 
+    // All output channels are of the same type so just grab the first one's primitive type
+    var outputChannelPrimitiveType = ProgramGraph.OutputChannels[0].Input.Connection?.DataType.PrimitiveType;
+    Debug.Assert(outputChannelPrimitiveType != null);
+    contentWriter.Write(nodeIndices[(byte)outputChannelPrimitiveType.Value]);
+
     Debug.Assert(ProgramGraph.OutputChannels.Count == ProgramVariantProperties.OutputChannelCount);
     foreach (var node in ProgramGraph.OutputChannels)
     {

@@ -10,6 +10,8 @@ namespace Chord
 {
   export
   {
+    std::optional<usz> GetTaskThreadIndex();
+
     struct TaskExecutorSettings
     {
       // Use 0 to default to the number of logical threads on the machine
@@ -28,6 +30,8 @@ namespace Chord
       TaskExecutor& operator=(const TaskExecutor&) = delete;
 
       ~TaskExecutor() noexcept;
+
+      usz GetThreadCount() const;
 
       void EnqueueTask(Task* task);
 

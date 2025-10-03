@@ -105,7 +105,12 @@ namespace Chord
 
     template<typename TElement> requires (!std::is_const_v<TElement>)
     constexpr void ResizableArrayBase<TElement>::Clear(this non_const_self auto& self)
-      { self.SetCount(0); }
+    {
+      for (usz i = 0; i < self.m_count; i++)
+        { std::destroy_at(&self.Elements()[self.m_count - i - 1]); }
+
+      self.m_count = 0;
+    }
 
     template<typename TElement> requires (!std::is_const_v<TElement>)
     constexpr void ResizableArrayBase<TElement>::SetCount(this non_const_self auto& self, usz count)

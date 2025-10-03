@@ -6,6 +6,12 @@ namespace Chord
 {
   export
   {
+    // All buffer allocations are at least this amount of memory
+    constexpr usz MinBufferByteCount = MaxSimdAlignment;
+
+    // When a buffer is m_isConstant set, this many bytes must always be filled with the same constant value
+    constexpr usz BufferConstantValueByteCount = MinBufferByteCount;
+
     class BufferMemory
     {
     public:

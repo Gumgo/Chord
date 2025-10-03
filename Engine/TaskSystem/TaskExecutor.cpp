@@ -6,6 +6,11 @@ import Chord.Foundation;
 
 namespace Chord
 {
+  static thread_local std::optional<usz> tl_taskThreadIndex;
+
+  std::optional<usz> GetTaskThreadIndex()
+    { return tl_taskThreadIndex; }
+
   TaskExecutor::TaskExecutor(const TaskExecutorSettings& settings)
     : m_settings(settings)
   {
@@ -25,6 +30,9 @@ namespace Chord
       { context.m_thread.join(); }
   }
 
+  usz TaskExecutor::GetThreadCount() const
+    { return m_taskThreadContexts.Count(); }
+
   void TaskExecutor::EnqueueTask(Task* task)
   {
     ASSERT(task->m_execute.IsValid(), "The task was not initialized");
@@ -43,6 +51,8 @@ namespace Chord
 
   void TaskExecutor::TaskThreadEntryPoint(usz threadIndex)
   {
+    tl_taskThreadIndex = threadIndex;
+
     if (m_settings.m_initializeTaskThread.IsValid())
       { m_settings.m_initializeTaskThread(); }
 

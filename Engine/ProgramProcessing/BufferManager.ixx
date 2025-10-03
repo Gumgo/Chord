@@ -15,25 +15,56 @@ namespace Chord
     class BufferManager
     {
     public:
-      enum BufferIndex : usz
+      enum BufferHandle : usz
         { };
 
       struct Buffer
       {
+        template<typename TElement>
+        Span<TElement> Get(usz nonUpsampledSampleCount) const
+        {
+          if constexpr (std::same_as<TElement, f32>)
+            { ASSERT(m_primitiveType == PrimitiveTypeFloat); }
+          if constexpr (std::same_as<TElement, f64>)
+            { ASSERT(m_primitiveType == PrimitiveTypeFloat); }
+          if constexpr (std::same_as<TElement, s32>)
+            { ASSERT(m_primitiveType == PrimitiveTypeFloat || m_primitiveType == PrimitiveTypeBool); }
+          else
+            { ASSERT(AlwaysFalse<TElement>, "Unsupported element type"); }
+
+          usz sampleCount = nonUpsampledSampleCount * usz(m_upsampleFactor);
+          if (m_primitiveType == PrimitiveTypeBool)
+          {
+            usz s32Count = (sampleCount + sizeof(s32) * 8 - 1) / (sizeof(s32) * 8);
+            ASSERT((std::same_as<TElement, s32>));
+            ASSERT(sizeof(TElement) * s32Count <= m_byteCount);
+            return Span<TElement>(static_cast<TElement*>(m_memory), s32Count);
+          }
+          else
+          {
+
+            ASSERT(sizeof(TElement) * sampleCount <= m_byteCount);
+            return Span<TElement>(static_cast<TElement*>(m_memory), sampleCount);
+          }
+        }
+
         PrimitiveType m_primitiveType;
         s32 m_upsampleFactor = 0;
         usz m_byteCount = 0;
-        void* m_memory = nullptr;
+        void* m_memory = nullptr; // !!! make this a span of u8, make a utility function GetTyped()
+        bool m_isConstant = false;
       };
 
       BufferManager() = default;
       BufferManager(const BufferManager&) = delete;
       BufferManager& operator=(const BufferManager&) = delete;
 
-      BufferIndex AddBuffer(PrimitiveType primitiveType, usz nonUpsampledSampleCount, s32 upsampleFactor);
-      void SetBufferOutputTaskForSharing(BufferIndex bufferIndex, const void* outputTaskForSharing);
-      void AddBufferInputTask(BufferIndex bufferIndex, const void* inputTask, bool canShareWithOutput);
-      const Buffer& GetBuffer(BufferIndex bufferIndex) const;
+      BufferHandle AddBuffer(PrimitiveType primitiveType, usz nonUpsampledSampleCount, s32 upsampleFactor);
+      void SetBufferOutputTaskForSharing(BufferHandle bufferHandle, const void* outputTaskForSharing);
+      void AddBufferInputTask(BufferHandle bufferHandle, const void* inputTask, bool canShareWithOutput);
+      const Buffer& GetBuffer(BufferHandle bufferHandle) const;
+
+      void SetBufferConstant(BufferHandle bufferHandle, bool isConstant);
 
       Span<InputFloatBuffer> AddFloatBufferArray(usz count);
       Span<InputDoubleBuffer> AddDoubleBufferArray(usz count);
@@ -42,30 +73,30 @@ namespace Chord
 
       // If two buffers are marked as concurrent, it means that they may be used at the same time and therefore cannot share the same memory
       void InitializeBufferConcurrency();
-      void SetBuffersConcurrent(BufferIndex bufferIndexA, BufferIndex bufferIndexB);
-      void SetBufferConcurrentWithAll(BufferIndex bufferIndex);
+      void SetBuffersConcurrent(BufferHandle bufferHandleA, BufferHandle bufferHandleB);
+      void SetBufferConcurrentWithAll(BufferHandle bufferHandle);
       void AllocateBuffers();
 
       #if BUFFER_GUARDS_ENABLED
         void BeginProcessing(usz sampleCount);
         void EndProcessing();
 
-        void StartBufferWrite(BufferIndex bufferIndex, const void* task);
-        void FinishBufferWrite(BufferIndex bufferIndex, const void* task);
-        void StartBufferRead(BufferIndex bufferIndex, const void* task);
-        void FinishBufferRead(BufferIndex bufferIndex, const void* task);
+        void StartBufferWrite(BufferHandle bufferHandle, const void* task);
+        void FinishBufferWrite(BufferHandle bufferHandle, const void* task);
+        void StartBufferRead(BufferHandle bufferHandle, const void* task);
+        void FinishBufferRead(BufferHandle bufferHandle, const void* task);
       #else
         void BeginProcessing([[maybe_unused]] usz sampleCount)
           { }
         void EndProcessing();
 
-        void StartBufferWrite([[maybe_unused]] BufferIndex bufferIndex, [[maybe_unused]] const void* task)
+        void StartBufferWrite([[maybe_unused]] BufferHandle bufferHandle, [[maybe_unused]] const void* task)
           { }
-        void FinishBufferWrite([[maybe_unused]] BufferIndex bufferIndex, [[maybe_unused]] const void* task)
+        void FinishBufferWrite([[maybe_unused]] BufferHandle bufferHandle, [[maybe_unused]] const void* task)
           { }
-        void StartBufferRead([[maybe_unused]] BufferIndex bufferIndex, [[maybe_unused]] const void* task)
+        void StartBufferRead([[maybe_unused]] BufferHandle bufferHandle, [[maybe_unused]] const void* task)
           { }
-        void FinishBufferRead([[maybe_unused]] BufferIndex bufferIndex, [[maybe_unused]] const void* task)
+        void FinishBufferRead([[maybe_unused]] BufferHandle bufferHandle, [[maybe_unused]] const void* task)
           { }
       #endif
 

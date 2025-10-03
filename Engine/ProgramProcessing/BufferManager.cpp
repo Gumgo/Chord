@@ -16,6 +16,8 @@ namespace Chord
   class SharedBufferMemoryGroupManager
   {
   public:
+    // Note: we're calling this GroupIndex instead of GroupHandle because we actually do rely on the ability to iterate over all groups (so it actually does
+    // represent an index, just with additional type safety).
     enum class GroupIndex : usz
       { };
 
@@ -170,9 +172,9 @@ namespace Chord
     return AlignInt((nonUpsampledSampleCount * Coerce<usz>(upsampleFactor) * elementBitCount + 7) / 8, MaxSimdAlignment);
   }
 
-  BufferManager::BufferIndex BufferManager::AddBuffer(PrimitiveType primitiveType, usz nonUpsampledSampleCount, s32 upsampleFactor)
+  BufferManager::BufferHandle BufferManager::AddBuffer(PrimitiveType primitiveType, usz nonUpsampledSampleCount, s32 upsampleFactor)
   {
-    auto bufferIndex = BufferIndex(m_buffers.Count());
+    auto bufferHandle = BufferHandle(m_buffers.Count());
     m_buffers.Append(
       {
         {
@@ -182,22 +184,25 @@ namespace Chord
         },
       });
 
-    return bufferIndex;
+    return bufferHandle;
   }
 
-  void BufferManager::SetBufferOutputTaskForSharing(BufferIndex bufferIndex, const void* outputTaskForSharing)
-    { m_buffers[usz(bufferIndex)].m_outputTaskForSharing = outputTaskForSharing; }
+  void BufferManager::SetBufferOutputTaskForSharing(BufferHandle bufferHandle, const void* outputTaskForSharing)
+    { m_buffers[usz(bufferHandle)].m_outputTaskForSharing = outputTaskForSharing; }
 
-  void BufferManager::AddBufferInputTask(BufferIndex bufferIndex, const void* inputTask, bool canShareWithOutput)
+  void BufferManager::AddBufferInputTask(BufferHandle bufferHandle, const void* inputTask, bool canShareWithOutput)
   {
-    BufferData& buffer = m_buffers[usz(bufferIndex)];
+    BufferData& buffer = m_buffers[usz(bufferHandle)];
     buffer.m_inputTaskUsageCount++;
     if (canShareWithOutput && buffer.m_inputTaskForSharing == nullptr)
       { buffer.m_inputTaskForSharing = inputTask; }
   }
 
-  const BufferManager::Buffer& BufferManager::GetBuffer(BufferIndex bufferIndex) const
-    { return m_buffers[usz(bufferIndex)]; }
+  const BufferManager::Buffer& BufferManager::GetBuffer(BufferHandle bufferHandle) const
+    { return m_buffers[usz(bufferHandle)]; }
+
+  void BufferManager::SetBufferConstant(BufferHandle bufferHandle, bool isConstant)
+    { m_buffers[usz(bufferHandle)].m_isConstant = isConstant; }
 
   Span<InputFloatBuffer> BufferManager::AddFloatBufferArray(usz count)
     { return m_inputFloatBufferArrays.AppendNew(InitializeCapacity(count)); }
@@ -217,16 +222,16 @@ namespace Chord
     m_bufferConcurrencyMatrix.ZeroElements();
   }
 
-  void BufferManager::SetBuffersConcurrent(BufferIndex bufferIndexA, BufferIndex bufferIndexB)
+  void BufferManager::SetBuffersConcurrent(BufferHandle bufferHandleA, BufferHandle bufferHandleB)
   {
-    m_bufferConcurrencyMatrix[usz(bufferIndexA) * m_buffers.Count() + usz(bufferIndexB)] = true;
-    m_bufferConcurrencyMatrix[usz(bufferIndexB) * m_buffers.Count() + usz(bufferIndexA)] = true;
+    m_bufferConcurrencyMatrix[usz(bufferHandleA) * m_buffers.Count() + usz(bufferHandleB)] = true;
+    m_bufferConcurrencyMatrix[usz(bufferHandleB) * m_buffers.Count() + usz(bufferHandleA)] = true;
   }
 
-  void BufferManager::SetBufferConcurrentWithAll(BufferIndex bufferIndex)
+  void BufferManager::SetBufferConcurrentWithAll(BufferHandle bufferHandle)
   {
     for (usz i = 0; i < m_buffers.Count(); i++)
-      { SetBuffersConcurrent(bufferIndex, BufferIndex(i)); }
+      { SetBuffersConcurrent(bufferHandle, BufferHandle(i)); }
   }
 
   void BufferManager::AllocateBuffers()
@@ -413,13 +418,13 @@ namespace Chord
       }
     }
 
-    void BufferManager::StartBufferWrite(BufferIndex bufferIndex, const void* task)
+    void BufferManager::StartBufferWrite(BufferHandle bufferHandle, const void* task)
     {
-      const BufferData& buffer = m_buffers[usz(bufferIndex)];
+      const BufferData& buffer = m_buffers[usz(bufferHandle)];
       if (buffer.m_isSharedAsOutput)
         { ASSERT(task == buffer.m_outputTaskForSharing); }
 
-      SharedBufferMemory& sharedBufferMemory = m_sharedBufferMemoryEntries[usz(bufferIndex)];
+      SharedBufferMemory& sharedBufferMemory = m_sharedBufferMemoryEntries[usz(bufferHandle)];
       const void* expectedWriteTask = nullptr;
       VERIFY(sharedBufferMemory.m_writeTask.compare_exchange_weak(expectedWriteTask, task, std::memory_order_relaxed));
       const void* readTask = sharedBufferMemory.m_readTask.load(std::memory_order_relaxed);
@@ -444,13 +449,13 @@ namespace Chord
       guardMemory.Fill(BufferGuardMemoryByte);
     }
 
-    void BufferManager::FinishBufferWrite(BufferIndex bufferIndex, const void* task)
+    void BufferManager::FinishBufferWrite(BufferHandle bufferHandle, const void* task)
     {
-      const BufferData& buffer = m_buffers[usz(bufferIndex)];
+      const BufferData& buffer = m_buffers[usz(bufferHandle)];
       if (buffer.m_isSharedAsOutput)
         { ASSERT(task == buffer.m_outputTaskForSharing); }
 
-      SharedBufferMemory& sharedBufferMemory = m_sharedBufferMemoryEntries[usz(bufferIndex)];
+      SharedBufferMemory& sharedBufferMemory = m_sharedBufferMemoryEntries[usz(bufferHandle)];
       const void* expectedWriteTask = task;
       VERIFY(sharedBufferMemory.m_writeTask.compare_exchange_weak(expectedWriteTask, nullptr, std::memory_order_relaxed));
       const void* readTask = sharedBufferMemory.m_readTask.load(std::memory_order_relaxed);
@@ -476,13 +481,13 @@ namespace Chord
         { ASSERT(byte == BufferGuardMemoryByte); }
     }
 
-    void BufferManager::StartBufferRead(BufferIndex bufferIndex, const void* task)
+    void BufferManager::StartBufferRead(BufferHandle bufferHandle, const void* task)
     {
-      const BufferData& buffer = m_buffers[usz(bufferIndex)];
+      const BufferData& buffer = m_buffers[usz(bufferHandle)];
       if (buffer.m_isSharedAsInput)
         { ASSERT(task == buffer.m_inputTaskForSharing); }
 
-      SharedBufferMemory& sharedBufferMemory = m_sharedBufferMemoryEntries[usz(bufferIndex)];
+      SharedBufferMemory& sharedBufferMemory = m_sharedBufferMemoryEntries[usz(bufferHandle)];
       const void* writeTask = sharedBufferMemory.m_writeTask.load(std::memory_order_relaxed);
       usz oldReadCount = sharedBufferMemory.m_readCount.fetch_add(1, std::memory_order_relaxed);
 
@@ -502,13 +507,13 @@ namespace Chord
       }
     }
 
-    void BufferManager::FinishBufferRead(BufferIndex bufferIndex, const void* task)
+    void BufferManager::FinishBufferRead(BufferHandle bufferHandle, const void* task)
     {
-      const BufferData& buffer = m_buffers[usz(bufferIndex)];
+      const BufferData& buffer = m_buffers[usz(bufferHandle)];
       if (buffer.m_isSharedAsInput)
         { ASSERT(task == buffer.m_inputTaskForSharing); }
 
-      SharedBufferMemory& sharedBufferMemory = m_sharedBufferMemoryEntries[usz(bufferIndex)];
+      SharedBufferMemory& sharedBufferMemory = m_sharedBufferMemoryEntries[usz(bufferHandle)];
       const void* writeTask = sharedBufferMemory.m_writeTask.load(std::memory_order_relaxed);
       usz oldReadCount = sharedBufferMemory.m_readCount.fetch_sub(1, std::memory_order_relaxed);
       ASSERT(oldReadCount != 0);

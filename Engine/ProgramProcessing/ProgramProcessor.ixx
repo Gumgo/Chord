@@ -11,6 +11,8 @@ import :Native;
 import :Program;
 import :ProgramProcessing.BufferManager;
 import :ProgramProcessing.ConstantManager;
+import :ProgramProcessing.ProgramStageTaskManager;
+import :ProgramProcessing.VoiceAllocator;
 import :TaskSystem;
 
 namespace Chord
@@ -23,16 +25,22 @@ namespace Chord
       Float64,
     };
 
-    struct InputBuffer
+    struct InputChannelBuffer
     {
       SampleType m_sampleType = SampleType::Float64;
       Span<const u8> m_samples;
     };
 
-    struct OutputBuffer
+    struct OutputChannelBuffer
     {
       SampleType m_sampleType = SampleType::Float32;
       Span<u8> m_samples;
+    };
+
+    struct VoiceTrigger
+    {
+      // $TODO we'll need an ID of some sort to link this voice to MIDI events
+      usz m_sampleIndex = 0;
     };
 
     struct ProgramProcessorSettings
@@ -48,152 +56,100 @@ namespace Chord
         NativeLibraryRegistry* nativeLibraryRegistry,
         const Program* program,
         const ProgramProcessorSettings& settings);
+      ~ProgramProcessor();
+
       ProgramProcessor(const ProgramProcessor&) = delete;
       ProgramProcessor& operator=(const ProgramProcessor&) = delete;
 
       void Process(
         usz sampleCount,
-        Span<const InputBuffer> inputBuffers,
-        Span<const OutputBuffer> outputBuffers);
+        Span<const InputChannelBuffer> inputChannelBuffers,
+        Span<const OutputChannelBuffer> outputChannelBuffers,
+        Span<const VoiceTrigger> voiceTriggers);
 
     private:
-      // This is used to quickly initialize all the sample count values within task arguments
-      struct SampleCountInitializer
+      struct ScratchMemoryAllocation
       {
-        int32_t* m_sampleCount = nullptr;
-        s32 m_upsampleFactor = 1;
-      };
+        ScratchMemoryAllocation() = default;
 
-      // This is used to quickly initialize all buffer sample memory within task arguments
-      struct SamplesInitializer
-      {
-        void** m_samples = nullptr;
-        BufferManager::BufferIndex m_bufferIndex;
-      };
-
-      struct NativeModuleCallTask
-      {
-        NativeModuleCallTask() = default;
-        NativeModuleCallTask(const NativeModuleCallTask&) = delete;
-        NativeModuleCallTask& operator=(const NativeModuleCallTask&) = delete;
-
-        const NativeModule* m_nativeModule = nullptr;
-        s32 m_upsampleFactor = 1;
-        FixedArray<NativeModuleArgument> m_arguments;
-        UnboundedArray<SampleCountInitializer> m_sampleCountInitializers;
-        UnboundedArray<SamplesInitializer> m_samplesInitializers;
-
-        // !!! add task dependency lists and other required task fields
-      };
-
-      using BufferOrConstant = std::variant<BufferManager::BufferIndex, f32, f64, s32, bool>;
-
-      struct VoiceData
-      {
-        VoiceData() = default;
-        VoiceData(const VoiceData&) = delete;
-        VoiceData& operator=(const VoiceData&) = delete;
-
-        FixedArray<NativeModuleCallTask> m_nativeModuleCallTasks;
-        FixedArray<BufferOrConstant> m_outputs;
-        std::optional<BufferOrConstant> m_remainActiveOutput;
-      };
-
-      struct EffectData
-      {
-        EffectData() = default;
-        EffectData(const EffectData&) = delete;
-        EffectData& operator=(const EffectData&) = delete;
-
-        FixedArray<BufferManager::BufferIndex> m_voiceToEffectBuffers;
-        FixedArray<NativeModuleCallTask> m_nativeModuleCallTasks;
-        FixedArray<BufferOrConstant> m_outputs;
-        std::optional<BufferOrConstant> m_remainActiveOutput;
-      };
-
-      void InitializeNativeModuleCallTask(
-        NativeLibraryRegistry* nativeLibraryRegistry,
-        const NativeModuleCallProgramGraphNode* node,
-        NativeModuleCallTask* task,
-        u32 voiceIndex);
-
-      NativeModuleArgument BuildNativeModuleInputArgument(
-        NativeModuleCallTask* task,
-        const NativeModuleParameter& parameter,
-        const IInputProgramGraphNode* inputNode,
-        u32 voiceIndex);
-      NativeModuleArgument BuildNativeModuleOutputArgument(
-        NativeModuleCallTask* task,
-        const NativeModuleParameter& parameter,
-        const IOutputProgramGraphNode* outputNode,
-        u32 voiceIndex);
-
-      void InitializeGraphOutput(const ProgramGraph& programGraph, const GraphOutputProgramGraphNode* outputNode, u32 voiceIndex);
-
-      void AllocateBuffers(const ProgramGraph& programGraph, HashMap<const NativeModuleCallTask*, const NativeModuleCallProgramGraphNode*>& nodesFromTasks);
-
-      template<typename TElement, typename TBuffer>
-      std::optional<BufferManager::BufferIndex> InitializeBufferOrConstant(
-        NativeModuleCallTask* task,
-        u32 voiceIndex,
-        const IOutputProgramGraphNode* outputNode,
-        TBuffer* buffer,
-        s32 upsampleFactor)
-      {
-        auto bufferOrConstant = m_buffersAndConstantsFromOutputNodes[std::make_tuple(voiceIndex, outputNode)];
-        if (std::holds_alternative<TElement>(bufferOrConstant))
+        ScratchMemoryAllocation(usz size, usz alignment)
         {
-          *buffer = m_constantManager.EnsureConstantBuffer(std::get<TElement>(bufferOrConstant));
-          task->m_sampleCountInitializers.Append({ .m_sampleCount = &buffer->m_sampleCount, .m_upsampleFactor = upsampleFactor });
-          return std::nullopt;
+          void* memory = ::operator new(size, std::align_val_t(alignment));
+          m_memory = Span<u8>(static_cast<u8*>(memory), size);
         }
-        else
-          { return InitializeBuffer(task, voiceIndex, outputNode, buffer, upsampleFactor); }
-      }
 
-      template<typename TBuffer>
-      BufferManager::BufferIndex InitializeBuffer(
-        NativeModuleCallTask* task,
-        u32 voiceIndex,
-        const IOutputProgramGraphNode* outputNode,
-        TBuffer* buffer,
-        s32 upsampleFactor)
-      {
-        *buffer = TBuffer { .m_sampleCount = 0, .m_isConstant = false, .m_samples = nullptr };
-        auto bufferOrConstant = m_buffersAndConstantsFromOutputNodes[std::make_tuple(voiceIndex, outputNode)];
-        ASSERT(std::holds_alternative<BufferManager::BufferIndex>(bufferOrConstant));
-        auto bufferIndex = std::get<BufferManager::BufferIndex>(bufferOrConstant);
+        ScratchMemoryAllocation(const ScratchMemoryAllocation&) = delete;
+        ScratchMemoryAllocation& operator=(const ScratchMemoryAllocation&) = delete;
 
-        auto& managedBuffer = m_bufferManager.GetBuffer(bufferIndex);
-        ASSERT(upsampleFactor == managedBuffer.m_upsampleFactor);
-        task->m_sampleCountInitializers.Append({ .m_sampleCount = &buffer->m_sampleCount, .m_upsampleFactor = managedBuffer.m_upsampleFactor });
+        ~ScratchMemoryAllocation() noexcept
+        {
+          if (!m_memory.IsEmpty())
+            { ::operator delete(m_memory.Elements(), std::align_val_t(m_alignment)); }
+        }
 
-        // Note: We're going to store off a pointer to m_samples as a void** despite the fact that m_samples is a pointer of a different type (e.g. float*)
-        // and then we're going to assign to m_samples by going through that void pointer. I believe this is technically undefined behavior because we're but
-        // I would be shocked if this particular case didn't work how we want. If so, there are slightly less efficient alternatives.
-        using VoidPointer = std::conditional_t<std::is_const_v<std::remove_pointer_t<decltype(buffer->m_samples)>>, const void*, void*>;
-        task->m_samplesInitializers.Append(
-          {
-            .m_samples = const_cast<void**>(reinterpret_cast<VoidPointer*>(&buffer->m_samples)),
-            .m_bufferIndex = bufferIndex,
-          });
+        ScratchMemoryAllocation(ScratchMemoryAllocation&& other) noexcept
+          : m_alignment(std::exchange(other.m_alignment, 0_usz))
+          , m_memory(std::exchange(other.m_memory, {}))
+          { }
 
-        return bufferIndex;
-      }
+        ScratchMemoryAllocation& operator=(ScratchMemoryAllocation&& other) noexcept
+        {
+          m_alignment = std::exchange(other.m_alignment, 0_usz);
+          m_memory = std::exchange(other.m_memory, {});
+          return *this;
+        }
+
+        usz m_alignment;
+        Span<u8> m_memory;
+      };
+
+      void AllocateBuffers(const ProgramGraph& programGraph);
+
+      void StartProcessBlock();
+      void InitializeInputChannelBuffer(usz inputChannelIndex);
+      void AllocateVoices();
+      void StartVoiceProcessing(usz activeVoiceIndex, StaticTaskGraph::TaskCompleter& taskCompleter);
+      void FinishVoiceProcessing();
+      void AccumulateVoiceOutput(usz outputIndex);
+      void StartEffectProcessing(StaticTaskGraph::TaskCompleter& taskCompleter);
+      void FinishEffectProcessing();
+      void FillOutputChannelBuffer(usz outputChannelIndex);
+      void FinishProcessBlock();
 
       TaskExecutor* m_taskExecutor = nullptr;
       usz m_bufferSampleCount = 0;
       ConstantManager m_constantManager;
       BufferManager m_bufferManager;
 
-      // The first tuple element here is the voice index
-      static constexpr u32 EffectVoiceIndex = 0xffffffff_u32;
-      HashMap<std::tuple<u32, const IOutputProgramGraphNode*>, BufferOrConstant> m_buffersAndConstantsFromOutputNodes;
+      FixedArray<ScratchMemoryAllocation> m_threadScratchMemoryAllocations;
+      FixedArray<Span<u8>> m_threadScratchMemory;
 
-      std::optional<FixedArray<BufferManager::BufferIndex>> m_inputChannelBuffersFloat;
-      std::optional<FixedArray<BufferManager::BufferIndex>> m_inputChannelBuffersDouble;
-      FixedArray<VoiceData> m_voices;
-      std::optional<EffectData> m_effect;
+      std::optional<FixedArray<BufferManager::BufferHandle>> m_inputChannelBuffersFloat;
+      std::optional<FixedArray<BufferManager::BufferHandle>> m_inputChannelBuffersDouble;
+
+      std::optional<VoiceAllocator> m_voiceAllocator;
+      BoundedArray<ProgramStageTaskManager> m_voices;
+
+      FixedArray<usz> m_voiceSampleOffsets;
+      FixedArray<BufferManager::BufferHandle> m_voiceOutputAccumulationBuffers;
+
+      EffectActivationMode m_effectActivationMode = EffectActivationMode::Always;
+      std::optional<f64> m_effectActivationThreshold;
+      std::optional<ProgramStageTaskManager> m_effect;
+      std::atomic<bool> m_effectActivationThresholdExceeded = false;
+
+      Span<const InputChannelBuffer> m_inputChannelBuffers;
+      Span<const OutputChannelBuffer> m_outputChannelBuffers;
+      Span<const VoiceTrigger> m_voiceTriggers;
+      usz m_processSampleCount = 0;
+      usz m_blockSampleOffset = 0;
+      usz m_blockSampleCount = 0;
+
+      StaticTaskGraph m_taskGraph;
+
+      std::mutex m_processingMutex;
+      std::condition_variable m_processingConditionVariable;
+      bool m_processing = false;
     };
   }
 }
