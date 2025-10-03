@@ -71,7 +71,7 @@ namespace Chord
     const BufferManager::Buffer& buffer,
     usz sampleCount)
   {
-    Span<TElement> bufferSamples = { static_cast<TElement*>(buffer.m_memory), sampleCount };
+    Span<TElement> bufferSamples = buffer.Get<TElement>(sampleCount);
 
     for (usz i = 0; i < activeVoiceIndices.Count(); i++)
     {
@@ -91,7 +91,7 @@ namespace Chord
         const BufferManager::Buffer& outputBuffer = bufferManager.GetBuffer(*outputBufferHandle);
         if (outputBuffer.m_isConstant)
         {
-          TElement constantValue = *static_cast<const TElement*>(outputBuffer.m_memory);
+          TElement constantValue = outputBuffer.Get<TElement>(1)[0];
           if (i == 0)
             { destination.Fill(constantValue); }
           else
@@ -102,7 +102,7 @@ namespace Chord
         }
         else
         {
-          Span<const TElement> source = { static_cast<const TElement*>(outputBuffer.m_memory), voiceSampleCount };
+          Span<const TElement> source = outputBuffer.Get<TElement>(voiceSampleCount);
 
           if (i == 0)
             { destination.CopyElementsFrom(source); }

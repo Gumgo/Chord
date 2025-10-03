@@ -25,24 +25,24 @@ namespace Chord
         {
           if constexpr (std::same_as<TElement, f32>)
             { ASSERT(m_primitiveType == PrimitiveTypeFloat); }
-          if constexpr (std::same_as<TElement, f64>)
-            { ASSERT(m_primitiveType == PrimitiveTypeFloat); }
-          if constexpr (std::same_as<TElement, s32>)
-            { ASSERT(m_primitiveType == PrimitiveTypeFloat || m_primitiveType == PrimitiveTypeBool); }
+          else if constexpr (std::same_as<TElement, f64>)
+            { ASSERT(m_primitiveType == PrimitiveTypeDouble); }
+          else if constexpr (std::same_as<TElement, s32>)
+            { ASSERT(m_primitiveType == PrimitiveTypeInt); }
+          else if constexpr (std::same_as<TElement, u8>)
+            { ASSERT(m_primitiveType == PrimitiveTypeBool); }
           else
             { ASSERT(AlwaysFalse<TElement>, "Unsupported element type"); }
 
           usz sampleCount = nonUpsampledSampleCount * usz(m_upsampleFactor);
-          if (m_primitiveType == PrimitiveTypeBool)
+          if constexpr (std::same_as<TElement, bool>)
           {
-            usz s32Count = (sampleCount + sizeof(s32) * 8 - 1) / (sizeof(s32) * 8);
-            ASSERT((std::same_as<TElement, s32>));
-            ASSERT(sizeof(TElement) * s32Count <= m_byteCount);
-            return Span<TElement>(static_cast<TElement*>(m_memory), s32Count);
+            usz u8Count = (sampleCount + 7) / 8;
+            ASSERT(u8Count <= m_byteCount);
+            return Span<TElement>(static_cast<TElement*>(m_memory), u8Count);
           }
           else
           {
-
             ASSERT(sizeof(TElement) * sampleCount <= m_byteCount);
             return Span<TElement>(static_cast<TElement*>(m_memory), sampleCount);
           }
@@ -51,7 +51,7 @@ namespace Chord
         PrimitiveType m_primitiveType;
         s32 m_upsampleFactor = 0;
         usz m_byteCount = 0;
-        void* m_memory = nullptr; // !!! make this a span of u8, make a utility function GetTyped()
+        void* m_memory = nullptr;
         bool m_isConstant = false;
       };
 

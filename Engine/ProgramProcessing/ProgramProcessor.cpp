@@ -540,11 +540,11 @@ namespace Chord
           switch (buffer.m_primitiveType)
           {
           case PrimitiveTypeFloat:
-            source = *static_cast<const f32*>(buffer.m_memory);
+            source = buffer.Get<f32>(1)[0];
             break;
 
           case PrimitiveTypeDouble:
-            source = *static_cast<const f64*>(buffer.m_memory);
+            source = buffer.Get<f64>(1)[0];
             break;
 
           case PrimitiveTypeInt:
@@ -579,12 +579,12 @@ namespace Chord
           switch (buffer.m_primitiveType)
           {
           case PrimitiveTypeFloat:
-            destination.CopyElementsFrom(Span<const f32>(static_cast<const f32*>(buffer.m_memory), m_blockSampleCount));
+            destination.CopyElementsFrom(buffer.Get<f32>(m_blockSampleCount));
             break;
 
           case PrimitiveTypeDouble:
             {
-              Span<const f64> sourceSamples = { static_cast<const f64*>(buffer.m_memory), m_blockSampleCount };
+              Span<const f64> sourceSamples = buffer.Get<f64>(m_blockSampleCount);
               for (usz i = 0; i < destination.Count(); i++)
                 { destination[i] = f32(sourceSamples[i]); }
               break;
@@ -621,14 +621,14 @@ namespace Chord
           {
           case PrimitiveTypeFloat:
             {
-              Span<const f32> sourceSamples = { static_cast<const f32*>(buffer.m_memory), m_blockSampleCount };
+              Span<const f32> sourceSamples = buffer.Get<f32>(m_blockSampleCount);
               for (usz i = 0; i < destination.Count(); i++)
                 { destination[i] = f32(sourceSamples[i]); }
               break;
             }
 
           case PrimitiveTypeDouble:
-            destination.CopyElementsFrom(Span<const f64>(static_cast<const f64*>(buffer.m_memory), m_blockSampleCount));
+            destination.CopyElementsFrom(buffer.Get<f64>(m_blockSampleCount));
             break;
 
           case PrimitiveTypeInt:
