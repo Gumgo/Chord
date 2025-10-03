@@ -10,7 +10,6 @@ namespace Chord
 {
   export
   {
-    // !!! add unit tests
     class StaticTaskGraph
     {
     private:
