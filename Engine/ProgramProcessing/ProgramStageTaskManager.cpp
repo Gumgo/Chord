@@ -1,6 +1,7 @@
 module;
 
 #include "../../NativeLibraryApi/ChordNativeLibraryApi.h"
+#include "BufferGuards.h"
 
 module Chord.Engine;
 
@@ -755,23 +756,19 @@ namespace Chord
     switch (parameter.m_dataType.m_primitiveType)
     {
     case PrimitiveTypeFloat:
-      InitializeBuffer(bufferManager, task, outputNode, &argument.m_floatBufferOut, upsampleFactor);
-      task->m_isConstantResolvers.Append({ .m_isConstant = &argument.m_floatBufferOut.m_isConstant, .m_bufferHandle = bufferHandle });
+      InitializeBuffer(bufferManager, task, false, outputNode, &argument.m_floatBufferOut, upsampleFactor);
       break;
 
     case PrimitiveTypeDouble:
-      InitializeBuffer(bufferManager, task, outputNode, &argument.m_doubleBufferOut, upsampleFactor);
-      task->m_isConstantResolvers.Append({ .m_isConstant = &argument.m_doubleBufferOut.m_isConstant, .m_bufferHandle = bufferHandle });
+      InitializeBuffer(bufferManager, task, false, outputNode, &argument.m_doubleBufferOut, upsampleFactor);
       break;
 
     case PrimitiveTypeInt:
-      InitializeBuffer(bufferManager, task, outputNode, &argument.m_intBufferOut, upsampleFactor);
-      task->m_isConstantResolvers.Append({ .m_isConstant = &argument.m_intBufferOut.m_isConstant, .m_bufferHandle = bufferHandle });
+      InitializeBuffer(bufferManager, task, false, outputNode, &argument.m_intBufferOut, upsampleFactor);
       break;
 
     case PrimitiveTypeBool:
-      InitializeBuffer(bufferManager, task, outputNode, &argument.m_boolBufferOut, upsampleFactor);
-      task->m_isConstantResolvers.Append({ .m_isConstant = &argument.m_boolBufferOut.m_isConstant, .m_bufferHandle = bufferHandle });
+      InitializeBuffer(bufferManager, task, false, outputNode, &argument.m_boolBufferOut, upsampleFactor);
       break;
 
     case PrimitiveTypeString:
@@ -804,6 +801,13 @@ namespace Chord
   void ProgramStageTaskManager::RunTask(TaskExecutor* taskExecutor, usz taskIndex)
   {
     NativeModuleCallTask& task = m_nativeModuleCallTasks[taskIndex];
+
+    #if BUFFER_GUARDS_ENABLED
+      for (BufferManager::BufferHandle bufferHandle : task.m_inputBufferHandles)
+        { m_processContext->m_bufferManager->StartBufferRead(bufferHandle, &task); }
+      for (BufferManager::BufferHandle bufferHandle : task.m_outputBufferHandles)
+        { m_processContext->m_bufferManager->StartBufferWrite(bufferHandle, &task); }
+    #endif
 
     for (const SampleCountInitializer& sampleCountInitializer : task.m_sampleCountInitializers)
       { *sampleCountInitializer.m_sampleCount = Coerce<int32_t>(m_processContext->m_sampleCount * usz(sampleCountInitializer.m_upsampleFactor)); }
@@ -846,6 +850,13 @@ namespace Chord
     // Update the constant state of output buffers
     for (const IsConstantResolver& isConstantResolver : task.m_isConstantResolvers)
       { m_processContext->m_bufferManager->SetBufferConstant(isConstantResolver.m_bufferHandle, *isConstantResolver.m_isConstant); }
+
+    #if BUFFER_GUARDS_ENABLED
+      for (BufferManager::BufferHandle bufferHandle : task.m_inputBufferHandles)
+        { m_processContext->m_bufferManager->FinishBufferWrite(bufferHandle, &task); }
+      for (BufferManager::BufferHandle bufferHandle : task.m_outputBufferHandles)
+        { m_processContext->m_bufferManager->FinishBufferWrite(bufferHandle, &task); }
+    #endif
 
     // Kick off successor tasks
     for (usz successorTaskIndex : task.m_successorTaskIndices)

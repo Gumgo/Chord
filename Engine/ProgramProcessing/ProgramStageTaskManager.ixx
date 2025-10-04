@@ -1,6 +1,7 @@
 module;
 
 #include "../../NativeLibraryApi/ChordNativeLibraryApi.h"
+#include "BufferGuards.h"
 
 export module Chord.Engine:ProgramProcessing.ProgramStageTaskManager;
 
@@ -95,6 +96,10 @@ namespace Chord
         UnboundedArray<SampleCountInitializer> m_sampleCountInitializers;
         UnboundedArray<SamplesInitializer> m_samplesInitializers;
         UnboundedArray<IsConstantResolver> m_isConstantResolvers;
+        #if BUFFER_GUARDS_ENABLED
+          UnboundedArray<BufferManager::BufferHandle> m_inputBufferHandles;
+          UnboundedArray<BufferManager::BufferHandle> m_outputBufferHandles;
+        #endif
 
         void* m_voiceContext = nullptr;
         MemoryRequirement m_scratchMemoryRequirement;
@@ -169,13 +174,14 @@ namespace Chord
           return std::nullopt;
         }
         else
-          { return InitializeBuffer(bufferManager, task, outputNode, buffer, upsampleFactor); }
+          { return InitializeBuffer(bufferManager, task, true, outputNode, buffer, upsampleFactor); }
       }
 
       template<typename TBuffer>
       BufferManager::BufferHandle InitializeBuffer(
         BufferManager* bufferManager,
         NativeModuleCallTask* task,
+        bool isTaskInput,
         const IOutputProgramGraphNode* outputNode,
         TBuffer* buffer,
         s32 upsampleFactor)
@@ -199,6 +205,20 @@ namespace Chord
             .m_isConstant = &buffer->m_isConstant,
             .m_bufferHandle = bufferHandle,
           });
+
+        if (isTaskInput)
+        {
+          #if BUFFER_GUARDS_ENABLED
+            task->m_inputBufferHandles.Append(bufferHandle);
+          #endif
+        }
+        else
+        {
+          task->m_isConstantResolvers.Append({ .m_isConstant = &buffer->m_isConstant, .m_bufferHandle = bufferHandle });
+          #if BUFFER_GUARDS_ENABLED
+            task->m_outputBufferHandles.Append(bufferHandle);
+          #endif
+        }
 
         return bufferHandle;
       }

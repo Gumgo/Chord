@@ -308,6 +308,8 @@ namespace Chord
 
   void ProgramProcessor::StartProcessBlock()
   {
+    m_bufferManager.StartProcessing(m_blockSampleCount);
+
     ASSERT(m_blockSampleOffset < m_processSampleCount);
     m_blockSampleCount = Min(m_processSampleCount - m_blockSampleOffset, m_bufferSampleCount);
 
@@ -665,6 +667,8 @@ namespace Chord
 
     if (m_effect.has_value() && !m_effect->ShouldRemainActive())
       { m_effect->SetActive(false); }
+
+    m_bufferManager.FinishProcessing();
 
     // !!! probably assert various things here
 

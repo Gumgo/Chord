@@ -404,10 +404,10 @@ namespace Chord
   }
 
   #if BUFFER_GUARDS_ENABLED
-    void BufferManager::BeginProcessing(usz sampleCount)
+    void BufferManager::StartProcessing(usz sampleCount)
       { m_processingSampleCount = sampleCount; }
 
-    void BufferManager::EndProcessing()
+    void BufferManager::FinishProcessing()
     {
       m_processingSampleCount = 0;
       for (SharedBufferMemory& sharedMemoryBuffer : m_sharedBufferMemoryEntries)

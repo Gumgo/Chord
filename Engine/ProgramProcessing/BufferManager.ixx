@@ -78,17 +78,17 @@ namespace Chord
       void AllocateBuffers();
 
       #if BUFFER_GUARDS_ENABLED
-        void BeginProcessing(usz sampleCount);
-        void EndProcessing();
+        void StartProcessing(usz sampleCount);
+        void FinishProcessing();
 
         void StartBufferWrite(BufferHandle bufferHandle, const void* task);
         void FinishBufferWrite(BufferHandle bufferHandle, const void* task);
         void StartBufferRead(BufferHandle bufferHandle, const void* task);
         void FinishBufferRead(BufferHandle bufferHandle, const void* task);
       #else
-        void BeginProcessing([[maybe_unused]] usz sampleCount)
+        void StartProcessing([[maybe_unused]] usz sampleCount)
           { }
-        void EndProcessing();
+        void FinishProcessing();
 
         void StartBufferWrite([[maybe_unused]] BufferHandle bufferHandle, [[maybe_unused]] const void* task)
           { }
