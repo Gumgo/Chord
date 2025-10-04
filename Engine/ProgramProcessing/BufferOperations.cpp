@@ -63,7 +63,7 @@ namespace Chord
         { result += std::get<TElement>(output); }
     }
 
-    Span<TElement>(static_cast<TElement*>(buffer.m_memory), BufferConstantValueByteCount / sizeof(TElement)).Fill(result);
+    buffer.Get<TElement>(BufferConstantValueByteCount / sizeof(TElement)).Fill(result);
   }
 
   template<typename TElement>
@@ -82,58 +82,53 @@ namespace Chord
     {
       usz voiceIndex = activeVoiceIndices[i];
       usz voiceSampleOffset = voiceSampleOffsets[voiceIndex];
-      usz voiceSampleCount = sampleCount - voiceSampleOffset;
-
-      // We're going to copy the first voice rather than accumulate so zero out the elements that come before it
-      if (i == 0)
-        { Span<TElement>(bufferSamples, 0, voiceSampleOffset).ZeroElements(); }
-      Span<TElement> destination = { bufferSamples, voiceSampleOffset, voiceSampleCount };
 
       const ProgramStageTaskManager& voice = voices[voiceIndex];
       auto output = voice.GetOutput(outputIndex);
       if (auto outputBufferHandle = std::get_if<BufferManager::BufferHandle>(&output); outputBufferHandle != nullptr)
       {
         bufferManager.StartBufferRead(*outputBufferHandle, nullptr);
-        const BufferManager::Buffer& outputBuffer = bufferManager.GetBuffer(*outputBufferHandle);
-
-        if (outputBuffer.m_isConstant)
-        {
-          TElement constantValue = outputBuffer.Get<TElement>(1)[0];
-          if (i == 0)
-            { destination.Fill(constantValue); }
-          else
-          {
-            for (TElement& sample : destination)
-              { sample += constantValue; }
-          }
-        }
-        else
-        {
-          Span<const TElement> source = outputBuffer.Get<TElement>(voiceSampleCount);
-
-          if (i == 0)
-            { destination.CopyElementsFrom(source); }
-          else
-          {
-            for (usz sampleIndex = 0; sampleIndex < voiceSampleCount; sampleIndex++)
-              { destination[sampleIndex] += source[sampleIndex]; }
-          }
-        }
-
+        AccumulateToBuffer(bufferSamples, bufferManager.GetBuffer(*outputBufferHandle), i == 0, voiceSampleOffset);
         bufferManager.FinishBufferRead(*outputBufferHandle, nullptr);
       }
       else
-      {
-        TElement constantValue = std::get<TElement>(output);
-        if (i == 0)
-          { destination.Fill(constantValue); }
-        else
-        {
-          for (TElement& sample : destination)
-            { sample += constantValue; }
-        }
-      }
+        { AccumulateToBuffer(bufferSamples, std::get<TElement>(output), i == 0, voiceSampleOffset); }
     }
+  }
+
+  bool ShouldActivateEffect(const InputChannelBuffer& inputChannelBuffer, f64 effectActivationThreshold, usz blockSampleOffset, usz blockSampleCount)
+  {
+    switch (inputChannelBuffer.m_sampleType)
+    {
+    case SampleType::Float32:
+      {
+        auto source = Span(reinterpret_cast<const f32*>(inputChannelBuffer.m_samples.Elements()), inputChannelBuffer.m_samples.Count() * sizeof(f32));
+        auto sourceBlock = Span(source, blockSampleOffset, blockSampleCount);
+        for (f32 value : sourceBlock)
+        {
+          if (Abs(value) > effectActivationThreshold)
+            { return true; }
+        }
+        break;
+      }
+
+    case SampleType::Float64:
+      {
+        auto source = Span(reinterpret_cast<const f64*>(inputChannelBuffer.m_samples.Elements()), inputChannelBuffer.m_samples.Count() * sizeof(f64));
+        auto sourceBlock = Span(source, blockSampleOffset, blockSampleCount);
+        for (f64 value : sourceBlock)
+        {
+          if (Abs(value) > effectActivationThreshold)
+            { return true; }
+        }
+        break;
+      }
+
+    default:
+      ASSERT(false, "Unsupported sample type");
+    }
+
+    return false;
   }
 
   void AccumulateVoiceOutputs(
@@ -196,5 +191,78 @@ namespace Chord
     }
 
     bufferManager.FinishBufferWrite(bufferHandle, nullptr);
+  }
+
+  void FillOutputChannelBuffer(
+    const OutputChannelBuffer& outputChannelBuffer,
+    const BufferManager::Buffer& sourceBuffer,
+    usz blockSampleOffset,
+    usz blockSampleCount)
+  {
+    ASSERT(!sourceBuffer.m_isConstant);
+    switch (outputChannelBuffer.m_sampleType)
+    {
+    case SampleType::Float32:
+      {
+        auto samples = Span(reinterpret_cast<f32*>(outputChannelBuffer.m_samples.Elements()), outputChannelBuffer.m_samples.Count() * sizeof(f32));
+        auto destination = Span(samples, blockSampleOffset, blockSampleCount);
+
+        switch (sourceBuffer.m_primitiveType)
+        {
+        case PrimitiveTypeFloat:
+          destination.CopyElementsFrom(sourceBuffer.Get<f32>(blockSampleCount));
+          break;
+
+        case PrimitiveTypeDouble:
+          {
+            Span<const f64> sourceSamples = sourceBuffer.Get<f64>(blockSampleCount);
+            for (usz i = 0; i < destination.Count(); i++)
+              { destination[i] = f32(sourceSamples[i]); }
+            break;
+          }
+
+        case PrimitiveTypeInt:
+        case PrimitiveTypeBool:
+        case PrimitiveTypeString:
+        default:
+          ASSERT(false);
+          break;
+        }
+
+        break;
+      }
+
+    case SampleType::Float64:
+      {
+        auto samples = Span(reinterpret_cast<f64*>(outputChannelBuffer.m_samples.Elements()), outputChannelBuffer.m_samples.Count() * sizeof(f64));
+        auto destination = Span(samples, blockSampleOffset, blockSampleCount);
+
+        switch (sourceBuffer.m_primitiveType)
+        {
+        case PrimitiveTypeFloat:
+          {
+            Span<const f32> sourceSamples = sourceBuffer.Get<f32>(blockSampleCount);
+            for (usz i = 0; i < destination.Count(); i++)
+              { destination[i] = f32(sourceSamples[i]); }
+            break;
+          }
+
+        case PrimitiveTypeDouble:
+          destination.CopyElementsFrom(sourceBuffer.Get<f64>(blockSampleCount));
+          break;
+
+        case PrimitiveTypeInt:
+        case PrimitiveTypeBool:
+        case PrimitiveTypeString:
+        default:
+          ASSERT(false);
+          break;
+        }
+      }
+      break;
+
+    default:
+      ASSERT(false, "Unsupported sample type");
+    }
   }
 }

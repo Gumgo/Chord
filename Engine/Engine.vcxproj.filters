@@ -171,10 +171,13 @@
     <ClCompile Include="ProgramProcessing\ProgramStageTaskManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ProgramProcessing\VoiceOutputAccumulator.ixx">
+    <ClCompile Include="ProgramProcessing\BufferOperations.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ProgramProcessing\VoiceOutputAccumulator.cpp">
+    <ClCompile Include="ProgramProcessing\BufferOperations.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ProgramProcessing\ProgramProcessorTypes.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

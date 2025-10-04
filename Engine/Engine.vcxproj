@@ -63,6 +63,7 @@
     <ClCompile Include="ProgramProcessing\BufferMemory.ixx" />
     <ClCompile Include="ProgramProcessing\ConstantManager.cpp" />
     <ClCompile Include="ProgramProcessing\ConstantManager.ixx" />
+    <ClCompile Include="ProgramProcessing\ProgramProcessorTypes.ixx" />
     <ClCompile Include="ProgramProcessing\ProgramStageTaskManager.cpp" />
     <ClCompile Include="ProgramProcessing\ProgramStageTaskManager.ixx" />
     <ClCompile Include="ProgramProcessing\ProgramGraphUtilities.cpp" />
@@ -72,8 +73,8 @@
     <ClCompile Include="ProgramProcessing\ProgramProcessor.ixx" />
     <ClCompile Include="ProgramProcessing\VoiceAllocator.cpp" />
     <ClCompile Include="ProgramProcessing\VoiceAllocator.ixx" />
-    <ClCompile Include="ProgramProcessing\VoiceOutputAccumulator.cpp" />
-    <ClCompile Include="ProgramProcessing\VoiceOutputAccumulator.ixx" />
+    <ClCompile Include="ProgramProcessing\BufferOperations.cpp" />
+    <ClCompile Include="ProgramProcessing\BufferOperations.ixx" />
     <ClCompile Include="Program\InstrumentProperties.ixx" />
     <ClCompile Include="Program\Program.cpp" />
     <ClCompile Include="Program\Program.ixx" />

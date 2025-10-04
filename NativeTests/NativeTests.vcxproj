@@ -56,6 +56,7 @@
     <ClCompile Include="ConsoleCommand.ixx" />
     <ClCompile Include="Engine\ProgramProcessing\BufferManager.cpp" />
     <ClCompile Include="Engine\ProgramProcessing\BufferMemory.cpp" />
+    <ClCompile Include="Engine\ProgramProcessing\BufferOperations.cpp" />
     <ClCompile Include="Engine\ProgramProcessing\ConstantManager.cpp" />
     <ClCompile Include="Engine\ProgramProcessing\VoiceAllocator.cpp" />
     <ClCompile Include="Engine\TaskSystem\StaticTaskGraph.cpp" />

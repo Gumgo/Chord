@@ -128,5 +128,8 @@
     <ClCompile Include="Engine\ProgramProcessing\VoiceAllocator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\ProgramProcessing\BufferOperations.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -7,8 +7,8 @@ module Chord.Engine;
 import std;
 
 import Chord.Foundation;
+import :ProgramProcessing.BufferOperations;
 import :ProgramProcessing.ProgramGraphUtilities;
-import :ProgramProcessing.VoiceOutputAccumulator;
 
 namespace Chord
 {
@@ -314,7 +314,7 @@ namespace Chord
     m_blockSampleCount = Min(m_processSampleCount - m_blockSampleOffset, m_bufferSampleCount);
 
     if (m_effectActivationThreshold.has_value())
-      { m_effectActivationThresholdExceeded.store(false, std::memory_order_relaxed); }
+      { m_shouldActivateEffect.store(false, std::memory_order_relaxed); }
   }
 
   void ProgramProcessor::InitializeInputChannelBuffer(usz inputChannelIndex)
@@ -323,29 +323,11 @@ namespace Chord
     {
       BufferManager::BufferHandle bufferHandle = m_inputChannelBuffersFloat.value()[inputChannelIndex];
       m_bufferManager.StartBufferWrite(bufferHandle, nullptr);
-      auto destination = m_bufferManager.GetBuffer(bufferHandle).Get<f32>(m_blockSampleCount);
-      auto& inputChannelBuffer = m_inputChannelBuffers[inputChannelIndex];
-      switch (inputChannelBuffer.m_sampleType)
-      {
-      case SampleType::Float32:
-        {
-          auto source = Span(reinterpret_cast<const f32*>(inputChannelBuffer.m_samples.Elements()), inputChannelBuffer.m_samples.Count() * sizeof(f32));
-          destination.CopyElementsFrom(Span(source, m_blockSampleOffset, m_blockSampleCount));
-          break;
-        }
-
-      case SampleType::Float64:
-        {
-          auto source = Span(reinterpret_cast<const f64*>(inputChannelBuffer.m_samples.Elements()), inputChannelBuffer.m_samples.Count() * sizeof(f64));
-          for (usz i = 0; i < m_blockSampleCount; i++)
-            { destination[i] = f32(source[m_blockSampleOffset + i]); }
-          break;
-        }
-
-      default:
-        ASSERT(false, "Unsupported sample type");
-      }
-
+      InitializeFromInputChannelBuffer<f32>(
+        m_inputChannelBuffers[inputChannelIndex],
+        m_bufferManager.GetBuffer(bufferHandle),
+        m_blockSampleOffset,
+        m_blockSampleCount);
       m_bufferManager.FinishBufferWrite(bufferHandle, nullptr);
     }
 
@@ -353,29 +335,11 @@ namespace Chord
     {
       BufferManager::BufferHandle bufferHandle = m_inputChannelBuffersDouble.value()[inputChannelIndex];
       m_bufferManager.StartBufferWrite(bufferHandle, nullptr);
-      auto destination = m_bufferManager.GetBuffer(bufferHandle).Get<f64>(m_blockSampleCount);
-      auto& inputChannelBuffer = m_inputChannelBuffers[inputChannelIndex];
-      switch (inputChannelBuffer.m_sampleType)
-      {
-      case SampleType::Float32:
-        {
-          auto source = Span(reinterpret_cast<const f32*>(inputChannelBuffer.m_samples.Elements()), inputChannelBuffer.m_samples.Count() * sizeof(f32));
-          for (usz i = 0; i < m_blockSampleCount; i++)
-            { destination[i] = source[m_blockSampleOffset + i]; }
-          break;
-        }
-
-      case SampleType::Float64:
-        {
-          auto source = Span(reinterpret_cast<const f64*>(inputChannelBuffer.m_samples.Elements()), inputChannelBuffer.m_samples.Count() * sizeof(f64));
-          destination.CopyElementsFrom(Span(source, m_blockSampleOffset, m_blockSampleCount));
-          break;
-        }
-
-      default:
-        ASSERT(false, "Unsupported sample type");
-      }
-
+      InitializeFromInputChannelBuffer<f64>(
+        m_inputChannelBuffers[inputChannelIndex],
+        m_bufferManager.GetBuffer(bufferHandle),
+        m_blockSampleOffset,
+        m_blockSampleCount);
       m_bufferManager.FinishBufferWrite(bufferHandle, nullptr);
     }
 
@@ -383,39 +347,8 @@ namespace Chord
     if (m_effectActivationThreshold.has_value() && !m_effect->IsActive())
     {
       auto& inputChannelBuffer = m_inputChannelBuffers[inputChannelIndex];
-      switch (inputChannelBuffer.m_sampleType)
-      {
-      case SampleType::Float32:
-        {
-          auto source = Span(reinterpret_cast<const f32*>(inputChannelBuffer.m_samples.Elements()), inputChannelBuffer.m_samples.Count() * sizeof(f32));
-          for (usz i = 0; i < m_blockSampleCount; i++)
-          {
-            if (Abs(source[m_blockSampleOffset + i]) > m_effectActivationThreshold.value())
-            {
-              m_effectActivationThresholdExceeded.store(true, std::memory_order_relaxed);
-              break;
-            }
-          }
-          break;
-        }
-
-      case SampleType::Float64:
-        {
-          auto source = Span(reinterpret_cast<const f64*>(inputChannelBuffer.m_samples.Elements()), inputChannelBuffer.m_samples.Count() * sizeof(f64));
-          for (usz i = 0; i < m_blockSampleCount; i++)
-          {
-            if (Abs(source[m_blockSampleOffset + i]) > m_effectActivationThreshold.value())
-            {
-              m_effectActivationThresholdExceeded.store(true, std::memory_order_relaxed);
-              break;
-            }
-          }
-          break;
-        }
-
-      default:
-        ASSERT(false, "Unsupported sample type");
-      }
+      if (ShouldActivateEffect(inputChannelBuffer, m_effectActivationThreshold.value(), m_blockSampleOffset, m_blockSampleCount))
+        { m_shouldActivateEffect.store(true, std::memory_order_relaxed); }
     }
   }
 
@@ -496,7 +429,7 @@ namespace Chord
       break;
 
     case EffectActivationMode::Threshold:
-      shouldActivate = m_effectActivationThresholdExceeded.load(std::memory_order_relaxed);
+      shouldActivate = m_shouldActivateEffect.load(std::memory_order_relaxed);
       break;
 
     default:
@@ -530,7 +463,7 @@ namespace Chord
   {
     // We'll either copy output from the voice or the effect stage depending on what is present
     const OutputChannelBuffer& outputChannelBuffer = m_outputChannelBuffers[outputChannelIndex];
-    std::optional<ProgramStageTaskManager::BufferOrConstant> source;
+    ProgramStageTaskManager::BufferOrConstant source = 0.0f;
     if (m_effect.has_value())
     {
       if (m_effect->IsActive())
@@ -540,130 +473,46 @@ namespace Chord
       { source = m_voiceOutputAccumulationBuffers[outputChannelIndex]; }
 
     // If the source is a constant buffer, just grab the constant out up-front for simplicity
-    if (source.has_value())
+    if (auto bufferHandle = std::get_if<BufferManager::BufferHandle>(&source); bufferHandle != nullptr)
     {
-      if (auto bufferHandle = std::get_if<BufferManager::BufferHandle>(&source.value()); bufferHandle != nullptr)
+      m_bufferManager.StartBufferRead(*bufferHandle, nullptr);
+
+      const BufferManager::Buffer& buffer = m_bufferManager.GetBuffer(*bufferHandle);
+      if (buffer.m_isConstant)
       {
-        m_bufferManager.StartBufferRead(*bufferHandle, nullptr);
-
-        const BufferManager::Buffer& buffer = m_bufferManager.GetBuffer(*bufferHandle);
-        if (buffer.m_isConstant)
+        switch (buffer.m_primitiveType)
         {
-          switch (buffer.m_primitiveType)
-          {
-          case PrimitiveTypeFloat:
-            source = buffer.Get<f32>(1)[0];
-            break;
+        case PrimitiveTypeFloat:
+          source = buffer.Get<f32>(1)[0];
+          break;
 
-          case PrimitiveTypeDouble:
-            source = buffer.Get<f64>(1)[0];
-            break;
+        case PrimitiveTypeDouble:
+          source = buffer.Get<f64>(1)[0];
+          break;
 
-          case PrimitiveTypeInt:
-          case PrimitiveTypeBool:
-          case PrimitiveTypeString:
-          default:
-            ASSERT(false);
-            break;
-          }
+        case PrimitiveTypeInt:
+        case PrimitiveTypeBool:
+        case PrimitiveTypeString:
+        default:
+          ASSERT(false);
+          break;
         }
-
-        m_bufferManager.FinishBufferRead(*bufferHandle, nullptr);
       }
+
+      m_bufferManager.FinishBufferRead(*bufferHandle, nullptr);
     }
 
-    switch (outputChannelBuffer.m_sampleType)
+    if (auto f32Value = std::get_if<f32>(&source); f32Value != nullptr)
+      { ::Chord::FillOutputChannelBuffer(outputChannelBuffer, *f32Value, m_blockSampleOffset, m_blockSampleCount); }
+    else if (auto f64Value = std::get_if<f64>(&source); f64Value != nullptr)
+      { ::Chord::FillOutputChannelBuffer(outputChannelBuffer, *f64Value, m_blockSampleOffset, m_blockSampleCount); }
+    else
     {
-    case SampleType::Float32:
-      {
-        auto samples = Span(reinterpret_cast<f32*>(outputChannelBuffer.m_samples.Elements()), outputChannelBuffer.m_samples.Count() * sizeof(f32));
-        auto destination = Span(samples, m_blockSampleOffset, m_processSampleCount);
-        if (!source.has_value())
-          { destination.ZeroElements(); }
-        else if (auto f32Value = std::get_if<f32>(&source.value()); f32Value != nullptr)
-          { destination.Fill(*f32Value); }
-        else if (auto f64Value = std::get_if<f64>(&source.value()); f64Value != nullptr)
-          { destination.Fill(f32(*f64Value)); }
-        else
-        {
-          auto bufferHandle = std::get<BufferManager::BufferHandle>(source.value());
-          m_bufferManager.StartBufferRead(bufferHandle, nullptr);
-          const BufferManager::Buffer& buffer = m_bufferManager.GetBuffer(bufferHandle);
-          ASSERT(!buffer.m_isConstant);
-
-          switch (buffer.m_primitiveType)
-          {
-          case PrimitiveTypeFloat:
-            destination.CopyElementsFrom(buffer.Get<f32>(m_blockSampleCount));
-            break;
-
-          case PrimitiveTypeDouble:
-            {
-              Span<const f64> sourceSamples = buffer.Get<f64>(m_blockSampleCount);
-              for (usz i = 0; i < destination.Count(); i++)
-                { destination[i] = f32(sourceSamples[i]); }
-              break;
-            }
-
-          case PrimitiveTypeInt:
-          case PrimitiveTypeBool:
-          case PrimitiveTypeString:
-          default:
-            ASSERT(false);
-            break;
-          }
-
-          m_bufferManager.FinishBufferRead(bufferHandle, nullptr);
-        }
-        break;
-      }
-
-    case SampleType::Float64:
-      {
-        auto samples = Span(reinterpret_cast<f64*>(outputChannelBuffer.m_samples.Elements()), outputChannelBuffer.m_samples.Count() * sizeof(f64));
-        auto destination = Span(samples, m_blockSampleOffset, m_processSampleCount);
-        if (!source.has_value())
-          { destination.ZeroElements(); }
-        else if (auto f32Value = std::get_if<f32>(&source.value()); f32Value != nullptr)
-          { destination.Fill(f64(*f32Value)); }
-        else if (auto f64Value = std::get_if<f64>(&source.value()); f64Value != nullptr)
-          { destination.Fill(*f64Value); }
-        else
-        {
-          auto bufferHandle = std::get<BufferManager::BufferHandle>(source.value());
-          m_bufferManager.StartBufferRead(bufferHandle, nullptr);
-          const BufferManager::Buffer& buffer = m_bufferManager.GetBuffer(bufferHandle);
-          ASSERT(!buffer.m_isConstant);
-
-          switch (buffer.m_primitiveType)
-          {
-          case PrimitiveTypeFloat:
-            {
-              Span<const f32> sourceSamples = buffer.Get<f32>(m_blockSampleCount);
-              for (usz i = 0; i < destination.Count(); i++)
-                { destination[i] = f32(sourceSamples[i]); }
-              break;
-            }
-
-          case PrimitiveTypeDouble:
-            destination.CopyElementsFrom(buffer.Get<f64>(m_blockSampleCount));
-            break;
-
-          case PrimitiveTypeInt:
-          case PrimitiveTypeBool:
-          case PrimitiveTypeString:
-          default:
-            ASSERT(false);
-            break;
-          }
-
-          m_bufferManager.FinishBufferRead(bufferHandle, nullptr);
-        }
-        break;
-      }
-
-    default:
-      ASSERT(false, "Unsupported sample type");
+      auto bufferHandle = std::get<BufferManager::BufferHandle>(source);
+      m_bufferManager.StartBufferRead(bufferHandle, nullptr);
+      const BufferManager::Buffer& buffer = m_bufferManager.GetBuffer(bufferHandle);
+      ::Chord::FillOutputChannelBuffer(outputChannelBuffer, buffer, m_blockSampleOffset, m_blockSampleCount);
+      m_bufferManager.FinishBufferRead(bufferHandle, nullptr);
     }
   }
 

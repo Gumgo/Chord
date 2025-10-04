@@ -11,6 +11,7 @@ import :Native;
 import :Program;
 import :ProgramProcessing.BufferManager;
 import :ProgramProcessing.ConstantManager;
+import :ProgramProcessing.ProgramProcessorTypes;
 import :ProgramProcessing.ProgramStageTaskManager;
 import :ProgramProcessing.VoiceAllocator;
 import :TaskSystem;
@@ -19,30 +20,6 @@ namespace Chord
 {
   export
   {
-    enum class SampleType
-    {
-      Float32,
-      Float64,
-    };
-
-    struct InputChannelBuffer
-    {
-      SampleType m_sampleType = SampleType::Float64;
-      Span<const u8> m_samples;
-    };
-
-    struct OutputChannelBuffer
-    {
-      SampleType m_sampleType = SampleType::Float32;
-      Span<u8> m_samples;
-    };
-
-    struct VoiceTrigger
-    {
-      // $TODO we'll need an ID of some sort to link this voice to MIDI events
-      usz m_sampleIndex = 0;
-    };
-
     struct ProgramProcessorSettings
     {
       usz m_bufferSampleCount = 1024;
@@ -136,7 +113,7 @@ namespace Chord
       EffectActivationMode m_effectActivationMode = EffectActivationMode::Always;
       std::optional<f64> m_effectActivationThreshold;
       std::optional<ProgramStageTaskManager> m_effect;
-      std::atomic<bool> m_effectActivationThresholdExceeded = false;
+      std::atomic<bool> m_shouldActivateEffect = false;
 
       Span<const InputChannelBuffer> m_inputChannelBuffers;
       Span<const OutputChannelBuffer> m_outputChannelBuffers;
