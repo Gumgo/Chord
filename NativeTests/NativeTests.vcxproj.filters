@@ -125,5 +125,8 @@
     <ClCompile Include="Engine\TaskSystem\StaticTaskGraph.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\ProgramProcessing\VoiceAllocator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

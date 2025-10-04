@@ -55,6 +55,7 @@ namespace Chord
     m_inactiveVoiceIndices.RemoveByIndex(m_inactiveVoiceIndices.Count() - 1);
 
     // Append to the active voice list which will cause the list to be sorted by voice age starting with the oldest voices
+    m_activeVoiceIndices.Append(voiceIndex);
     m_activatedVoices.Append({ .m_voiceIndex = voiceIndex, .m_sampleIndex = sampleIndex });
   }
 
@@ -69,7 +70,7 @@ namespace Chord
   Span<const usz> VoiceAllocator::GetDeactivatedVoiceIndices() const
     { return m_deactivatedVoiceIndices; }
 
-  Span<const VoiceAllocator::ActivatedVoice> VoiceAllocator::GetActivatedVoiceIndices() const
+  Span<const VoiceAllocator::ActivatedVoice> VoiceAllocator::GetActivatedVoices() const
     { return m_activatedVoices; }
 
   Span<const usz> VoiceAllocator::GetActiveVoiceIndices() const

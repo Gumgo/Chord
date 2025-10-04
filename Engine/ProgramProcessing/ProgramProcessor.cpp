@@ -432,7 +432,7 @@ namespace Chord
     for (usz deactivatedVoiceIndex : m_voiceAllocator->GetDeactivatedVoiceIndices())
       { m_voices[deactivatedVoiceIndex].SetActive(false); }
 
-    for (const VoiceAllocator::ActivatedVoice& activatedVoice : m_voiceAllocator->GetActivatedVoiceIndices())
+    for (const VoiceAllocator::ActivatedVoice& activatedVoice : m_voiceAllocator->GetActivatedVoices())
     {
       m_voices[activatedVoice.m_voiceIndex].SetActive(true);
       m_voiceSampleOffsets[activatedVoice.m_voiceIndex] = activatedVoice.m_sampleIndex;

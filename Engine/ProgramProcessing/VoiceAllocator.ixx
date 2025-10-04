@@ -6,7 +6,6 @@ namespace Chord
 {
   export
   {
-    // !!! write unit tests, make sure to test edge cases like reactivating a voice multiple times
     class VoiceAllocator
     {
     public:
@@ -28,7 +27,7 @@ namespace Chord
       void DeactivateVoice(usz voiceIndex);
 
       Span<const usz> GetDeactivatedVoiceIndices() const;
-      Span<const ActivatedVoice> GetActivatedVoiceIndices() const;
+      Span<const ActivatedVoice> GetActivatedVoices() const;
       Span<const usz> GetActiveVoiceIndices() const;
 
     private:
