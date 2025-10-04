@@ -321,8 +321,10 @@ namespace Chord
   {
     if (m_inputChannelBuffersFloat.has_value())
     {
+      BufferManager::BufferHandle bufferHandle = m_inputChannelBuffersFloat.value()[inputChannelIndex];
+      m_bufferManager.StartBufferWrite(bufferHandle, nullptr);
+      auto destination = m_bufferManager.GetBuffer(bufferHandle).Get<f32>(m_blockSampleCount);
       auto& inputChannelBuffer = m_inputChannelBuffers[inputChannelIndex];
-      auto destination = m_bufferManager.GetBuffer(m_inputChannelBuffersFloat.value()[inputChannelIndex]).Get<f32>(m_blockSampleCount);
       switch (inputChannelBuffer.m_sampleType)
       {
       case SampleType::Float32:
@@ -343,12 +345,16 @@ namespace Chord
       default:
         ASSERT(false, "Unsupported sample type");
       }
+
+      m_bufferManager.FinishBufferWrite(bufferHandle, nullptr);
     }
 
     if (m_inputChannelBuffersDouble.has_value())
     {
+      BufferManager::BufferHandle bufferHandle = m_inputChannelBuffersDouble.value()[inputChannelIndex];
+      m_bufferManager.StartBufferWrite(bufferHandle, nullptr);
+      auto destination = m_bufferManager.GetBuffer(bufferHandle).Get<f64>(m_blockSampleCount);
       auto& inputChannelBuffer = m_inputChannelBuffers[inputChannelIndex];
-      auto destination = m_bufferManager.GetBuffer(m_inputChannelBuffersDouble.value()[inputChannelIndex]).Get<f64>(m_blockSampleCount);
       switch (inputChannelBuffer.m_sampleType)
       {
       case SampleType::Float32:
@@ -369,6 +375,8 @@ namespace Chord
       default:
         ASSERT(false, "Unsupported sample type");
       }
+
+      m_bufferManager.FinishBufferWrite(bufferHandle, nullptr);
     }
 
     // If needed, determine if effect processing should be activated by checking for silence
@@ -536,6 +544,8 @@ namespace Chord
     {
       if (auto bufferHandle = std::get_if<BufferManager::BufferHandle>(&source.value()); bufferHandle != nullptr)
       {
+        m_bufferManager.StartBufferRead(*bufferHandle, nullptr);
+
         const BufferManager::Buffer& buffer = m_bufferManager.GetBuffer(*bufferHandle);
         if (buffer.m_isConstant)
         {
@@ -557,6 +567,8 @@ namespace Chord
             break;
           }
         }
+
+        m_bufferManager.FinishBufferRead(*bufferHandle, nullptr);
       }
     }
 
@@ -575,6 +587,7 @@ namespace Chord
         else
         {
           auto bufferHandle = std::get<BufferManager::BufferHandle>(source.value());
+          m_bufferManager.StartBufferRead(bufferHandle, nullptr);
           const BufferManager::Buffer& buffer = m_bufferManager.GetBuffer(bufferHandle);
           ASSERT(!buffer.m_isConstant);
 
@@ -599,6 +612,8 @@ namespace Chord
             ASSERT(false);
             break;
           }
+
+          m_bufferManager.FinishBufferRead(bufferHandle, nullptr);
         }
         break;
       }
@@ -616,6 +631,7 @@ namespace Chord
         else
         {
           auto bufferHandle = std::get<BufferManager::BufferHandle>(source.value());
+          m_bufferManager.StartBufferRead(bufferHandle, nullptr);
           const BufferManager::Buffer& buffer = m_bufferManager.GetBuffer(bufferHandle);
           ASSERT(!buffer.m_isConstant);
 
@@ -640,6 +656,8 @@ namespace Chord
             ASSERT(false);
             break;
           }
+
+          m_bufferManager.FinishBufferRead(bufferHandle, nullptr);
         }
         break;
       }

@@ -26,6 +26,9 @@ namespace Chord
       auto output = voice.GetOutput(outputIndex);
       if (auto outputBufferHandle = std::get_if<BufferManager::BufferHandle>(&output); outputBufferHandle != nullptr)
       {
+        bufferManager.StartBufferRead(*outputBufferHandle, nullptr);
+        OnScopeExit finishBufferRead = [&]() { bufferManager.FinishBufferRead(*outputBufferHandle, nullptr); };
+
         const BufferManager::Buffer& outputBuffer = bufferManager.GetBuffer(*outputBufferHandle);
         if (!outputBuffer.m_isConstant)
           { return false; }
@@ -50,9 +53,11 @@ namespace Chord
       auto output = voice.GetOutput(outputIndex);
       if (auto outputBufferHandle = std::get_if<BufferManager::BufferHandle>(&output); outputBufferHandle != nullptr)
       {
+        bufferManager.StartBufferRead(*outputBufferHandle, nullptr);
         const BufferManager::Buffer& outputBuffer = bufferManager.GetBuffer(*outputBufferHandle);
         ASSERT(outputBuffer.m_isConstant);
         result += *static_cast<const TElement*>(outputBuffer.m_memory);
+        bufferManager.FinishBufferRead(*outputBufferHandle, nullptr);
       }
       else
         { result += std::get<TElement>(output); }
@@ -88,7 +93,9 @@ namespace Chord
       auto output = voice.GetOutput(outputIndex);
       if (auto outputBufferHandle = std::get_if<BufferManager::BufferHandle>(&output); outputBufferHandle != nullptr)
       {
+        bufferManager.StartBufferRead(*outputBufferHandle, nullptr);
         const BufferManager::Buffer& outputBuffer = bufferManager.GetBuffer(*outputBufferHandle);
+
         if (outputBuffer.m_isConstant)
         {
           TElement constantValue = outputBuffer.Get<TElement>(1)[0];
@@ -112,6 +119,8 @@ namespace Chord
               { destination[sampleIndex] += source[sampleIndex]; }
           }
         }
+
+        bufferManager.FinishBufferRead(*outputBufferHandle, nullptr);
       }
       else
       {
@@ -136,6 +145,7 @@ namespace Chord
     BufferManager::BufferHandle bufferHandle,
     usz sampleCount)
   {
+    bufferManager.StartBufferWrite(bufferHandle, nullptr);
     const BufferManager::Buffer& buffer = bufferManager.GetBuffer(bufferHandle);
 
     if (activeVoiceIndices.IsEmpty())
@@ -184,5 +194,7 @@ namespace Chord
 
       bufferManager.SetBufferConstant(bufferHandle, canAccumulateOutputsAsConstant);
     }
+
+    bufferManager.FinishBufferWrite(bufferHandle, nullptr);
   }
 }
