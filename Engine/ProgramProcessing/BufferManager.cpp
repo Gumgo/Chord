@@ -202,7 +202,60 @@ namespace Chord
     { return m_buffers[usz(bufferHandle)]; }
 
   void BufferManager::SetBufferConstant(BufferHandle bufferHandle, bool isConstant)
-    { m_buffers[usz(bufferHandle)].m_isConstant = isConstant; }
+  {
+    Buffer& buffer = m_buffers[usz(bufferHandle)];
+    buffer.m_isConstant = isConstant;
+
+    #if CHORD_ASSERTS_ENABLED
+      if (isConstant)
+      {
+        // Make sure that the first BufferConstantValueByteCount worth of elements are identical. For float types, we'll perform checks using bit_cast integers
+        // to properly handle NaN.
+        switch (buffer.m_primitiveType)
+        {
+        case PrimitiveTypeFloat:
+          {
+            auto constantElements = buffer.Get<f32>(BufferConstantValueByteCount / sizeof(f32));
+            for (f32 value : constantElements)
+              { ASSERT(std::bit_cast<u32>(value) == std::bit_cast<u32>(constantElements[0])); }
+            break;
+          }
+
+        case PrimitiveTypeDouble:
+          {
+            auto constantElements = buffer.Get<f64>(BufferConstantValueByteCount / sizeof(f64));
+            for (f64 value : constantElements)
+              { ASSERT(std::bit_cast<u64>(value) == std::bit_cast<u64>(constantElements[0])); }
+            break;
+          }
+
+        case PrimitiveTypeInt:
+          {
+            auto constantElements = buffer.Get<s32>(BufferConstantValueByteCount / sizeof(s32));
+            for (s32 value : constantElements)
+              { ASSERT(value == constantElements[0]); }
+            break;
+          }
+
+        case PrimitiveTypeBool:
+          {
+            auto constantElements = buffer.Get<u8>(BufferConstantValueByteCount);
+            ASSERT(constantElements[0] == 0x00_u8 || constantElements[0] == 0xff_u8);
+            for (u8 value : constantElements)
+              { ASSERT(value == constantElements[0]); }
+            break;
+          }
+
+        case PrimitiveTypeString:
+          ASSERT(false);
+          break;
+
+        default:
+          ASSERT(false);
+        }
+      }
+    #endif
+  }
 
   Span<InputFloatBuffer> BufferManager::AddFloatBufferArray(usz count)
     { return m_inputFloatBufferArrays.AppendNew(InitializeCapacity(count)); }
