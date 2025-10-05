@@ -697,4 +697,28 @@ namespace Chord
 
     return std::move(program);
   }
+
+  bool Program::Validate(NativeLibraryRegistry* nativeLibraryRegistry) const
+  {
+    for (const NativeLibraryDependency& nativeLibraryDependency : m_nativeLibraryDependencies)
+    {
+      auto result = nativeLibraryRegistry->TryGetNativeLibraryAndContext(nativeLibraryDependency.m_id);
+      if (!result.has_value())
+        { return false; }
+
+      // $TODO validate that the native library version that the program was built with is compatible with the one we have loaded:
+      // auto [nativeLibrary, context] = result.value();
+      // NativeLibraryVersion dependencyVersion =
+      // {
+      //   .m_major = nativeLibraryDependency.m_majorVersion,
+      //   .m_minor = nativeLibraryDependency.m_minorVersion,
+      //   .m_patch = nativeLibraryDependency.m_patchVersion,
+      // };
+      //
+      // if (!nativeLibrary->m_isCompatibleWithVersion(&dependencyVersion))
+      //   { return false; }
+    }
+
+    return true;
+  }
 }

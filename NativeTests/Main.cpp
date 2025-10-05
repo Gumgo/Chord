@@ -81,7 +81,6 @@ static bool ShouldRunTestMethod(const TestClassInfo* testClass, TestMethodInfo* 
   return false;
 }
 
-// $TODO add command line arguments to filter tests
 s32 main(s32 argc, char** argv)
 {
   std::vector<Filter> filters;

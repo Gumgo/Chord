@@ -3,6 +3,7 @@ export module Chord.Engine:Program;
 import std;
 
 import Chord.Foundation;
+import :Native.NativeLibraryRegistry;
 
 export import :Program.InstrumentProperties;
 export import :Program.ProgramGraph;
@@ -79,8 +80,8 @@ namespace Chord
 
       static std::optional<Program> Deserialize(Span<const u8> bytes);
 
-      // !!! we probably want something like this to make sure all required native libraries are present and versions are compatible
-      // bool Validate(NativeLibraryRegistry* nativeLibraryRegistry) const;
+      // Returns whether all required native libraries are present
+      bool Validate(NativeLibraryRegistry* nativeLibraryRegistry) const;
 
       Span<const NativeLibraryDependency> NativeLibraryDependencies() const
         { return m_nativeLibraryDependencies; }
