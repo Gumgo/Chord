@@ -131,6 +131,36 @@ namespace Chord
     return false;
   }
 
+  bool ProcessRemainActiveOutput(const BufferManager::Buffer& buffer, usz sampleCount)
+  {
+    ASSERT(buffer.m_primitiveType == PrimitiveTypeBool);
+
+    // The remain-active output should tell us the first possible moment that a voice or effect can stop processing. This means that even if a single bit in the
+    // buffer is false, followed by true bits, we still set the remain-active result to false.
+    Span<const u8> byteValues = buffer.Get<u8>(sampleCount);
+
+    if (buffer.m_isConstant)
+      { return (byteValues[0] & 1) != 0; }
+
+    usz fullByteCount = sampleCount / 8;
+    for (usz byteIndex = 0; byteIndex < fullByteCount; byteIndex++)
+    {
+      if (byteValues[byteIndex] != 0xff_u8)
+        { return false; }
+    }
+
+    ASSERT(fullByteCount == byteValues.Count() || fullByteCount + 1 == byteValues.Count());
+    if (byteValues.Count() == fullByteCount)
+      { return true; }
+
+    u8 partialValue = byteValues[fullByteCount];
+    usz validBitCount = sampleCount - (fullByteCount * 8);
+
+    // We want to return false if a single bit is 0 so mask out the invalid bits with 1
+    u8 value = u8(partialValue | (0xff_u8 << validBitCount));
+    return value == 0xff_u8;
+  }
+
   void AccumulateVoiceOutputs(
     Span<const ProgramStageTaskManager> voices,
     Span<const usz> activeVoiceIndices,

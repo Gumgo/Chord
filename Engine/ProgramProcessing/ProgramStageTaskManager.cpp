@@ -8,6 +8,7 @@ module Chord.Engine;
 import std;
 
 import Chord.Foundation;
+import :ProgramProcessing.BufferOperations;
 import :ProgramProcessing.ProgramGraphUtilities;
 
 namespace Chord
@@ -886,11 +887,10 @@ namespace Chord
 
   void ProgramStageTaskManager::ProcessRemainActiveOutput()
   {
-    m_remainActiveResult = true;
-
     if (!m_remainActiveOutput.has_value())
     {
       // If there's no remain-active output, we always stay active (this is only supported for effect processing, voices can always turn off)
+      m_remainActiveResult = true;
       return;
     }
 
@@ -902,32 +902,6 @@ namespace Chord
 
     auto bufferHandle = std::get<BufferManager::BufferHandle>(m_remainActiveOutput.value());
     const BufferManager::Buffer& buffer = m_processContext->m_bufferManager->GetBuffer(bufferHandle);
-
-    ASSERT(buffer.m_primitiveType == PrimitiveTypeBool);
-
-    // The remain-active output should tell us the first possible moment that a voice or effect can stop processing. This means that even if a single bit in the
-    // buffer is false, followed by true bits, we still set the remain-active result to false.
-    Span<const u8> byteValues = buffer.Get<u8>(m_processContext->m_sampleCount);
-    usz fullByteCount = m_processContext->m_sampleCount / 8;
-    for (usz byteIndex = 0; byteIndex < fullByteCount; byteIndex++)
-    {
-      if (byteValues[byteIndex] != 0xff_u8)
-      {
-        m_remainActiveResult = false;
-        return;
-      }
-    }
-
-    ASSERT(fullByteCount == byteValues.Count() || fullByteCount == byteValues.Count()  + 1);
-    if (byteValues.Count() > fullByteCount)
-    {
-      u8 partialValue = byteValues[fullByteCount];
-      usz validBitCount = m_processContext->m_sampleCount - (fullByteCount * 8);
-
-      // We want to return false if a single bit is 0 so mask out the invalid bits with 1
-      u8 value = u8(partialValue | (0xff_u8 << validBitCount));
-      if (value != 0xff_u8)
-        { m_remainActiveResult = false; }
-    }
+    m_remainActiveResult = ::Chord::ProcessRemainActiveOutput(buffer, m_processContext->m_sampleCount);
   }
 }

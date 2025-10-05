@@ -128,6 +128,57 @@ namespace Chord
       EXPECT(!ShouldActivateEffect(inputChannelBufferDouble, 1.0, 4, 4));
     }
 
+    TEST_METHOD(ProcessRemainActiveBuffer)
+    {
+      FixedArray<u8, 4> bufferMemory;
+      BufferManager::Buffer buffer =
+      {
+        .m_primitiveType = PrimitiveTypeBool,
+        .m_upsampleFactor = 1,
+        .m_byteCount = bufferMemory.Count(),
+        .m_memory = bufferMemory.Elements(),
+        .m_isConstant = false,
+      };
+
+      bufferMemory[0] = 0xff;
+      bufferMemory[1] = 0xff;
+      bufferMemory[2] = 0xff;
+      bufferMemory[3] = 0xff;
+      EXPECT(ProcessRemainActiveOutput(buffer, 32));
+
+      bufferMemory[0] = 0xff;
+      bufferMemory[1] = 0xff ^ u8(1 << 3);
+      bufferMemory[2] = 0xff;
+      bufferMemory[3] = 0xff;
+      EXPECT(!ProcessRemainActiveOutput(buffer, 32));
+
+      bufferMemory[0] = 0xff;
+      bufferMemory[1] = 0xff;
+      bufferMemory[2] = 0xff;
+      bufferMemory[3] = 0x07;
+      EXPECT(ProcessRemainActiveOutput(buffer, 25));
+      EXPECT(ProcessRemainActiveOutput(buffer, 26));
+      EXPECT(ProcessRemainActiveOutput(buffer, 27));
+      EXPECT(!ProcessRemainActiveOutput(buffer, 28));
+      EXPECT(!ProcessRemainActiveOutput(buffer, 29));
+      EXPECT(!ProcessRemainActiveOutput(buffer, 30));
+      EXPECT(!ProcessRemainActiveOutput(buffer, 31));
+      EXPECT(!ProcessRemainActiveOutput(buffer, 32));
+
+      buffer.m_isConstant = true;
+      bufferMemory[0] = 0x01;
+      bufferMemory[1] = 0x00;
+      bufferMemory[2] = 0x00;
+      bufferMemory[3] = 0x00;
+      EXPECT(ProcessRemainActiveOutput(buffer, 32));
+
+      bufferMemory[0] = 0xfe;
+      bufferMemory[1] = 0xff;
+      bufferMemory[2] = 0xff;
+      bufferMemory[3] = 0xff;
+      EXPECT(!ProcessRemainActiveOutput(buffer, 32));
+    }
+
     TEST_METHOD(AccumulateToBuffer)
     {
       auto Run =

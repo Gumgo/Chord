@@ -35,7 +35,7 @@ namespace Chord
             { ASSERT(AlwaysFalse<TElement>, "Unsupported element type"); }
 
           usz sampleCount = nonUpsampledSampleCount * usz(m_upsampleFactor);
-          if constexpr (std::same_as<TElement, bool>)
+          if constexpr (std::same_as<TElement, u8>)
           {
             usz u8Count = (sampleCount + 7) / 8;
             ASSERT(u8Count <= m_byteCount);

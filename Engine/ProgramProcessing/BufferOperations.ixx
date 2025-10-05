@@ -51,6 +51,7 @@ namespace Chord
     }
 
     bool ShouldActivateEffect(const InputChannelBuffer& inputChannelBuffer, f64 effectActivationThreshold, usz blockSampleOffset, usz blockSampleCount);
+    bool ProcessRemainActiveOutput(const BufferManager::Buffer& buffer, usz sampleCount);
 
     template<typename TElement>
     void AccumulateToBuffer(Span<TElement> destination, TElement value, bool isFirstAccumulation, usz voiceSampleOffset)
