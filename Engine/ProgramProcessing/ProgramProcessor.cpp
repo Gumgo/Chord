@@ -105,6 +105,7 @@ namespace Chord
       {
         m_voices.AppendNew(
           nativeLibraryRegistry,
+          settings.m_reportCallback,
           program,
           true,
           &m_constantManager,
@@ -138,6 +139,7 @@ namespace Chord
 
       m_effect.emplace(
         nativeLibraryRegistry,
+        settings.m_reportCallback,
         program,
         false,
         &m_constantManager,

@@ -256,6 +256,12 @@ file class ReportingWrapper(IReporting reporting) : IReporting
   public int WarningCount { get; private set; }
   public int ErrorCount { get; private set; }
 
+  public void Info(string? identifier, string message)
+    => reporting.Info(identifier, message);
+
+  public void Info(string? identifier, SourceLocation sourceLocation, string message)
+    => reporting.Info(identifier, sourceLocation, message);
+
   public void Warning(string? identifier, string message)
   {
     WarningCount++;

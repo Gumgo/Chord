@@ -23,6 +23,7 @@ namespace Chord
     struct ProgramProcessorSettings
     {
       usz m_bufferSampleCount = 1024;
+      Callable<void(ReportingSeverity severity, const UnicodeString& message)> m_reportCallback;
     };
 
     class ProgramProcessor

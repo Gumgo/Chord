@@ -40,6 +40,41 @@ typedef enum
 
 static_assert(sizeof(RuntimeMutability) == sizeof(int32_t));
 
+typedef enum
+{
+  ReportingSeverityInfo,
+  ReportingSeverityWarning,
+  ReportingSeverityError,
+} ReportingSeverity;
+
+static_assert(sizeof(ReportingSeverity) == sizeof(int32_t));
+
+typedef enum
+{
+  // Matches against a specific native module call
+  OptimizationRuleComponentNativeModuleCall,
+
+  // Matches against a constant value or provides a constant value for output
+  OptimizationRuleComponentConstant,
+
+  // Matches against an array of values or provides an array of values for output
+  OptimizationRuleComponentArray,
+
+  // Matches against a native module input, possibly with constraints
+  OptimizationRuleComponentInput,
+
+  // Matches against a native module output (no additional data is needed)
+  OptimizationRuleComponentOutput,
+
+  // References a previously-matched native module input by its index in the component list; can only be used in output patterns
+  OptimizationRuleComponentInputReference,
+
+  // Marks the end of the component list
+  OptimizationRuleComponentEndOfList,
+} OptimizationRuleComponentType;
+
+static_assert(sizeof(OptimizationRuleComponentType) == sizeof(int32_t));
+
 typedef struct
 {
   RuntimeMutability m_runtimeMutability;
@@ -250,8 +285,7 @@ typedef struct
   size_t m_argumentCount;
 } NativeModuleArguments;
 
-typedef void (*ReportWarning)(void* reportingContext, char32_t* message);
-typedef void (*ReportError)(void* reportingContext, char32_t* message);
+typedef void (*Report)(void* reportingContext, ReportingSeverity severity, const char32_t* message);
 
 typedef struct
 {
@@ -265,15 +299,14 @@ typedef struct
   void* m_voiceContext;
 
   // These are always available.
-  void* m_reportingContext;
   int32_t m_sampleRate;
   int32_t m_inputChannelCount;
   int32_t m_outputChannelCount;
   int32_t m_upsampleFactor;
   bool m_isCompileTime;
 
-  ReportWarning m_reportWarning;
-  ReportError m_reportError;
+  void* m_reportingContext;
+  Report m_report;
 } NativeModuleContext;
 
 // Called before a native module is going to be inserted into the graph. Any necessary argument validation should occur here and latency should be output.
@@ -321,30 +354,6 @@ typedef struct
   NativeModuleInvokeCompileTime m_invokeCompileTime;
   NativeModuleInvoke m_invoke;
 } NativeModule;
-
-typedef enum
-{
-  // Matches against a specific native module call
-  OptimizationRuleComponentNativeModuleCall,
-
-  // Matches against a constant value or provides a constant value for output
-  OptimizationRuleComponentConstant,
-
-  // Matches against an array of values or provides an array of values for output
-  OptimizationRuleComponentArray,
-
-  // Matches against a native module input, possibly with constraints
-  OptimizationRuleComponentInput,
-
-  // Matches against a native module output (no additional data is needed)
-  OptimizationRuleComponentOutput,
-
-  // References a previously-matched native module input by its index in the component list; can only be used in output patterns
-  OptimizationRuleComponentInputReference,
-
-  // Marks the end of the component list
-  OptimizationRuleComponentEndOfList,
-} OptimizationRuleComponentType;
 
 typedef struct
 {

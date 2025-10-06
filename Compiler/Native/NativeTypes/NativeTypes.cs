@@ -43,6 +43,13 @@ internal enum OptimizationRuleComponentType : int
   EndOfList,
 }
 
+internal enum ReportingSeverity : int
+{
+  Info,
+  Warning,
+  Error,
+}
+
 [StructLayout(LayoutKind.Sequential)]
 internal unsafe struct DataType
 {
@@ -274,8 +281,7 @@ internal unsafe struct NativeModuleContext
   public NativeBool IsCompileTime;
 
   public void* ReportingContext;
-  public delegate* unmanaged[Cdecl]<void*, uint*, void> ReportWarning;
-  public delegate* unmanaged[Cdecl]<void*, uint*, void> ReportError;
+  public delegate* unmanaged[Cdecl]<void*, ReportingSeverity, uint*, void> Report;
 }
 
 [StructLayout(LayoutKind.Sequential)]

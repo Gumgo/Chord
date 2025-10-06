@@ -7,6 +7,18 @@ internal class NativeModuleReporting(IReporting reporting, string identifier, So
 {
   public int ErrorCount { get; private set; }
 
+  public void Info(string? identifierUnused, string message)
+  {
+    Debug.Assert(identifierUnused == null);
+    reporting.Info(identifier, sourceLocation, message);
+  }
+
+  public void Info(string? identifierUnused, SourceLocation sourceLocationUnused, string message)
+  {
+    Debug.Assert(identifierUnused == null);
+    reporting.Info(identifier, sourceLocation, message);
+  }
+
   public void Warning(string? identifierUnused, string message)
   {
     Debug.Assert(identifierUnused == null);

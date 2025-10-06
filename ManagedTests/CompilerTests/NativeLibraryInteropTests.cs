@@ -11,23 +11,6 @@ using NativeTypes = Compiler.Native.NativeTypes;
 
 namespace ManagedTests.CompilerTests;
 
-[StructLayout(LayoutKind.Sequential)]
-internal unsafe struct NativeModuleContext123
-{
-  public void* NativeLibraryContext;
-  public void* NativeLibraryVoiceContext;
-  public void* VoiceContext;
-  public int SampleRate;
-  public int InputChannelCount;
-  public int OutputChannelCount;
-  public int UpsampleFactor;
-  public bool IsCompileTime;
-
-  public void* ReportingContext;
-  public delegate* unmanaged[Cdecl]<void*, uint*, void> ReportWarning;
-  public delegate* unmanaged[Cdecl]<void*, uint*, void> ReportError;
-}
-
 public unsafe class NativeLibraryInteropTests
 {
   private const sbyte NativeFalse = 0;
@@ -204,8 +187,8 @@ public unsafe class NativeLibraryInteropTests
       Assert.Equal(5u, arguments->ArgumentCount);
 
       var messageHandle = GCHandle.Alloc("test message\0".EnumerateRunes().ToArray(), GCHandleType.Pinned);
-      context->ReportWarning(context->ReportingContext, (uint*)messageHandle.AddrOfPinnedObject());
-      context->ReportError(context->ReportingContext, (uint*)messageHandle.AddrOfPinnedObject());
+      context->Report(context->ReportingContext, NativeTypes.ReportingSeverity.Warning, (uint*)messageHandle.AddrOfPinnedObject());
+      context->Report(context->ReportingContext, NativeTypes.ReportingSeverity.Error, (uint*)messageHandle.AddrOfPinnedObject());
       messageHandle.Free();
     }
 

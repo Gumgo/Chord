@@ -26,6 +26,7 @@ namespace Chord
 
       ProgramStageTaskManager(
         NativeLibraryRegistry* nativeLibraryRegistry,
+        const Callable<void(ReportingSeverity severity, const UnicodeString& message)>& reportCallback,
         const Program* program,
         bool isVoiceGraph,
         ConstantManager* constantManager,
@@ -127,7 +128,9 @@ namespace Chord
         Callable<void()> m_onComplete;
       };
 
-      NativeModuleContext BuildNativeModuleContext(const NativeLibraryEntry& nativeLibraryEntry, void* voiceContext) const;
+      static void ReportCallbackStatic(void* context, ReportingSeverity reportingSeverity, const char32_t* message);
+
+      NativeModuleContext BuildNativeModuleContext(const NativeLibraryEntry& nativeLibraryEntry, void* voiceContext, s32 upsampleFactor);
 
       void InitializeNativeModuleCallTask(
         NativeLibraryRegistry* nativeLibraryRegistry,
@@ -222,6 +225,12 @@ namespace Chord
 
         return bufferHandle;
       }
+
+      Callable<void(ReportingSeverity severity, const UnicodeString& message)> m_reportCallback;
+
+      s32 m_sampleRate = 0;
+      s32 m_inputChannelCount = 0;
+      s32 m_outputChannelCount = 0;
 
       HashMap<const IOutputProgramGraphNode*, BufferOrConstant> m_buffersAndConstantsFromOutputNodes;
 

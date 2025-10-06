@@ -229,21 +229,29 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
     // $TODO I'm not sure if null-terminated UTF32 is the right choice for these messages. The alternative is pointer/count.
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
-    static void ReportWarningWrapper(void* reportingContext, uint* message)
+    static void ReportWrapper(void* reportingContext, NativeTypes.ReportingSeverity severity, uint* message)
     {
       var reportingContextHandle = GCHandle.FromIntPtr((nint)reportingContext);
       Debug.Assert(reportingContextHandle.Target != null);
       var pinnedReporting = (IReporting)reportingContextHandle.Target;
-      pinnedReporting.Warning("NativeModuleCall", ReadUTF32String(message) ?? string.Empty);
-    }
+      switch (severity)
+      {
+        case NativeTypes.ReportingSeverity.Info:
+          pinnedReporting.Info("NativeModuleCall", ReadUTF32String(message) ?? string.Empty);
+          break;
 
-    [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
-    static void ReportErrorWrapper(void* reportingContext, uint* message)
-    {
-      var reportingContextHandle = GCHandle.FromIntPtr((nint)reportingContext);
-      Debug.Assert(reportingContextHandle.Target != null);
-      var pinnedReporting = (IReporting)reportingContextHandle.Target;
-      pinnedReporting.Error("NativeModuleCall", ReadUTF32String(message) ?? string.Empty);
+        case NativeTypes.ReportingSeverity.Warning:
+          pinnedReporting.Warning("NativeModuleCall", ReadUTF32String(message) ?? string.Empty);
+          break;
+
+        case NativeTypes.ReportingSeverity.Error:
+          pinnedReporting.Error("NativeModuleCall", ReadUTF32String(message) ?? string.Empty);
+          break;
+
+        default:
+          pinnedReporting.Error("InvalidReportingSeverity", $"Invalid reporting severity provided for message: {ReadUTF32String(message) ?? string.Empty}");
+          break;
+      }
     }
 
     nativeModuleContextNative = new()
@@ -257,8 +265,7 @@ internal class NativeLibraryInterop(NativeLibraryInteropContext context)
       UpsampleFactor = nativeModuleContext.UpsampleFactor,
       IsCompileTime = NativeTypes.NativeBool.True,
       ReportingContext = (void*)GCHandle.ToIntPtr(memoryHandle),
-      ReportWarning = &ReportWarningWrapper,
-      ReportError = &ReportErrorWrapper,
+      Report = &ReportWrapper,
     };
 
     return new DisposableCallback(memoryHandle.Free);

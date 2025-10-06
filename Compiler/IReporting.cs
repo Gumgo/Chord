@@ -4,6 +4,8 @@
 // argument is provided so that specific errors can be detected in unit tests.
 public interface IReporting
 {
+  void Info(string? identifier, string message);
+  void Info(string? identifier, SourceLocation sourceLocation, string message);
   void Warning(string? identifier, string message);
   void Warning(string? identifier, SourceLocation sourceLocation, string message);
   void Error(string? identifier, string message);
