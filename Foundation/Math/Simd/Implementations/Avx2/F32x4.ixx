@@ -543,6 +543,34 @@ import :Math.Simd.SimdOperation;
         static s32 Run(const __m128& v)
           { return _mm_movemask_ps(v); }
       };
+
+      template<>
+      struct SimdOperationImplementation<f32, 4, SimdOperation::TestMaskNone> : public SupportedSimdOperationImplementation
+      {
+        static bool Run(const __m128& v)
+          { return _mm_testz_ps(v, v) != 0; }
+      };
+
+      template<>
+      struct SimdOperationImplementation<f32, 4, SimdOperation::TestMaskAny> : public SupportedSimdOperationImplementation
+      {
+        static bool Run(const __m128& v)
+          { return _mm_testz_ps(v, v) == 0; }
+      };
+
+      template<>
+      struct SimdOperationImplementation<f32, 4, SimdOperation::TestMaskAll> : public SupportedSimdOperationImplementation
+      {
+        static bool Run(const __m128& v)
+          { return _mm_testc_ps(v, MmSetAllBitsPs()) != 0; }
+      };
+
+      template<>
+      struct SimdOperationImplementation<f32, 4, SimdOperation::TestMaskSome> : public SupportedSimdOperationImplementation
+      {
+        static bool Run(const __m128& v)
+          { return _mm_testnzc_ps(v, MmSetAllBitsPs()) != 0; }
+      };
     }
   }
 #endif

@@ -523,37 +523,30 @@ namespace Chord
         RunSimdOperation<TElement, ElementCount, SimdOperation::Select>(condition.m_data, trueValue.m_data, falseValue.m_data));
     }
 
-    // !!! add the individual mask functions Josh suggested
-    // // Return true if all bits are set
-    // bool AllOf(Nat a)
-    //   { return _mm256_testc_si256(a.v, SetOnes<Nat>().v) == 0; }
-    //
-    // // Returns true if any bits are set
-    // bool AnyOf(Nat a)
-    //   { return _mm256_testz_si256(a.v, a.v) == 0; }
-    //
-    // // Return true if no bits are set
-    // bool NoneOf(Nat a)
-    //   { return _mm256_testz_si256(a.v, a.v) != 0; }
-    //
-    // // SomeOf is equivalent to AnyOf(a) && !AllOf(a)
-    // bool SomeOf(Nat a)
-    //   { return _mm256_testnzc_si256(a.v, SetOnes<Nat>().v) == 0; }
-
     template<basic_numeric TElement, usz ElementCount>
       requires (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::GetMask>)
     constexpr s32 GetMask(const Vector<TElement, ElementCount>& v)
       { return RunSimdOperation<TElement, ElementCount, SimdOperation::GetMask>(v.m_data); }
 
     template<basic_numeric TElement, usz ElementCount>
-      requires (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::GetMask>)
-    constexpr bool TestMaskAllZeros(const Vector<TElement, ElementCount>& v)
-      { return GetMask(v) == 0; }
+      requires (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::TestMaskNone>)
+    constexpr bool TestMaskNone(const Vector<TElement, ElementCount>& v)
+      { return RunSimdOperation<TElement, ElementCount, SimdOperation::TestMaskNone>(v.m_data); }
 
     template<basic_numeric TElement, usz ElementCount>
-      requires (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::GetMask>)
-    constexpr bool TestMaskAllOnes(const Vector<TElement, ElementCount>& v)
-      { return GetMask(v) == ((1 << ElementCount) - 1); }
+      requires (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::TestMaskAny>)
+    constexpr bool TestMaskAny(const Vector<TElement, ElementCount>& v)
+      { return RunSimdOperation<TElement, ElementCount, SimdOperation::TestMaskAny>(v.m_data); }
+
+    template<basic_numeric TElement, usz ElementCount>
+      requires (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::TestMaskAll>)
+    constexpr bool TestMaskAll(const Vector<TElement, ElementCount>& v)
+      { return RunSimdOperation<TElement, ElementCount, SimdOperation::TestMaskAll>(v.m_data); }
+
+    template<basic_numeric TElement, usz ElementCount>
+      requires (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::TestMaskSome>)
+    constexpr bool TestMaskSome(const Vector<TElement, ElementCount>& v)
+      { return RunSimdOperation<TElement, ElementCount, SimdOperation::TestMaskSome>(v.m_data); }
   }
 }
 

@@ -238,10 +238,16 @@ namespace Chord
     constexpr auto Select(bool condition, TTrueFunc&& trueFunc, TFalseFunc&& falseFunc)
       { return condition ? trueFunc() : falseFunc(); }
 
-    inline constexpr bool TestMaskAllZeros(bool mask)
+    inline constexpr bool TestMaskNone(bool mask)
       { return !mask; }
 
-    inline constexpr bool TestMaskAllOnes(bool mask)
+    inline constexpr bool TestMaskAny(bool mask)
       { return mask; }
+
+    inline constexpr bool TestMaskAll(bool mask)
+      { return mask; }
+
+    inline constexpr bool TestMaskSome([[maybe_unused]] bool mask)
+      { return false; }
   }
 }

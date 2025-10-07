@@ -931,5 +931,36 @@ namespace Chord
         return result;
       }
     };
+
+    template<basic_numeric TElement, usz ElementCount>
+    struct EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::TestMaskNone>
+    {
+      static constexpr bool Run(const FixedArray<TElement, ElementCount>& v)
+        { return EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::GetMask>::Run(v) == 0; }
+    };
+
+    template<basic_numeric TElement, usz ElementCount>
+    struct EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::TestMaskAny>
+    {
+      static constexpr bool Run(const FixedArray<TElement, ElementCount>& v)
+        { return EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::GetMask>::Run(v) != 0; }
+    };
+
+    template<basic_numeric TElement, usz ElementCount>
+    struct EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::TestMaskAll>
+    {
+      static constexpr bool Run(const FixedArray<TElement, ElementCount>& v)
+        { return EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::GetMask>::Run(v) == (1 << ElementCount) - 1; }
+    };
+
+    template<basic_numeric TElement, usz ElementCount>
+    struct EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::TestMaskSome>
+    {
+      static constexpr bool Run(const FixedArray<TElement, ElementCount>& v)
+      {
+        s32 mask = EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::GetMask>::Run(v);
+        return mask != 0 && mask != (1 << ElementCount) - 1;
+      }
+    };
   }
 }

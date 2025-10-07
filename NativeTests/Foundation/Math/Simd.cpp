@@ -1135,6 +1135,18 @@ namespace Chord
     TEST_METHOD_CONSTEXPR(GetMask)
       { ForEachSimdType([](auto t, auto c) { SimdTest::GetMask<typename decltype(t)::type, decltype(c)::value>(); }); }
 
+    TEST_METHOD_CONSTEXPR(TestMaskNone)
+      { ForEachSimdType([](auto t, auto c) { SimdTest::TestMaskNone<typename decltype(t)::type, decltype(c)::value>(); }); }
+
+    TEST_METHOD_CONSTEXPR(TestMaskAny)
+      { ForEachSimdType([](auto t, auto c) { SimdTest::TestMaskAny<typename decltype(t)::type, decltype(c)::value>(); }); }
+
+    TEST_METHOD_CONSTEXPR(TestMaskAll)
+      { ForEachSimdType([](auto t, auto c) { SimdTest::TestMaskAll<typename decltype(t)::type, decltype(c)::value>(); }); }
+
+    TEST_METHOD_CONSTEXPR(TestMaskSome)
+      { ForEachSimdType([](auto t, auto c) { SimdTest::TestMaskSome<typename decltype(t)::type, decltype(c)::value>(); }); }
+
     TEST_METHOD_CONSTEXPR(Fmod)
     {
       ForEachSimdType(

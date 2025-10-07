@@ -516,6 +516,90 @@ namespace Chord
         }
       }
 
+      template<basic_numeric TElement, usz ElementCount>
+      static constexpr void TestMaskNone()
+      {
+        if constexpr (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::TestMaskNone>)
+        {
+          using S = SimdRelatedSignedElement<TElement>; // Shorthand in the next line
+          alignas(32) FixedArray<SimdRelatedSignedElement<TElement>, 8> sourceElementsA = { S(0), S(0), S(0), S(0), S(0), S(0), S(0), S(0) };
+          alignas(32) FixedArray<SimdRelatedSignedElement<TElement>, 8> sourceElementsB = { S(0), S(-1), S(0), S(-1), S(0), S(-1), S(0), S(-1) };
+          alignas(32) FixedArray<SimdRelatedSignedElement<TElement>, 8> sourceElementsC = { S(-1), S(-1), S(-1), S(-1), S(-1), S(-1), S(-1), S(-1) };
+          auto vA = Vector<SimdRelatedSignedElement<TElement>, ElementCount>::LoadAligned(sourceElementsA);
+          auto vB = Vector<SimdRelatedSignedElement<TElement>, ElementCount>::LoadAligned(sourceElementsB);
+          auto vC = Vector<SimdRelatedSignedElement<TElement>, ElementCount>::LoadAligned(sourceElementsC);
+          auto mA = ::Chord::TestMaskNone(vA);
+          auto mB = ::Chord::TestMaskNone(vB);
+          auto mC = ::Chord::TestMaskNone(vC);
+          EXPECT(mA);
+          EXPECT(!mB);
+          EXPECT(!mC);
+        }
+      }
+
+      template<basic_numeric TElement, usz ElementCount>
+      static constexpr void TestMaskAny()
+      {
+        if constexpr (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::TestMaskAny>)
+        {
+          using S = SimdRelatedSignedElement<TElement>; // Shorthand in the next line
+          alignas(32) FixedArray<SimdRelatedSignedElement<TElement>, 8> sourceElementsA = { S(0), S(0), S(0), S(0), S(0), S(0), S(0), S(0) };
+          alignas(32) FixedArray<SimdRelatedSignedElement<TElement>, 8> sourceElementsB = { S(0), S(-1), S(0), S(-1), S(0), S(-1), S(0), S(-1) };
+          alignas(32) FixedArray<SimdRelatedSignedElement<TElement>, 8> sourceElementsC = { S(-1), S(-1), S(-1), S(-1), S(-1), S(-1), S(-1), S(-1) };
+          auto vA = Vector<SimdRelatedSignedElement<TElement>, ElementCount>::LoadAligned(sourceElementsA);
+          auto vB = Vector<SimdRelatedSignedElement<TElement>, ElementCount>::LoadAligned(sourceElementsB);
+          auto vC = Vector<SimdRelatedSignedElement<TElement>, ElementCount>::LoadAligned(sourceElementsC);
+          auto mA = ::Chord::TestMaskAny(vA);
+          auto mB = ::Chord::TestMaskAny(vB);
+          auto mC = ::Chord::TestMaskAny(vC);
+          EXPECT(!mA);
+          EXPECT(mB);
+          EXPECT(mC);
+        }
+      }
+
+      template<basic_numeric TElement, usz ElementCount>
+      static constexpr void TestMaskAll()
+      {
+        if constexpr (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::TestMaskAll>)
+        {
+          using S = SimdRelatedSignedElement<TElement>; // Shorthand in the next line
+          alignas(32) FixedArray<SimdRelatedSignedElement<TElement>, 8> sourceElementsA = { S(0), S(0), S(0), S(0), S(0), S(0), S(0), S(0) };
+          alignas(32) FixedArray<SimdRelatedSignedElement<TElement>, 8> sourceElementsB = { S(0), S(-1), S(0), S(-1), S(0), S(-1), S(0), S(-1) };
+          alignas(32) FixedArray<SimdRelatedSignedElement<TElement>, 8> sourceElementsC = { S(-1), S(-1), S(-1), S(-1), S(-1), S(-1), S(-1), S(-1) };
+          auto vA = Vector<SimdRelatedSignedElement<TElement>, ElementCount>::LoadAligned(sourceElementsA);
+          auto vB = Vector<SimdRelatedSignedElement<TElement>, ElementCount>::LoadAligned(sourceElementsB);
+          auto vC = Vector<SimdRelatedSignedElement<TElement>, ElementCount>::LoadAligned(sourceElementsC);
+          auto mA = ::Chord::TestMaskAll(vA);
+          auto mB = ::Chord::TestMaskAll(vB);
+          auto mC = ::Chord::TestMaskAll(vC);
+          EXPECT(!mA);
+          EXPECT(!mB);
+          EXPECT(mC);
+        }
+      }
+
+      template<basic_numeric TElement, usz ElementCount>
+      static constexpr void TestMaskSome()
+      {
+        if constexpr (IsSimdTypeSupported<TElement, ElementCount> && IsSimdOperationSupported<TElement, ElementCount, SimdOperation::TestMaskSome>)
+        {
+          using S = SimdRelatedSignedElement<TElement>; // Shorthand in the next line
+          alignas(32) FixedArray<SimdRelatedSignedElement<TElement>, 8> sourceElementsA = { S(0), S(0), S(0), S(0), S(0), S(0), S(0), S(0) };
+          alignas(32) FixedArray<SimdRelatedSignedElement<TElement>, 8> sourceElementsB = { S(0), S(-1), S(0), S(-1), S(0), S(-1), S(0), S(-1) };
+          alignas(32) FixedArray<SimdRelatedSignedElement<TElement>, 8> sourceElementsC = { S(-1), S(-1), S(-1), S(-1), S(-1), S(-1), S(-1), S(-1) };
+          auto vA = Vector<SimdRelatedSignedElement<TElement>, ElementCount>::LoadAligned(sourceElementsA);
+          auto vB = Vector<SimdRelatedSignedElement<TElement>, ElementCount>::LoadAligned(sourceElementsB);
+          auto vC = Vector<SimdRelatedSignedElement<TElement>, ElementCount>::LoadAligned(sourceElementsC);
+          auto mA = ::Chord::TestMaskSome(vA);
+          auto mB = ::Chord::TestMaskSome(vB);
+          auto mC = ::Chord::TestMaskSome(vC);
+          EXPECT(!mA);
+          EXPECT(mB);
+          EXPECT(!mC);
+        }
+      }
+
       template<usz ElementCount, typename TFunc, basic_numeric... TArgs>
       static constexpr void TestAgainstScalar(
         TFunc&& func,

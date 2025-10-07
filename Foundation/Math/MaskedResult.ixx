@@ -99,7 +99,7 @@ namespace Chord
       {
         m_result |= std::bit_cast<T>(AndNot(m_mask, condition) & std::bit_cast<typename T::SignedVector>(value));
         m_mask |= condition;
-        return TestMaskAllOnes(m_mask);
+        return TestMaskAll(m_mask);
       }
 
       template<typename TGetValue>
@@ -108,7 +108,7 @@ namespace Chord
       {
         m_result |= std::bit_cast<T>(AndNot(m_mask, condition) & std::bit_cast<typename T::SignedVector>(getValue()));
         m_mask |= condition;
-        return TestMaskAllOnes(m_mask);
+        return TestMaskAll(m_mask);
       }
 
       constexpr void SetResult(const T& value)
@@ -119,7 +119,7 @@ namespace Chord
 
       constexpr const T& Result() const
       {
-        ASSERT(TestMaskAllOnes(m_mask));
+        ASSERT(TestMaskAll(m_mask));
         return m_result;
       }
 

@@ -24,7 +24,7 @@ namespace Chord
     while (true)
     {
       s64xC mask = AndNot(resultMask, xRemainder > yAbs);
-      if (TestMaskAllZeros(mask))
+      if (TestMaskNone(mask))
         { break; }
 
       // After performing the division, subtract 1 from the integer representation to guarantee that the division didn't round up
@@ -53,7 +53,7 @@ namespace Chord
 
     // These values are known to be non-overlapping, i.e. a + b == a. This is possible when a's exponent is high enough compared to b's that 100% of b's
     // precision is lost. Therefore, the high/low exponent ranges should still be ordered or, if the high parts were equal, they should cancel to 0.
-    ASSERT(TestMaskAllOnes(subHigh >= subLow || subHigh == T(0.0)));
+    ASSERT(TestMaskAll(subHigh >= subLow || subHigh == T(0.0)));
     T resultHigh = subHigh + subLow;
     return { resultHigh, subLow - (resultHigh - subHigh) };
   }
@@ -156,7 +156,7 @@ namespace Chord
             while (true)
             {
               auto mask = AndNot(result.Mask(), xRemainderHigh > yAbs);
-              if (TestMaskAllZeros(mask))
+              if (TestMaskNone(mask))
                 { break; }
 
               // This is equivalent to Trunc(xRemainder / yAbs) but with enhanced precision
@@ -181,7 +181,7 @@ namespace Chord
             }
 
             // Everything should resolve to double precision (not quad) so we expect the lower half to be 0
-            ASSERT(TestMaskAllOnes((xRemainderLow == T(0.0)) | result.Mask()));
+            ASSERT(TestMaskAll((xRemainderLow == T(0.0)) | result.Mask()));
 
             if constexpr (vector<T>)
               { xRemainderHigh &= std::bit_cast<T>(xRemainderHigh < yAbs); }
@@ -189,7 +189,7 @@ namespace Chord
               { xRemainderHigh = (xRemainderHigh < yAbs) ? xRemainderHigh : 0.0; }
           };
 
-        if (TestMaskAllZeros(AndNot(result.Mask(), IsInf(xAbs / yAbsOrig))))
+        if (TestMaskNone(AndNot(result.Mask(), IsInf(xAbs / yAbsOrig))))
         {
           // Perf early-out, this branch can be omitted. It's testing that the values are close enough that only one pass is needed.
           xRemainderHigh *= scale;

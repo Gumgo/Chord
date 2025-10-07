@@ -104,6 +104,10 @@ namespace Chord
       Select,
 
       GetMask,
+      TestMaskNone,
+      TestMaskAny,
+      TestMaskAll,
+      TestMaskSome,
     };
 
     // Defines metadata regarding a SIMD operation. Should implement Run() to perform the operation.
