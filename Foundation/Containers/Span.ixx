@@ -172,8 +172,6 @@ namespace Chord
 
       constexpr bool Contains(this const auto& self, TElement& element)
         { return self.FirstIndexOf(element).has_value(); }
-
-      // !!! Add utilities: ElementsMatch, etc.
     };
 
     template<typename TElement>

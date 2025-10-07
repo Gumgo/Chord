@@ -85,7 +85,6 @@ namespace Chord
         requires (std::movable<TElement>);
       constexpr void RemoveByIndexUnordered(this non_const_self auto& self, basic_integral auto index, subspan_count auto count = 1)
         requires (std::movable<TElement>);
-      // !!! maybe add remove-by-value?
 
     protected:
       constexpr void ShiftElementsUp(this non_const_self auto& self, usz index, usz shiftCount)

@@ -539,8 +539,6 @@ namespace Chord
 
     m_bufferManager.FinishProcessing();
 
-    // !!! probably assert various things here
-
     m_blockSampleOffset += m_blockSampleCount;
     if (m_blockSampleOffset < m_processSampleCount)
     {
