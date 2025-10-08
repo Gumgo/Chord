@@ -83,11 +83,11 @@ static bool ShouldRunTestMethod(const TestClassInfo* testClass, TestMethodInfo* 
 
 s32 main(s32 argc, char** argv)
 {
+  InitializeFloatingPointEnvironment();
+
   std::vector<Filter> filters;
   for (s32 i = 1; i < argc; i++)
     { filters.push_back(BuildFilter(argv[i])); }
-
-  // !!! set up floating point and other thread things
 
   TestClassInfo* testClasses = FinalizeAndGetTests();
 

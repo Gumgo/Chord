@@ -41,13 +41,13 @@ namespace Chord
       return data;
     }
 
-    static void DefaultConstruct()
+    static constexpr void DefaultConstruct()
     {
       TypedString str;
       EXPECT(str.IsEmpty());
     }
 
-    static void CopyConstruct()
+    static constexpr void CopyConstruct()
     {
       TypedString str(Str("test").Pointer());
       TypedString str2(str);
@@ -55,7 +55,7 @@ namespace Chord
       EXPECT(str2 == "test");
     }
 
-    static void MoveConstruct()
+    static constexpr void MoveConstruct()
     {
       TypedString str(Str("test").Pointer());
       TypedString str2(std::move(str));
@@ -63,7 +63,7 @@ namespace Chord
       EXPECT(str2 == "test");
     }
 
-    static void ConstructFromNullTerminatedString()
+    static constexpr void ConstructFromNullTerminatedString()
     {
       TypedString strA(Str("test").Pointer());
       TypedString strB(StrOther("test").Pointer());
@@ -71,7 +71,7 @@ namespace Chord
       EXPECT(strB == "test");
     }
 
-    static void ConstructFromPointerAndLength()
+    static constexpr void ConstructFromPointerAndLength()
     {
       TypedString strA(Span(Str("test").Pointer(), 4));
       TypedString strB(Span(StrOther("test").Pointer(), 4));
@@ -79,13 +79,13 @@ namespace Chord
       EXPECT(strB == "test");
     }
 
-    static void ConstructUnmanaged()
+    static constexpr void ConstructUnmanaged()
     {
       TypedString str(Unmanaged, Span(Str("test").Pointer(), 4));
       EXPECT(str == "test");
     }
 
-    static void CopyAssign()
+    static constexpr void CopyAssign()
     {
       TypedString str(Str("test").Pointer());
       TypedString str2;
@@ -94,7 +94,7 @@ namespace Chord
       EXPECT(str2 == "test");
     }
 
-    static void MoveAssign()
+    static constexpr void MoveAssign()
     {
       TypedString str(Str("test").Pointer());
       TypedString str2;
@@ -103,7 +103,7 @@ namespace Chord
       EXPECT(str2 == "test");
     }
 
-    static void CreateForWrite()
+    static constexpr void CreateForWrite()
     {
       auto [str, buffer] = TypedString::CreateForWrite(4);
       EXPECT(buffer.Count() == 4);
@@ -114,7 +114,7 @@ namespace Chord
       EXPECT(str == "test");
     }
 
-    static void AsSpan()
+    static constexpr void AsSpan()
     {
       TypedString str(Str("test").Pointer());
       auto span = str.AsSpan();
@@ -125,7 +125,7 @@ namespace Chord
       EXPECT(span[3] == 't');
     }
 
-    static void CharPtr()
+    static constexpr void CharPtr()
     {
       TypedString strA;
       TypedString strB(Str("test").Pointer());
@@ -143,7 +143,7 @@ namespace Chord
       EXPECT(strC.CharPtr()[3] == 't');
     }
 
-    static void Length()
+    static constexpr void Length()
     {
       TypedString strA;
       TypedString strB(Str("test").Pointer());
@@ -162,7 +162,7 @@ namespace Chord
       EXPECT(!strE.IsEmpty());
     }
 
-    static void CharAt()
+    static constexpr void CharAt()
     {
       TypedString strA(Str("test").Pointer());
       TypedString strB(Unmanaged, Span(Str("test").Pointer(), 4));
@@ -186,7 +186,7 @@ namespace Chord
       EXPECT(strB[3] == 't');
     }
 
-    static void Clear()
+    static constexpr void Clear()
     {
       TypedString str(Str("test").Pointer());
       TypedString str2(Str("test").Pointer());
@@ -198,7 +198,7 @@ namespace Chord
       EXPECT(!strCopy.IsEmpty());
     }
 
-    static void Set()
+    static constexpr void Set()
     {
       TypedString strA;
       strA.Set(Str("test").Pointer());
@@ -239,7 +239,7 @@ namespace Chord
       EXPECT(strE.CharPtr() == charPointerB); // Going from "longer test" to "test2" reduces length so the memory should be reused
     }
 
-    static void Equals()
+    static constexpr void Equals()
     {
       TypedString str(Str("abc").Pointer());
       TypedString strA(Str("abc").Pointer());
@@ -256,7 +256,7 @@ namespace Chord
       EXPECT(strA != strD);
     }
 
-    static void FirstIndexOf()
+    static constexpr void FirstIndexOf()
     {
       TypedString str(Str("foo bar quack bar florg").Pointer());
 
@@ -275,7 +275,7 @@ namespace Chord
       EXPECT(str.FirstIndexOf(StrOther("zig").Pointer()) == std::nullopt);
     }
 
-    static void LastIndexOf()
+    static constexpr void LastIndexOf()
     {
       TypedString str(Str("foo bar quack bar florg").Pointer());
 
@@ -294,7 +294,7 @@ namespace Chord
       EXPECT(str.LastIndexOf(StrOther("zig").Pointer()) == std::nullopt);
     }
 
-    static void Contains()
+    static constexpr void Contains()
     {
       TypedString str(Str("foo bar quack bar florg").Pointer());
 
@@ -313,7 +313,7 @@ namespace Chord
       EXPECT(!str.Contains(StrOther("zig").Pointer()));
     }
 
-    static void StartsWith()
+    static constexpr void StartsWith()
     {
       TypedString str(Str("foo bar quack bar florg").Pointer());
 
@@ -332,7 +332,7 @@ namespace Chord
       EXPECT(!str.StartsWith(StrOther("zig").Pointer()));
     }
 
-    static void EndsWith()
+    static constexpr void EndsWith()
     {
       TypedString str(Str("foo bar quack bar florg").Pointer());
 
@@ -351,7 +351,7 @@ namespace Chord
       EXPECT(!str.EndsWith(StrOther("zig").Pointer()));
     }
 
-    static void Append()
+    static constexpr void Append()
     {
       {
         TypedString str(Str("abc").Pointer());
@@ -423,7 +423,7 @@ namespace Chord
       }
     }
 
-    static void Insert()
+    static constexpr void Insert()
     {
       {
         TypedString str(Str("abc").Pointer());
@@ -507,7 +507,7 @@ namespace Chord
       }
     }
 
-    static void Remove()
+    static constexpr void Remove()
     {
       {
         TypedString str(Str("abc123xyz").Pointer());
@@ -554,7 +554,7 @@ namespace Chord
       }
     }
 
-    static void Substring()
+    static constexpr void Substring()
     {
       TypedString strA(Str("abc123").Pointer());
       TypedString strA1 = strA.Substring(0, 6);
@@ -571,7 +571,7 @@ namespace Chord
       EXPECT(strB1.CharPtr() == strB.CharPtr() + 1);
     }
 
-    static void OperatorPlus()
+    static constexpr void OperatorPlus()
     {
       TypedString str(Str("test").Pointer());
 
@@ -608,6 +608,7 @@ namespace Chord
     }
   };
 
+  // $TODO change these to TEST_METHOD_CONSTEXPR when we upgrade to C++26
   TEST_CLASS(String)
   {
     TEST_METHOD(DefaultConstruct)

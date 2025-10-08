@@ -23,7 +23,7 @@ namespace Chord
   template<fixed_char TChar>
   struct StringData
   {
-    StringData(TChar* pointer, usz length, usz capacity)
+    constexpr StringData(TChar* pointer, usz length, usz capacity)
       : m_pointer(pointer)
       , m_length(length)
       , m_capacity(capacity)
@@ -197,7 +197,7 @@ namespace Chord
       //     This is an unmanaged string; m_pointer points to the actual string data and m_length is the actual character count
       // - m_pointer != nullptr && m_length == 0:
       //     This is a managed string; m_pointer points to a StringData instance
-      // !!! change this to a union to make it constexpr-compatible, perhaps?
+      // $TODO in C++26, we can constexpr cast void pointers, so this class will be constexpr-compatible
       void* m_pointer = nullptr;
       usz m_length = 0;
     };
@@ -306,7 +306,7 @@ namespace Chord
     {
       StringData<TChar>* stringData = TryGetStringData();
       auto [pointer, length] = (stringData == nullptr)
-        ? std::make_tuple(reinterpret_cast<const TChar*>(m_pointer), m_length)
+        ? std::make_tuple(static_cast<const TChar*>(m_pointer), m_length)
         : std::make_tuple(stringData->m_pointer, stringData->m_length);
       auto span = Span(pointer, length);
       return Span(span, start, count);
@@ -316,7 +316,7 @@ namespace Chord
     constexpr const TChar* String<TChar>::CharPtr() const
     {
       StringData<TChar>* stringData = TryGetStringData();
-      return stringData != nullptr ? stringData->m_pointer : reinterpret_cast<const TChar*>(m_pointer);
+      return stringData != nullptr ? stringData->m_pointer : static_cast<const TChar*>(m_pointer);
     }
 
     template<fixed_char TChar>
@@ -556,7 +556,7 @@ namespace Chord
 
     template<fixed_char TChar>
     constexpr StringData<TChar>* String<TChar>::TryGetStringData() const
-      { return m_pointer != nullptr && m_length == 0 ? reinterpret_cast<StringData<TChar>*>(m_pointer) : nullptr; }
+      { return m_pointer != nullptr && m_length == 0 ? static_cast<StringData<TChar>*>(m_pointer) : nullptr; }
 
     template<fixed_char TChar>
     constexpr void String<TChar>::SetStringData(StringData<TChar>* stringData)
