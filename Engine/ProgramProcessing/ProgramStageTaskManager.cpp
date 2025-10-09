@@ -823,6 +823,8 @@ namespace Chord
 
   void ProgramStageTaskManager::RunTask(TaskExecutor* taskExecutor, usz taskIndex)
   {
+    DisallowAllocationsScope disallowAllocationsScope;
+
     NativeModuleCallTask& task = m_nativeModuleCallTasks[taskIndex];
 
     #if BUFFER_GUARDS_ENABLED

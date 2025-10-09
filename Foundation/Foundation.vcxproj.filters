@@ -81,9 +81,6 @@
     <ClCompile Include="Math\Simd\Implementations\Emulated.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Utilities\DisallowAllocationScope.ixx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Utilities\Alignment.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -229,6 +226,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Core\FloatingPointEnvironment.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Memory.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Memory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

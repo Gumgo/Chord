@@ -127,6 +127,8 @@ namespace Chord
 
   void StaticTaskGraph::RunTask(usz taskIndex)
   {
+    DisallowAllocationsScope disallowAllocationsScope(m_disallowAllocations);
+
     const TaskDefinition& taskDefinition = m_taskDefinitions[taskIndex];
     TaskRuntime& taskRuntime = m_taskRuntimes[taskIndex];
 
@@ -172,6 +174,8 @@ namespace Chord
 
   void StaticTaskGraph::RunSubTask(usz taskIndex, usz subTaskIndex)
   {
+    DisallowAllocationsScope disallowAllocationsScope(m_disallowAllocations);
+
     const TaskDefinition& taskDefinition = m_taskDefinitions[taskIndex];
 
     if (auto execute = std::get_if<Callable<void(usz subTaskIndex)>>(&taskDefinition.m_execute); execute != nullptr)

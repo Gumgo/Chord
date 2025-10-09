@@ -10,6 +10,9 @@ namespace Chord
 {
   export
   {
+    enum class DisallowAllocations_t { DisallowAllocations };
+    using enum DisallowAllocations_t;
+
     class StaticTaskGraph
     {
     private:
@@ -44,6 +47,10 @@ namespace Chord
       };
 
       StaticTaskGraph() = default;
+      StaticTaskGraph(DisallowAllocations_t)
+        : m_disallowAllocations(true)
+        { }
+
       StaticTaskGraph(const StaticTaskGraph&) = delete;
       StaticTaskGraph& operator=(const StaticTaskGraph&) = delete;
 
@@ -133,6 +140,8 @@ namespace Chord
       void DecrementSuccessorPredecessorCounts(const TaskDefinition& taskDefinition);
       void DecrementRemainingSubTaskCount(usz taskIndex);
       void CompleteTask(usz taskIndex);
+
+      bool m_disallowAllocations = false;
 
       UnboundedArray<TaskDefinition> m_taskDefinitions;
       UnboundedArray<usz> m_rootTaskIndices;

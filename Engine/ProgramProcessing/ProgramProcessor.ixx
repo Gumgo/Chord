@@ -123,7 +123,7 @@ namespace Chord
       usz m_blockSampleOffset = 0;
       usz m_blockSampleCount = 0;
 
-      StaticTaskGraph m_taskGraph;
+      StaticTaskGraph m_taskGraph = { DisallowAllocations };
 
       std::mutex m_processingMutex;
       std::condition_variable m_processingConditionVariable;

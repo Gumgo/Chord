@@ -68,6 +68,8 @@
     <ClCompile Include="Core\FloatingPointEnvironment.ixx" />
     <ClCompile Include="Core\FloatTraits.ixx" />
     <ClCompile Include="Core\ConstevalSafeCast.ixx" />
+    <ClCompile Include="Core\Memory.cpp" />
+    <ClCompile Include="Core\Memory.ixx" />
     <ClCompile Include="Foundation.ixx" />
     <ClCompile Include="Core\NullTerminatedString.ixx" />
     <ClCompile Include="Core\Types.ixx" />
@@ -114,7 +116,6 @@
     <ClCompile Include="Utilities\BitOperations.ixx" />
     <ClCompile Include="Utilities\Copy.ixx" />
     <ClCompile Include="Utilities\Bounds.ixx" />
-    <ClCompile Include="Utilities\DisallowAllocationScope.ixx" />
     <ClCompile Include="Utilities\Guid.ixx" />
     <ClCompile Include="Utilities\HashKey.ixx" />
     <ClCompile Include="Utilities\Sha256.cpp" />
