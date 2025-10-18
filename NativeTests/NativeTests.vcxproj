@@ -79,8 +79,11 @@
     <ClCompile Include="Foundation\Utilities\BitOperations.cpp" />
     <ClCompile Include="Foundation\Utilities\Bounds.cpp" />
     <ClCompile Include="Foundation\Utilities\Copy.cpp" />
+    <ClCompile Include="Foundation\Utilities\Guid.cpp" />
     <ClCompile Include="Foundation\Utilities\Sha256.cpp" />
     <ClCompile Include="Foundation\Utilities\Unroll.cpp" />
+    <ClCompile Include="NativeLibraryToolkit\DeclareNativeModule.cpp" />
+    <ClCompile Include="NativeLibraryToolkit\StackAllocator.cpp" />
     <ClCompile Include="TestUtilities\ObjectWithConstructorArguments.ixx" />
     <ClCompile Include="TestUtilities\ResizableArrayBaseTests.ixx" />
     <ClCompile Include="Main.cpp" />
@@ -99,6 +102,9 @@
     </ProjectReference>
     <ProjectReference Include="..\Foundation\Foundation.vcxproj">
       <Project>{a95efdcc-40d3-4094-9a26-6783eb2ac1b8}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\NativeLibraryToolkit\NativeLibraryToolkit.vcxproj">
+      <Project>{b3e3a505-6f78-4a04-9cdb-112fd4e29b9a}</Project>
     </ProjectReference>
   </ItemGroup>
 </Project>

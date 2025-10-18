@@ -19,5 +19,19 @@ namespace Chord
         { length++; }
       return length;
     }
+
+    template<fixed_char TChar>
+    constexpr bool NullTerminatedStringsEqual(const TChar* strA, const TChar* strB)
+    {
+      usz i = 0;
+      while (true)
+      {
+        if (strA[i] != strB[i])
+          { return false; }
+        if (strA[i] == '\0')
+          { return true; }
+        i++;
+      }
+    }
   }
 }

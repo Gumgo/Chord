@@ -9,6 +9,34 @@ import :Core.Types;
 
 namespace Chord
 {
+  inline constexpr usz FindSubstringStartIndex(const char* str, const char* substr)
+  {
+    usz i = 0;
+    while (str[i] != '\0')
+    {
+      usz j = 0;
+      bool match = true;
+      while (substr[j] != '\0')
+      {
+        if (str[i + j] != substr[j])
+        {
+          match = false;
+          break;
+        }
+
+        j++;
+      }
+
+      if (match)
+        { return i; }
+
+      i++;
+    }
+
+    ASSERT(false, "Substring not found");
+    return 0;
+  }
+
   inline constexpr usz FindSubstringEndIndex(const char* str, const char* substr)
   {
     usz i = 0;
@@ -67,6 +95,33 @@ namespace Chord
     return signature[searchIndex] != '(';
   }
 
+  template<any_enum TEnum>
+  consteval bool IsEnumFlags()
+  {
+    // To determine whether the provided enum represents flags, we can parse the function signature string of this call. It will show up as the following:
+    // MSVC:
+    //  <return type> IsEnumFlags<enum <enum name>>(void)
+    // GCC:
+    //  consteval <return type> IsEnumFlags() [with TEnum = <enum name>]
+    // Clang:
+    //  <return type> IsEnumFlags() [TEnum = <enum name>]
+
+    #if COMPILER_MSVC
+      const char* signature = __FUNCSIG__;
+      usz searchIndex = FindSubstringStartIndex(signature, ">(void)");
+    #elif COMPILER_GCC
+      const char* signature = __PRETTY_FUNCTION__;
+      usz searchIndex = FindSubstringStartIndex(signature, "]");
+    #elif COMPILER_CLANG
+      const char* signature = __PRETTY_FUNCTION__;
+      usz searchIndex = FindSubstringStartIndex(signature, "]");
+    #else
+      #error Unsupported compiler
+    #endif
+
+    return searchIndex >= 5 && FindSubstringStartIndex(&signature[searchIndex - 5], "Flags") == 0;
+  }
+
   template<any_enum T, usz Start, usz End>
   consteval usz FindEnumCount()
   {
@@ -101,6 +156,36 @@ namespace Chord
         { static_assert(!IsValidEnumValue<T(-1)>(), "EnumCount() requires that -1 be an invalid enum value"); }
       return FindEnumCount<T, 0, 1>();
     }
+
+    template<any_enum T>
+      requires (IsEnumFlags<T>())
+    constexpr T operator|(T a, T b)
+      { return T(EnumValue(a) | EnumValue(b)); }
+
+    template<any_enum T>
+      requires (IsEnumFlags<T>())
+    constexpr T operator&(T a, T b)
+      { return T(EnumValue(a) & EnumValue(b)); }
+
+    template<any_enum T>
+      requires (IsEnumFlags<T>())
+    constexpr T operator~(T v)
+      { return T(~EnumValue(v)); }
+
+    template<any_enum T>
+      requires (IsEnumFlags<T>())
+    constexpr T None()
+      { return T(0); }
+
+    template<any_enum T>
+      requires (IsEnumFlags<T>())
+    constexpr bool AnySet(T flags, T testFlags)
+      { return (flags & testFlags) != T(0); }
+
+    template<any_enum T>
+      requires (IsEnumFlags<T>())
+    constexpr bool AllSet(T flags, T testFlags)
+      { return (flags & testFlags) == testFlags; }
 
     template<any_enum T>
     class EnumIterator

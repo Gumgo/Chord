@@ -12,7 +12,7 @@ namespace Chord
 {
   export
   {
-    template<typename TElement, usz FixedCapacity = 0>
+    template<typename TElement, usz FixedCapacity = usz(-1)>
     class BoundedArray : public ResizableArrayBase<TElement>
     {
       using Super = ResizableArrayBase<TElement>;
@@ -74,10 +74,20 @@ namespace Chord
       }
 
       constexpr TElement* Elements()
-        { return reinterpret_cast<TElement*>(m_storage); }
+      {
+        if constexpr (FixedCapacity == 0)
+          { return nullptr; }
+        else
+          { return reinterpret_cast<TElement*>(m_storage); }
+      }
 
       constexpr const TElement* Elements() const
-        { return reinterpret_cast<const TElement*>(m_storage); }
+      {
+        if constexpr (FixedCapacity == 0)
+          { return nullptr; }
+        else
+          { return reinterpret_cast<const TElement*>(m_storage); }
+      }
 
       constexpr static usz Capacity()
         { return FixedCapacity; }
@@ -86,11 +96,14 @@ namespace Chord
         { ASSERT(capacity <= FixedCapacity); }
 
     private:
-      alignas(TElement) u8 m_storage[sizeof(TElement) * FixedCapacity];
+      struct Empty
+        { };
+
+      [[no_unique_address]] alignas(TElement) std::conditional_t<FixedCapacity == 0, Empty, u8> m_storage[sizeof(TElement) * FixedCapacity];
     };
 
     template<typename TElement>
-    class BoundedArray<TElement, 0> : public ResizableArrayBase<TElement>
+    class BoundedArray<TElement, usz(-1)> : public ResizableArrayBase<TElement>
     {
     public:
       constexpr BoundedArray() = default;

@@ -96,7 +96,7 @@ typedef struct
 typedef struct
 {
   const char32_t* m_name;
-  NativeModuleParameter* m_parameters;
+  const NativeModuleParameter* m_parameters;
   size_t m_parameterCount;
   int32_t m_returnParameterIndex;
 } NativeModuleSignature;

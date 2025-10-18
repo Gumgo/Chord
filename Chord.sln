@@ -26,6 +26,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MathPrecisionTests", "MathP
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Engine", "Engine\Engine.vcxproj", "{C108B7DF-3303-4EC9-B55F-9DA1CBC839C6}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NativeLibraryToolkit", "NativeLibraryToolkit\NativeLibraryToolkit.vcxproj", "{B3E3A505-6F78-4A04-9CDB-112FD4E29B9A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{A95EFDCC-40D3-4094-9A26-6783EB2AC1B8} = {A95EFDCC-40D3-4094-9A26-6783EB2AC1B8}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -69,6 +74,12 @@ Global
 		{C108B7DF-3303-4EC9-B55F-9DA1CBC839C6}.Dev|Any CPU.Build.0 = Release|x64
 		{C108B7DF-3303-4EC9-B55F-9DA1CBC839C6}.Release|Any CPU.ActiveCfg = Release|x64
 		{C108B7DF-3303-4EC9-B55F-9DA1CBC839C6}.Release|Any CPU.Build.0 = Release|x64
+		{B3E3A505-6F78-4A04-9CDB-112FD4E29B9A}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{B3E3A505-6F78-4A04-9CDB-112FD4E29B9A}.Debug|Any CPU.Build.0 = Debug|x64
+		{B3E3A505-6F78-4A04-9CDB-112FD4E29B9A}.Dev|Any CPU.ActiveCfg = Release|x64
+		{B3E3A505-6F78-4A04-9CDB-112FD4E29B9A}.Dev|Any CPU.Build.0 = Release|x64
+		{B3E3A505-6F78-4A04-9CDB-112FD4E29B9A}.Release|Any CPU.ActiveCfg = Release|x64
+		{B3E3A505-6F78-4A04-9CDB-112FD4E29B9A}.Release|Any CPU.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

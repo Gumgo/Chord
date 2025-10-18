@@ -12,9 +12,31 @@ namespace Chord
     ValueC,
   };
 
+  enum class TestFlags : u32
+  {
+    FlagA = 0x1,
+    FlagB = 0x2,
+    FlagC = 0x4,
+
+    FlagAB = 0x3,
+  };
+
   TEST_CLASS(Enum)
   {
     static_assert(EnumCount<TestEnum>() == 3);
+
+    static_assert((TestFlags::FlagA | TestFlags::FlagB) == TestFlags::FlagAB);
+    static_assert((TestFlags::FlagA & TestFlags::FlagB) == None<TestFlags>());
+    static_assert((TestFlags::FlagAB & TestFlags::FlagA) == TestFlags::FlagA);
+
+    static_assert(AnySet(TestFlags::FlagA, TestFlags::FlagAB));
+    static_assert(!AnySet(TestFlags::FlagC, TestFlags::FlagAB));
+    static_assert(AnySet(TestFlags::FlagA | TestFlags::FlagC, TestFlags::FlagAB));
+
+    static_assert(!AllSet(TestFlags::FlagA, TestFlags::FlagAB));
+    static_assert(AllSet(TestFlags::FlagA | TestFlags::FlagB, TestFlags::FlagAB));
+    static_assert(!AllSet(TestFlags::FlagA | TestFlags::FlagC, TestFlags::FlagAB));
+    static_assert(AllSet(TestFlags::FlagA | TestFlags::FlagB | TestFlags::FlagC, TestFlags::FlagAB));
 
     TEST_METHOD_CONSTEXPR(EnumValue)
     {

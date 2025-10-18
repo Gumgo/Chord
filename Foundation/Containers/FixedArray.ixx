@@ -10,7 +10,7 @@ namespace Chord
 {
   export
   {
-    template<typename TElement, usz Length = 0>
+    template<typename TElement, usz Length = usz(-1)>
     class FixedArray : public SpanBase<TElement>
     {
       using Super = SpanBase<TElement>;
@@ -32,7 +32,7 @@ namespace Chord
         { }
 
       template <typename... TArgs>
-        requires ((std::is_same_v<std::remove_cvref_t<TArgs>, TElement> && ...) && sizeof...(TArgs) == Length)
+        requires ((std::is_same_v<std::remove_cvref_t<TArgs>, TElement> && ...) && Length > 0 && sizeof...(TArgs) == Length)
       constexpr FixedArray(TArgs&&... args)
         : m_storage({ { std::forward<TArgs>(args)... } })
         { }
@@ -56,20 +56,33 @@ namespace Chord
       }
 
       constexpr TElement* Elements()
-        { return m_storage.data(); }
+      {
+        if constexpr (Length == 0)
+          { return nullptr; }
+        else
+          { return m_storage.data(); }
+      }
 
       constexpr const TElement* Elements() const
-        { return m_storage.data(); }
+      {
+        if constexpr (Length == 0)
+          { return nullptr; }
+        else
+          { return m_storage.data(); }
+      }
 
       static constexpr usz Count()
         { return Length; }
 
     private:
-      std::array<TElement, Length> m_storage;
+      struct Empty
+        { };
+
+      [[no_unique_address]] std::conditional_t<Length == 0, Empty, std::array<TElement, Length>> m_storage;
     };
 
     template<typename TElement>
-    class FixedArray<TElement, 0> : public SpanBase<TElement>
+    class FixedArray<TElement, usz(-1)> : public SpanBase<TElement>
     {
     public:
       constexpr FixedArray() = default;
