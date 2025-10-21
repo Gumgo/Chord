@@ -183,7 +183,7 @@ import :Math.Simd.SimdOperation;
       struct SimdOperationImplementation<f32, 8, SimdOperation::NotEqual> : public SupportedSimdOperationImplementation
       {
         static __m256s32 Run(const __m256& a, const __m256& b)
-          { return _mm256_castps_si256(_mm256_cmp_ps(a, b, _CMP_NEQ_OQ)); }
+          { return _mm256_castps_si256(_mm256_cmp_ps(a, b, _CMP_NEQ_UQ)); }
       };
 
       template<>

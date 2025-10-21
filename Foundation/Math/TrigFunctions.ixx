@@ -258,17 +258,8 @@ namespace Chord
       using uBB = ScalarOrVectorUnsignedElementType<T>;
       using uBBxC = ScalarOrVectorUnsignedType<T>;
 
-      MaskedResult<T> result;
-
-      if (result.SetResult(IsInf(v) || IsNaN(v), T(std::numeric_limits<fBB>::quiet_NaN())))
-        { return result.Result(); }
-
       T vAbs = Abs(v);
       uBBxC vSign = std::bit_cast<uBBxC>(v) ^ std::bit_cast<uBBxC>(vAbs);
-
-      static constexpr fBB IntegerOnlyThreshold = fBB(uBB(1) << FloatTraits<T>::MantissaBitCount);
-      if (result.SetResult(vAbs >= T(IntegerOnlyThreshold), Zero))
-        { return result.Result(); }
 
       // The Taylor series covers the range [-0.25, 0.25]. We need to mirror/negate to cover [0.25, 1.0] and then mod for values outside of this range.
       if constexpr (vector<T>)
@@ -299,16 +290,7 @@ namespace Chord
       using fBB = ScalarOrVectorElementType<T>;
       using uBB = ScalarOrVectorUnsignedElementType<T>;
 
-      MaskedResult<T> result;
-
-      if (result.SetResult(IsInf(v) || IsNaN(v), T(std::numeric_limits<fBB>::quiet_NaN())))
-        { return result.Result(); }
-
       T vAbs = Abs(v);
-
-      static constexpr fBB IntegerOnlyThreshold = fBB(uBB(1) << FloatTraits<T>::MantissaBitCount);
-      if (result.SetResult(vAbs >= T(IntegerOnlyThreshold), T(1)))
-        { return result.Result(); }
 
       // The Taylor series covers the range [-0.25, 0.25]. We need to mirror/negate to cover [0.25, 1.0] and then mod for values outside of this range. Note
       // that since cos is symmetric across the y-axis, we can just the absolute value.

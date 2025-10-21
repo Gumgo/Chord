@@ -176,42 +176,42 @@ import :Math.Simd.SimdOperation;
       struct SimdOperationImplementation<f64, 4, SimdOperation::Equal> : public SupportedSimdOperationImplementation
       {
         static __m256s64 Run(const __m256d& a, const __m256d& b)
-          { return _mm256_castpd_si256(_mm256_cmp_pd(a, b, _CMP_EQ_OS)); }
+          { return _mm256_castpd_si256(_mm256_cmp_pd(a, b, _CMP_EQ_OQ)); }
       };
 
       template<>
       struct SimdOperationImplementation<f64, 4, SimdOperation::NotEqual> : public SupportedSimdOperationImplementation
       {
         static __m256s64 Run(const __m256d& a, const __m256d& b)
-          { return _mm256_castpd_si256(_mm256_cmp_pd(a, b, _CMP_NEQ_OS)); }
+          { return _mm256_castpd_si256(_mm256_cmp_pd(a, b, _CMP_NEQ_UQ)); }
       };
 
       template<>
       struct SimdOperationImplementation<f64, 4, SimdOperation::Greater> : public SupportedSimdOperationImplementation
       {
         static __m256s64 Run(const __m256d& a, const __m256d& b)
-          { return _mm256_castpd_si256(_mm256_cmp_pd(a, b, _CMP_GT_OS)); }
+          { return _mm256_castpd_si256(_mm256_cmp_pd(a, b, _CMP_GT_OQ)); }
       };
 
       template<>
       struct SimdOperationImplementation<f64, 4, SimdOperation::Less> : public SupportedSimdOperationImplementation
       {
         static __m256s64 Run(const __m256d& a, const __m256d& b)
-          { return _mm256_castpd_si256(_mm256_cmp_pd(a, b, _CMP_LT_OS)); }
+          { return _mm256_castpd_si256(_mm256_cmp_pd(a, b, _CMP_LT_OQ)); }
       };
 
       template<>
       struct SimdOperationImplementation<f64, 4, SimdOperation::GreaterEqual> : public SupportedSimdOperationImplementation
       {
         static __m256s64 Run(const __m256d& a, const __m256d& b)
-          { return _mm256_castpd_si256(_mm256_cmp_pd(a, b, _CMP_GE_OS)); }
+          { return _mm256_castpd_si256(_mm256_cmp_pd(a, b, _CMP_GE_OQ)); }
       };
 
       template<>
       struct SimdOperationImplementation<f64, 4, SimdOperation::LessEqual> : public SupportedSimdOperationImplementation
       {
         static __m256s64 Run(const __m256d& a, const __m256d& b)
-          { return _mm256_castpd_si256(_mm256_cmp_pd(a, b, _CMP_LE_OS)); }
+          { return _mm256_castpd_si256(_mm256_cmp_pd(a, b, _CMP_LE_OQ)); }
       };
 
       template<>
