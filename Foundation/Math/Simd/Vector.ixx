@@ -620,7 +620,6 @@ namespace Chord
       return (std::bit_cast<uBBxC>(v) & uBBxC(~FloatTraits<TElement>::SignBitMask)) == uBBxC(FloatTraits<TElement>::ExponentMask);
     }
 
-    // !!! fix these with Josh's suggestions
     template<std::floating_point TElement, usz ElementCount>
       requires (IsSimdTypeSupported<TElement, ElementCount>)
     constexpr auto IsNaN(const Vector<TElement, ElementCount>& v) -> typename Vector<TElement, ElementCount>::SignedVector

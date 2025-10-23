@@ -120,6 +120,7 @@
     <ClCompile Include="Utilities\HashKey.ixx" />
     <ClCompile Include="Utilities\Sha256.cpp" />
     <ClCompile Include="Utilities\Sha256.ixx" />
+    <ClCompile Include="Utilities\StringLiteral.ixx" />
     <ClCompile Include="Utilities\Unroll.ixx" />
     <ClCompile Include="Utilities\Utilities.ixx" />
   </ItemGroup>

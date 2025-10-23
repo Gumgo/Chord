@@ -342,16 +342,6 @@ internal class NativeLibraryValidatorContext
 }
 
 // $TODO do we need to perform validation on ID or version?
-// $TODO in C++, optimization rules should be specified in a syntax that looks something like this:
-// auto rule1 = OptimizationRule(
-//   "RemoveUnnecessaryAdditionWithZero",
-//   Call(AddIntInt, In("x"), 0, OutReturn()),
-//   InRef("x"));
-// auto rule2 = OptimizationRule(
-//   "ReplaceFooWithBarAndBaz",
-//   Call(Foo, OutReturn(), Out("other")),
-//   Call(Bar, OutReturn()),
-//   "other" = Call(Baz, OutReturn())); // Not sure yet about how to specify "other"
 internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
 {
   public bool ValidateNativeLibrary(NativeLibrary nativeLibrary)

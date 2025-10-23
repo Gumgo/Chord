@@ -11,21 +11,6 @@ import :NativeModuleTypes;
 
 namespace Chord
 {
-  template<usz CountArg>
-  struct StringLiteral
-  {
-    static constexpr usz Count = CountArg;
-
-    consteval StringLiteral(const char (&str)[CountArg])
-    {
-      ASSERT(str[Count - 1] == '\0');
-      for (usz i = 0; i < Count; i++)
-        { m_value[i] = str[i]; }
-    }
-
-    char m_value[Count];
-  };
-
   template<StringLiteral Value>
   consteval std::optional<usz> LastIndexOf(char c)
   {

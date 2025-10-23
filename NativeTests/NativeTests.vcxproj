@@ -83,6 +83,7 @@
     <ClCompile Include="Foundation\Utilities\Sha256.cpp" />
     <ClCompile Include="Foundation\Utilities\Unroll.cpp" />
     <ClCompile Include="NativeLibraryToolkit\DeclareNativeModule.cpp" />
+    <ClCompile Include="NativeLibraryToolkit\DeclareOptimizationRule.cpp" />
     <ClCompile Include="NativeLibraryToolkit\StackAllocator.cpp" />
     <ClCompile Include="TestUtilities\ObjectWithConstructorArguments.ixx" />
     <ClCompile Include="TestUtilities\ResizableArrayBaseTests.ixx" />

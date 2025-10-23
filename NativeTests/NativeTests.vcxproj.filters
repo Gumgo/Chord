@@ -140,5 +140,8 @@
     <ClCompile Include="NativeLibraryToolkit\StackAllocator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="NativeLibraryToolkit\DeclareOptimizationRule.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -52,25 +52,25 @@ static_assert(sizeof(ReportingSeverity) == sizeof(int32_t));
 typedef enum
 {
   // Matches against a specific native module call
-  OptimizationRuleComponentNativeModuleCall,
+  OptimizationRuleComponentTypeNativeModuleCall,
 
   // Matches against a constant value or provides a constant value for output
-  OptimizationRuleComponentConstant,
+  OptimizationRuleComponentTypeConstant,
 
   // Matches against an array of values or provides an array of values for output
-  OptimizationRuleComponentArray,
+  OptimizationRuleComponentTypeArray,
 
   // Matches against a native module input, possibly with constraints
-  OptimizationRuleComponentInput,
+  OptimizationRuleComponentTypeInput,
 
   // Matches against a native module output (no additional data is needed)
-  OptimizationRuleComponentOutput,
+  OptimizationRuleComponentTypeOutput,
 
   // References a previously-matched native module input by its index in the component list; can only be used in output patterns
-  OptimizationRuleComponentInputReference,
+  OptimizationRuleComponentTypeInputReference,
 
   // Marks the end of the component list
-  OptimizationRuleComponentEndOfList,
+  OptimizationRuleComponentTypeEndOfList,
 } OptimizationRuleComponentType;
 
 static_assert(sizeof(OptimizationRuleComponentType) == sizeof(int32_t));
@@ -424,7 +424,7 @@ typedef struct
   // not get passed into any input or to the input pattern's root value. Each entry is a list of optimization rule components to replace that output component.
   // The order of these output patterns matches the order of the output components within the input pattern but the input pattern's root value is always listed
   // first.
-  OptimizationRuleComponent** m_ppOutputPatterns;
+  OptimizationRuleComponent** m_outputPatterns;
 } OptimizationRule;
 
 typedef struct
