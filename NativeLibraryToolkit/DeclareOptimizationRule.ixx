@@ -332,7 +332,70 @@ namespace Chord
         { return NamedOptimizationRuleComponent { .m_name = name, .m_value = InRefOptimizationRuleComponent{} }; }
     }
 
-    // !!! write doc
+    // This function is used to declare an optimization rule using a convenient shorthand syntax. It returns a BuiltOptimizationRule instance which holds both
+    // the optimization rule itself as well as storage for the optimization rule components.
+    //
+    // Optimization rules are specified using patterns, where the input pattern is replaced with one or more output patterns. Patterns are built using nested
+    // function calls intended to appear similar to how the function would appear in a Chord script (though more verbose). These functions are found within the
+    // OptimizationRuleSyntax namespace. Here is an example of an input pattern:
+    //
+    //   Call(&add, In("a"), Call(&negate, In("b"), OutReturn()), OutReturn())
+    //
+    // This pattern would match against Chord expressions of the form "a + -b". We could associate this input pattern with the following output pattern:
+    //
+    //   Call(&subtract, InRef("a"), InRef("b"), OutReturn())
+    //
+    // This would cause Chord expressions of the form "a + -b" to be replaced with "a - b".
+    //
+    // Because native modules support multiple output parameters, an optimization rule must have an output pattern for every non-consumed output within the
+    // input pattern. An output is "consumed" when it is passed down to a nested call. For example, in "Foo(Bar())", the return value of Bar() is consumed by
+    // Foo(). Internally, native modules don't actually "return" values, but rather one output parameter may optionally be marked as "return". Therefore, when
+    // declaring optimization rules, the consumed output parameter must be explicitly specified with OutReturn(). So the previous example would actually appear
+    // as "Call(&foo, Call(&bar, OutReturn()), OutReturn())", which means: the first (output) argument of Bar() is consumed as the first (input) argument to
+    // Foo() and the second (output) argument of Foo() is consumed as the pattern's final resulting value.
+    //
+    // When additional output arguments are present, they are marked with Out("name") in the input pattern. For each named output argument in the input pattern,
+    // an additional named output pattern must be specified using the syntax: Named("name", <pattern>). The following is an example where three output patterns
+    // are required:
+    //
+    //   DeclareOptimizationRule(
+    //     nativeLibraryId,
+    //     U"rule",
+    //     Call(&foo, OutReturn(), Out("outA"), Out("outB")),
+    //     1.0f,
+    //     Named("outA", 2.0f),
+    //     Named("outB", 3.0f))
+    //
+    // In this example, foo's first output argument is replaced with 1.0f, its second with 2.0f, and its third with 3.0f.
+    //
+    // The following pattern syntax is supported:
+    //
+    //   Named(name, <value>)
+    //     Wraps a value (such as a constant) in a name so that it can be referenced in an output pattern. Also used to declare named output patterns.
+    //
+    //   Call([name], nativeModule, [upsampleFactor], <arg0>, <arg1>, ...)
+    //     Matches against a call of the provided native module with the provided arguments. upsampleFactor is specified by appending _x to an integer, e.g.
+    //     2_x, 3_x, etc.
+    //
+    //   <constant>
+    //     A constant of type f32, f64, s32, bool, or const char32_t* can be specified to match against a constant with this exact value.
+    //
+    //   In([name])
+    //     Matches against any input value.
+    //
+    //   Constant([name])
+    //     Matches against an input value only if it is a compile-time constant.
+    //
+    //   Out([name])
+    //     Used as a placeholder for an output argument. A name must be provided when used within input patterns and a correspondingly named output pattern must
+    //     then be provided. This can also be used to represent a "throwaway" output argument within output patterns.
+    //
+    //   OutReturn()
+    //     Used to mark the output argument with a native module call which is to be consumed either by an outer call, an array, or as the pattern's final
+    //     resulting value.
+    //
+    //   Array(<el0>, <el1>, ...)
+    //     Matches against an array with specific elements.
     template<typename TInputPattern, typename TReturnPattern, typename... TOutputPatterns>
     auto DeclareOptimizationRule(
       const Guid& nativeLibraryId,

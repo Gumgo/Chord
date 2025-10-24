@@ -737,7 +737,67 @@ namespace Chord
 
   export
   {
-    // !!! write doc
+    // This function takes a native module class, TNativeModule, written using convenient C++ conventions and wrapper types, and returns a NativeModule struct
+    // which can be registered using the C API. TNativeModule must have the following properties:
+    //
+    //   static constexpr Guid Id - the ID of the native module
+    //   static constexpr const char32_t Name - the name of the native module (i.e. the name used to invoke it from a Chord script)
+    //
+    // TNativeModule may have any of the following methods:
+    //
+    //   static bool Prepare()
+    //     This maps to m_prepare within the returned NativeModule struct. This function may take the following argument types:
+    //       NativeModuleCallContext context - the native module call context
+    //       Span<s32> outArgumentsLatencyOut - latency values for each output argument should be written to this array
+    //       Chord arguments - see below
+    //
+    //   [static] {void|void*} InitializeVoice()
+    //     This maps to m_initializeVoice with the returned NativeModule struct. If automatic voice context instantion is occurring, this function should return
+    //     void. Otherwise, it should return a pointer to the voice context. See notes on automatic voice context instantion below. This function may take the
+    //     following argument types:
+    //       NativeModuleCallContext context - the native module call context
+    //       StackAllocatorCalculator& scratchMemoryAllocatorCalculator - used to specify how much scratch memory should be allocated for use in Invoke()
+    //       Chord arguments - see below
+    //
+    //   [static] void DeinitializeVoice()
+    //     This maps to m_deinitializeVoice with the returned NativeModule struct. This function may take the following argument types:
+    //       NativeModuleCallContext context - the native module call context
+    //
+    //   [static] void SetVoiceActive()
+    //     This maps to m_setVoiceActive with the returned NativeModule struct. This function must take the following argument types:
+    //       bool voiceActive - whether the voice is being activated or deactivated
+    //     This function may take the following argument types:
+    //       NativeModuleCallContext context - the native module call context
+    //
+    //   [static] void Invoke()
+    //     This maps to m_invoke with the returned NativeModule struct. This function may take the following argument types:
+    //       NativeModuleCallContext context - the native module call context
+    //       StackAllocator& scratchMemoryAllocator - used to allocate scratch memory for the scope of the function
+    //       Chord arguments - see below
+    //
+    //   [static] void InvokeCompileTime()
+    //     This maps to m_invokeCompileTime with the returned NativeModule struct. This function may take the following argument types:
+    //       NativeModuleCallContext context - the native module call context
+    //       Chord arguments - see below
+    //
+    // TNativeModule must implement at least one of Invoke() or InvokeCompileTime().
+    //
+    // Automatic voice context instantiation:
+    //   If at least one of the above functions on TNativeModule is non-static, the voice context will be automatically instantiated as an instance of
+    //   TNativeModule at the beginning of m_initializeVoice. TNativeModule should have a default constructor in this case, and InitializeVoice() should return
+    //   void. The voice context does not need to be deallocated manually; this will happen automatically at the end of m_deinitializeVoice.
+    //
+    // Chord arguments:
+    //   The native module's parameters are defined by the use of Chord arguments, which use the macros CHORD_IN(type, name), CHORD_OUT(type, name), and
+    //   CHORD_RETURN(type, name). In each of these macros, "type" should be specified using Chord syntax. A few examples are:
+    //     CHORD_IN(float, x)
+    //     CHORD_OUT(const string, y)
+    //     CHORD_RETURN(const? bool@2x[], z)
+    //   Additionally, arguments can take the following optional flags:
+    //     CHORD_IN(float, x, ChordArgumentFlags::DisallowBufferSharing) - sets m_disallowBufferSharing to true in the NativeModuleParameter
+    //   Within the C++ functions, these macros resolve to the types defined in NativeModuleTypes.ixx. The native module's parameters are defined by the
+    //   arguments of the Invoke() function (or InvokeCompileTime() if Invoke() is not present). Other functions may use a subset of these arguments in any
+    //   order, but the types/names/flags must be exact matches.
     template<typename TNativeModule>
     NativeModule DeclareNativeModule()
     {
