@@ -349,7 +349,7 @@ namespace Chord
   auto ResolveNativeModuleArgument(const NativeModuleArguments* arguments)
   {
     static constexpr usz ParameterIndex = ResolveNativeModuleArgumentParameterIndex<TNativeModule, TArgument>();
-    return TArgument(arguments->m_arguments[ParameterIndex]);
+    return TArgument(&arguments->m_arguments[ParameterIndex]);
   }
 
   template<typename TNativeModule>

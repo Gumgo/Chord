@@ -22,6 +22,9 @@ namespace Chord
       NativeModuleCallContext(const NativeModuleCallContext&) = default;
       NativeModuleCallContext& operator=(const NativeModuleCallContext&) = default;
 
+      const NativeModuleContext* GetUnderlyingNativeModuleContext() const
+        { return m_nativeModuleContext; }
+
     private:
       const NativeModuleContext* m_nativeModuleContext = nullptr;
     };
@@ -58,8 +61,8 @@ namespace Chord
       static constexpr s32 UpsampleFactor = ArgumentData.m_dataType.m_upsampleFactor;
       static constexpr bool IsArray = ArgumentData.m_dataType.m_isArray;
 
-      TypedNativeModuleArgumentBase(const NativeModuleArgument& argument)
-        : m_argument(&argument)
+      TypedNativeModuleArgumentBase(NativeModuleArgument* argument)
+        : m_argument(argument)
         { }
 
       TypedNativeModuleArgumentBase(const TypedNativeModuleArgumentBase&) = default;
@@ -124,6 +127,9 @@ namespace Chord
 
       TypedNativeModuleArgument() = delete;
       using Super::Super;
+
+      InputFloatBuffer* GetUnderlyingArgument() const
+        { return &this->m_argument->m_floatBufferIn; }
     };
 
     // out float
@@ -136,6 +142,9 @@ namespace Chord
 
       TypedNativeModuleArgument() = delete;
       using Super::Super;
+
+      OutputFloatBuffer* GetUnderlyingArgument() const
+        { return &this->m_argument->m_floatBufferOut; }
     };
 
     // in float[]
@@ -196,6 +205,9 @@ namespace Chord
 
       TypedNativeModuleArgument() = delete;
       using Super::Super;
+
+      InputDoubleBuffer* GetUnderlyingArgument() const
+        { return &this->m_argument->m_doubleBufferIn; }
     };
 
     // out double
@@ -208,6 +220,9 @@ namespace Chord
 
       TypedNativeModuleArgument() = delete;
       using Super::Super;
+
+      OutputDoubleBuffer* GetUnderlyingArgument() const
+        { return &this->m_argument->m_doubleBufferOut; }
     };
 
     // in double[]
@@ -268,6 +283,10 @@ namespace Chord
 
       TypedNativeModuleArgument() = delete;
       using Super::Super;
+
+      InputIntBuffer* GetUnderlyingArgument() const
+        { return &this->m_argument->m_intBufferIn; }
+
     };
 
     // out int
@@ -280,6 +299,9 @@ namespace Chord
 
       TypedNativeModuleArgument() = delete;
       using Super::Super;
+
+      OutputIntBuffer* GetUnderlyingArgument() const
+        { return &this->m_argument->m_intBufferOut; }
     };
 
     // in int[]
@@ -340,6 +362,9 @@ namespace Chord
 
       TypedNativeModuleArgument() = delete;
       using Super::Super;
+
+      OutputBoolBuffer* GetUnderlyingArgument() const
+        { return &this->m_argument->m_boolBufferOut; }
     };
 
     // out bool
@@ -352,6 +377,9 @@ namespace Chord
 
       TypedNativeModuleArgument() = delete;
       using Super::Super;
+
+      OutputBoolBuffer* GetUnderlyingArgument() const
+        { return &this->m_argument->m_boolBufferOut; }
     };
 
     // in bool[]

@@ -53,6 +53,7 @@
     <ClInclude Include="Macros.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="BufferIterator.ixx" />
     <ClCompile Include="DeclareNativeModule.ixx" />
     <ClCompile Include="DeclareOptimizationRule.ixx" />
     <ClCompile Include="NativeLibraryToolkit.ixx" />
