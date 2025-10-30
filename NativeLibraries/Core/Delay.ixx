@@ -11,8 +11,6 @@ import Chord.NativeLibraryToolkit;
 
 namespace Chord
 {
-  // !!! modify the compiler to add the "initial value" parameter
-
   export
   {
     namespace DelayInternal

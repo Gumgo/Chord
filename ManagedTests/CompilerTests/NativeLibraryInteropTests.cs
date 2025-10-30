@@ -186,9 +186,10 @@ public unsafe class NativeLibraryInteropTests
       Assert.Equal(500, *(int*)context->VoiceContext);
       Assert.Equal(5u, arguments->ArgumentCount);
 
-      var messageHandle = GCHandle.Alloc("test message\0".EnumerateRunes().ToArray(), GCHandleType.Pinned);
-      context->Report(context->ReportingContext, NativeTypes.ReportingSeverity.Warning, (uint*)messageHandle.AddrOfPinnedObject());
-      context->Report(context->ReportingContext, NativeTypes.ReportingSeverity.Error, (uint*)messageHandle.AddrOfPinnedObject());
+      var message = "test message".EnumerateRunes().ToArray();
+      var messageHandle = GCHandle.Alloc(message, GCHandleType.Pinned);
+      context->Report(context->ReportingContext, NativeTypes.ReportingSeverity.Warning, (uint*)messageHandle.AddrOfPinnedObject(), (nuint)message.Length);
+      context->Report(context->ReportingContext, NativeTypes.ReportingSeverity.Error, (uint*)messageHandle.AddrOfPinnedObject(), (nuint)message.Length);
       messageHandle.Free();
     }
 
@@ -470,6 +471,7 @@ public unsafe class NativeLibraryInteropTests
         InputChannelCount = 1,
         OutputChannelCount = 1,
         UpsampleFactor = 1,
+        MaxSampleCount = 1,
         SampleCount = sampleCount,
         Reporting = nativeModuleCallReporting,
       };
@@ -737,6 +739,7 @@ public unsafe class NativeLibraryInteropTests
       InputChannelCount = 1,
       OutputChannelCount = 1,
       UpsampleFactor = 1,
+      MaxSampleCount = 1,
       SampleCount = 1,
       Reporting = reporting,
     };
@@ -790,6 +793,7 @@ public unsafe class NativeLibraryInteropTests
       InputChannelCount = 1,
       OutputChannelCount = 1,
       UpsampleFactor = 1,
+      MaxSampleCount = 1,
       SampleCount = 1,
       Reporting = reporting,
     };
@@ -864,6 +868,7 @@ public unsafe class NativeLibraryInteropTests
       InputChannelCount = 1,
       OutputChannelCount = 1,
       UpsampleFactor = 1,
+      MaxSampleCount = 1,
       SampleCount = 0,
       Reporting = reporting,
     };

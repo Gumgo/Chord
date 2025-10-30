@@ -295,6 +295,15 @@ internal class ProgramBuilder(ProgramBuilderContext context) : IProgramBuilder
       _ => throw UnhandledEnumValueException.Create(element.DataType.PrimitiveType.Value),
     };
 
+    var initialValueNode = element.DataType.PrimitiveType.Value switch
+    {
+      PrimitiveType.Float => new ConstantProgramGraphNode(0.0f),
+      PrimitiveType.Double => new ConstantProgramGraphNode(0.0),
+      PrimitiveType.Int or PrimitiveType.Bool or PrimitiveType.String
+        => throw new InvalidOperationException($"Unsupported InputChannels primitive type {element.DataType.PrimitiveType.Value}"),
+      _ => throw UnhandledEnumValueException.Create(element.DataType.PrimitiveType.Value),
+    };
+
     var nativeModuleCallsWithSideEffects = new List<NativeModuleCallProgramGraphNode>();
     var moduleCallBuilder = new ModuleCallGraphBuilder(programGraphBuilderContext);
 
@@ -304,9 +313,9 @@ internal class ProgramBuilder(ProgramBuilderContext context) : IProgramBuilder
       RuntimeMutability.Variable,
       1,
       delayNativeModuleDefinition,
-      [element, latencyNode.Output],
+      [element, latencyNode.Output, initialValueNode.Output],
       sourceLocation,
-      [sourceLocation, sourceLocation],
+      [sourceLocation, sourceLocation, sourceLocation],
       [sourceLocation],
       nativeModuleCallsWithSideEffects);
     Debug.Assert(delayedNode != null);

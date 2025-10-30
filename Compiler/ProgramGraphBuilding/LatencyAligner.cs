@@ -141,6 +141,16 @@ internal class LatencyAligner(ProgramGraphBuilderContext context)
       _ => throw UnhandledEnumValueException.Create(node.DataType.PrimitiveType.Value),
     };
 
+    var initialValueNode = node.DataType.PrimitiveType.Value switch
+    {
+      PrimitiveType.Float => new ConstantProgramGraphNode(0.0f),
+      PrimitiveType.Double => new ConstantProgramGraphNode(0.0),
+      PrimitiveType.Int => new ConstantProgramGraphNode(0),
+      PrimitiveType.Bool => new ConstantProgramGraphNode(false),
+      PrimitiveType.String => throw new InvalidOperationException("Cannot delay strings"),
+      _ => throw UnhandledEnumValueException.Create(node.DataType.PrimitiveType.Value),
+    };
+
     var nativeModuleCallsWithSideEffects = new List<NativeModuleCallProgramGraphNode>();
 
     var (delayedNode, delayOutputNodes) = moduleCallBuilder.BuildNativeModuleCall(
@@ -148,9 +158,9 @@ internal class LatencyAligner(ProgramGraphBuilderContext context)
       RuntimeMutability.Constant,
       upsampleFactor,
       delayNativeModuleDefinition,
-      [node, latencyNode.Output],
+      [node, latencyNode.Output, initialValueNode.Output],
       sourceLocation,
-      [sourceLocation, sourceLocation],
+      [sourceLocation, sourceLocation, sourceLocation],
       [sourceLocation],
       nativeModuleCallsWithSideEffects);
     Debug.Assert(delayedNode != null);
