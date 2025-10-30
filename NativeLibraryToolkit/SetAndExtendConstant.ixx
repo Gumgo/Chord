@@ -6,7 +6,6 @@ export module Chord.NativeLibraryToolkit:SetAndExtendConstant;
 
 import Chord.Foundation;
 
-// !!! unit tests
 namespace Chord
 {
   export

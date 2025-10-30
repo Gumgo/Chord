@@ -182,5 +182,8 @@
     <ClCompile Include="Foundation\Utilities\BitArrayOperations.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="NativeLibraryToolkit\SetAndExtendConstant.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

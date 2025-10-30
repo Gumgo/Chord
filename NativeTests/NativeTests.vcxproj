@@ -97,6 +97,7 @@
     <ClCompile Include="NativeLibraryToolkit\DeclareNativeModule.cpp" />
     <ClCompile Include="NativeLibraryToolkit\DeclareOptimizationRule.cpp" />
     <ClCompile Include="NativeLibraryToolkit\BufferIterator.cpp" />
+    <ClCompile Include="NativeLibraryToolkit\SetAndExtendConstant.cpp" />
     <ClCompile Include="NativeLibraryToolkit\StackAllocator.cpp" />
     <ClCompile Include="TestUtilities\ObjectWithConstructorArguments.ixx" />
     <ClCompile Include="TestUtilities\ResizableArrayBaseTests.ixx" />
