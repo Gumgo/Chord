@@ -87,6 +87,7 @@
     <ClCompile Include="Foundation\Text\Format.cpp" />
     <ClCompile Include="Foundation\Text\String.cpp" />
     <ClCompile Include="Foundation\Utilities\Alignment.cpp" />
+    <ClCompile Include="Foundation\Utilities\BitArrayOperations.cpp" />
     <ClCompile Include="Foundation\Utilities\BitOperations.cpp" />
     <ClCompile Include="Foundation\Utilities\Bounds.cpp" />
     <ClCompile Include="Foundation\Utilities\Copy.cpp" />

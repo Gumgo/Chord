@@ -4,7 +4,6 @@ import std;
 
 namespace Chord
 {
-  // !!! write thorough unit tests
   constexpr void CopyBits(Span<u8> destination, usz destinationOffset, Span<const u8> source, usz sourceOffset, usz count)
   {
     ASSERT(destinationOffset + count <= destination.Count() * 8);
@@ -23,18 +22,17 @@ namespace Chord
     if (count < 7)
     {
       // We're copying fewer than 7 bits which means we'll need to potentially chop off both sides. Handle this as a special case.
-      u8 unmaskedSourceByte = u8(source[sourceByteIndex] << sourceByteOffset);
+      u8 unmaskedSourceByte = u8(source[sourceByteIndex] >> sourceByteOffset);
       if ((sourceOffset + count - 1) / 8 > sourceByteIndex)
       {
         // The source spans two bytes
-        unmaskedSourceByte &= u8(~(~0 << sourceByteOffset));
-        unmaskedSourceByte |= u8(source[sourceByteIndex + 1] >> (8 - sourceByteOffset));
+        unmaskedSourceByte |= u8(source[sourceByteIndex + 1] << (8 - sourceByteOffset));
       }
 
-      u16 destinationMask = u8(~(~0 << count) << destinationByteOffset);
+      u16 destinationMask = u16(~(~0 << count) << destinationByteOffset);
       u16 destinationBytes = u16((unmaskedSourceByte << destinationByteOffset) & destinationMask);
       destination[destinationByteIndex] &= u8(~destinationMask);
-      destination[destinationByteIndex] |= u8((destinationBytes << destinationByteOffset) & destinationMask);
+      destination[destinationByteIndex] |= u8(destinationBytes);
       if ((destinationOffset + count - 1) / 8 > destinationByteIndex)
       {
         // The destination spans two bytes
@@ -46,7 +44,9 @@ namespace Chord
     {
       // Within each byte, the destination needs to be shifted relative to the source. As we visit each source byte, we'll chop off the beginning portion to
       // complete the current destination byte and write it, then chop off the end portion to start the next destination byte.
-      s32 leftShift = s32((destinationByteOffset > sourceByteOffset) ? destinationByteOffset - sourceByteOffset : sourceByteOffset - destinationByteOffset);
+      s32 leftShift = s32((destinationByteOffset > sourceByteOffset)
+        ? destinationByteOffset - sourceByteOffset
+        : 8 - (sourceByteOffset - destinationByteOffset));
       s32 rightShift = 8 - leftShift;
       u8 nextDestinationByte = destination[destinationByteIndex];
 
@@ -86,7 +86,7 @@ namespace Chord
       }
 
       // When we reach the last source byte, we may or may not yet be on the last destination byte, so we need special logic to handle that
-      if (endWholeSourceByteIndex < endSourceByteIndex)
+      if (sourceByteIndex < endSourceByteIndex)
       {
         u8 sourceByte = source[sourceByteIndex];
         nextDestinationByte |= u8(sourceByte << leftShift);
@@ -94,7 +94,10 @@ namespace Chord
         if (destinationByteIndex + 1 == endDestinationByteIndex)
         {
           // This is also the last destination byte so we need to apply extra masking
-          u8 destinationMask = u8(~(~0 << ((destinationOffset + count) % 8)));
+          usz destinationMaskBits = (destinationOffset + count) % 8;
+          if (destinationMaskBits == 0)
+            { destinationMaskBits = 8; }
+          u8 destinationMask = u8(~(~0 << destinationMaskBits));
           destination[destinationByteIndex] &= u8(~destinationMask);
           destination[destinationByteIndex] |= u8(nextDestinationByte & destinationMask);
         }
@@ -112,7 +115,10 @@ namespace Chord
       if (destinationByteIndex < endDestinationByteIndex)
       {
         ASSERT(destinationByteIndex + 1 == endDestinationByteIndex);
-        u8 destinationMask = u8(~(~0 << ((destinationOffset + count) % 8)));
+        usz destinationMaskBits = (destinationOffset + count) % 8;
+        if (destinationMaskBits == 0)
+          { destinationMaskBits = 8; }
+        u8 destinationMask = u8(~(~0 << destinationMaskBits));
         destination[destinationByteIndex] &= u8(~destinationMask);
         destination[destinationByteIndex] |= u8(nextDestinationByte & destinationMask);
       }
@@ -140,7 +146,10 @@ namespace Chord
 
       if (endWholeSourceByteIndex < endSourceByteIndex)
       {
-        u8 mask = u8(~(~0 << ((destinationOffset + count) % 8)));
+        usz maskBits = (destinationOffset + count) % 8;
+        if (maskBits == 0)
+          { maskBits = 8; }
+        u8 mask = u8(~(~0 << maskBits));
         u8 sourceByte = source[sourceByteIndex];
         destination[destinationByteIndex] &= u8(~mask);
         destination[destinationByteIndex] |= u8(sourceByte & mask);
@@ -159,7 +168,7 @@ namespace Chord
     usz destinationByteOffset = destinationOffset % 8;
     usz endDestinationByteIndex = (destinationOffset + count + 7) / 8;
 
-    if (destinationByteIndex == endDestinationByteIndex)
+    if (destinationByteIndex + 1 == endDestinationByteIndex)
     {
       ASSERT(count <= 8);
       u8 mask = u8(~(~0 << count) << destinationByteOffset);

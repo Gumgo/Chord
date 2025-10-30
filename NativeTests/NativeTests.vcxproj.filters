@@ -179,5 +179,8 @@
     <ClCompile Include="Foundation\Math\Simd\PowerFunctions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Foundation\Utilities\BitArrayOperations.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
