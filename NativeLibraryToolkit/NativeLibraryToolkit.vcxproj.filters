@@ -36,6 +36,9 @@
     <ClCompile Include="BufferIterator.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SetAndExtendConstant.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ChordArgument.h">

@@ -65,7 +65,7 @@ internal class NativeModuleCaller(NativeModuleCallerContext context)
     NativeModuleReporting GetNativeModuleReporting(string function)
       => new(context.Reporting, $"NativeModule{function} {nativeModule.Signature.Name}", callSourceLocation);
 
-    NativeModuleContext GetNativeModuleContext(IReporting reporting)
+    NativeModuleContext GetNativeModuleContext(IReporting reporting, nuint sampleCount)
       => new()
       {
         NativeLibraryContext = nativeLibraryContext.Value,
@@ -75,11 +75,13 @@ internal class NativeModuleCaller(NativeModuleCallerContext context)
         InputChannelCount = programVariantProperties.InputChannelCount,
         OutputChannelCount = programVariantProperties.OutputChannelCount,
         UpsampleFactor = upsampleFactor,
+        MaxSampleCount = 1,
+        SampleCount = sampleCount,
         Reporting = reporting,
       };
 
     var initializeVoiceNativeModuleReporting = GetNativeModuleReporting("InitializeVoice");
-    var initializeVoiceNativeModuleContext = GetNativeModuleContext(initializeVoiceNativeModuleReporting);
+    var initializeVoiceNativeModuleContext = GetNativeModuleContext(initializeVoiceNativeModuleReporting, 0);
     var nativeModuleVoiceContext = nativeModule.InitializeVoice(initializeVoiceNativeModuleContext, nativeModuleArguments, out var scratchMemoryRequirement);
     if (initializeVoiceNativeModuleReporting.ErrorCount > 0)
     {
@@ -87,7 +89,7 @@ internal class NativeModuleCaller(NativeModuleCallerContext context)
     }
 
     var deinitializeVoiceNativeModuleReporting = GetNativeModuleReporting("DeinitializeVoice");
-    var deinitializeVoiceNativeModuleContext = GetNativeModuleContext(deinitializeVoiceNativeModuleReporting);
+    var deinitializeVoiceNativeModuleContext = GetNativeModuleContext(deinitializeVoiceNativeModuleReporting, 0);
     cleanupActions.Add(() => nativeModule.DeinitializeVoice(deinitializeVoiceNativeModuleContext));
 
     if (scratchMemoryRequirement.Size > 0
@@ -112,7 +114,7 @@ internal class NativeModuleCaller(NativeModuleCallerContext context)
     }
 
     var setVoiceActiveNativeModuleReporting = GetNativeModuleReporting("SetVoiceActive");
-    var setVoiceActiveNativeModuleContext = GetNativeModuleContext(setVoiceActiveNativeModuleReporting);
+    var setVoiceActiveNativeModuleContext = GetNativeModuleContext(setVoiceActiveNativeModuleReporting, 0);
     nativeModule.SetVoiceActive(setVoiceActiveNativeModuleContext, true);
     if (setVoiceActiveNativeModuleReporting.ErrorCount > 0)
     {
@@ -124,7 +126,7 @@ internal class NativeModuleCaller(NativeModuleCallerContext context)
     if (nativeModule.InvokeCompileTime != null)
     {
       var invokeCompileTimeNativeModuleReporting = GetNativeModuleReporting("InvokeCompileTime");
-      var invokeCompileTimeNativeModuleContext = GetNativeModuleContext(invokeCompileTimeNativeModuleReporting);
+      var invokeCompileTimeNativeModuleContext = GetNativeModuleContext(invokeCompileTimeNativeModuleReporting, 1); // Note: sample count is 1
       nativeModule.InvokeCompileTime(callSourceLocation, invokeCompileTimeNativeModuleContext, nativeModuleArguments);
       if (invokeCompileTimeNativeModuleReporting.ErrorCount > 0)
       {
@@ -136,7 +138,7 @@ internal class NativeModuleCaller(NativeModuleCallerContext context)
       Debug.Assert(nativeModule.Invoke != null);
 
       var invokeNativeModuleReporting = GetNativeModuleReporting("Invoke");
-      var invokeNativeModuleContext = GetNativeModuleContext(invokeNativeModuleReporting);
+      var invokeNativeModuleContext = GetNativeModuleContext(invokeNativeModuleReporting, 1); // Note: sample count is 1
       nativeModule.Invoke(callSourceLocation, invokeNativeModuleContext, nativeModuleArguments, scratchMemoryPointer, scratchMemorySize);
       if (invokeNativeModuleReporting.ErrorCount > 0)
       {

@@ -20,6 +20,8 @@ internal class NativeModuleContext
   public required int InputChannelCount { get; init; }
   public required int OutputChannelCount { get; init; }
   public required int UpsampleFactor { get; init; }
+  public required nuint MaxSampleCount { get; init; }
+  public required nuint SampleCount { get; init; }
   public required IReporting Reporting { get; init; }
 }
 

@@ -116,6 +116,8 @@
     <ClCompile Include="Utilities\BitOperations.ixx" />
     <ClCompile Include="Utilities\Copy.ixx" />
     <ClCompile Include="Utilities\Bounds.ixx" />
+    <ClCompile Include="Utilities\BitArrayOperations.cpp" />
+    <ClCompile Include="Utilities\BitArrayOperations.ixx" />
     <ClCompile Include="Utilities\Guid.ixx" />
     <ClCompile Include="Utilities\HashKey.ixx" />
     <ClCompile Include="Utilities\Sha256.cpp" />

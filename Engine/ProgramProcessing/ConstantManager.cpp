@@ -174,9 +174,9 @@ namespace Chord
     if (memory == nullptr)
     {
       memory = m_constantBoolBufferMemory.Insert(value, { MaxSimdAlignment });
-      memory->AsType<s32>().Fill(value ? -1 : 0);
+      memory->AsType<u8>().Fill(value ? 0xff : 0);
     }
 
-    return { .m_sampleCount = 0, .m_isConstant = true, .m_samples = memory->AsType<s32>().Elements() };
+    return { .m_sampleCount = 0, .m_isConstant = true, .m_samples = memory->AsType<u8>().Elements() };
   }
 }

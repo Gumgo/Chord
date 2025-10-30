@@ -114,6 +114,19 @@ namespace Chord
     };
 
     template<basic_numeric TElement, usz ElementCount>
+    struct EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::Gather>
+    {
+      static constexpr FixedArray<TElement, ElementCount> Run(
+        const TElement* baseAddress,
+        const FixedArray<SimdRelatedSignedElement<TElement>, ElementCount>& v)
+      {
+        FixedArray<TElement, ElementCount> result;
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = baseAddress[v[i.value]]; });
+        return result;
+      }
+    };
+
+    template<basic_numeric TElement, usz ElementCount>
     struct EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::GetElement>
     {
       template<usz Index>
@@ -960,6 +973,18 @@ namespace Chord
       {
         s32 mask = EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::GetMask>::Run(v);
         return mask != 0 && mask != (1 << ElementCount) - 1;
+      }
+    };
+
+    template<basic_numeric TElement, usz ElementCount>
+    struct EmulatedSimdOperationImplementation<TElement, ElementCount, SimdOperation::FromMask>
+    {
+      static constexpr FixedArray<TElement, ElementCount> Run(s32 mask)
+      {
+        static constexpr TElement AllBits = std::bit_cast<TElement>(SimdRelatedSignedElement<TElement>(-1));
+        FixedArray<TElement, ElementCount> result;
+        Unroll<0, ElementCount>([&](auto i) { result[i.value] = ((mask >> i.value) & 1) == 0 ? 0 : AllBits; });
+        return result;
       }
     };
   }

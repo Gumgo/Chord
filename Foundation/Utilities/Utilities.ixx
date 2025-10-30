@@ -2,6 +2,7 @@ export module Chord.Foundation:Utilities;
 
 export import :Utilities.Alignment;
 export import :Utilities.BinaryReader;
+export import :Utilities.BitArrayOperations;
 export import :Utilities.BitOperations;
 export import :Utilities.Bounds;
 export import :Utilities.Copy;

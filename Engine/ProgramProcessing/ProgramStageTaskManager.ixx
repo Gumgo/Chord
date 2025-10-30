@@ -31,10 +31,10 @@ namespace Chord
         bool isVoiceGraph,
         ConstantManager* constantManager,
         BufferManager* bufferManager,
-        size_t bufferSampleCount,
+        usz bufferSampleCount,
         std::optional<Span<const BufferManager::BufferHandle>> inputChannelBuffersFloat,
         std::optional<Span<const BufferManager::BufferHandle>> inputChannelBuffersDouble,
-        size_t nativeModuleCallNodeCount,
+        usz nativeModuleCallNodeCount,
         Span<const IProcessorProgramGraphNode*> rootNodes);
       ~ProgramStageTaskManager() noexcept;
       ProgramStageTaskManager(const ProgramStageTaskManager&) = delete;
@@ -64,7 +64,7 @@ namespace Chord
       // This is used to quickly initialize all the sample count values within task arguments
       struct SampleCountInitializer
       {
-        int32_t* m_sampleCount = nullptr;
+        size_t* m_sampleCount = nullptr;
         s32 m_upsampleFactor = 1;
       };
 
@@ -128,15 +128,19 @@ namespace Chord
         Callable<void()> m_onComplete;
       };
 
-      static void ReportCallbackStatic(void* context, ReportingSeverity reportingSeverity, const char32_t* message);
+      static void ReportCallbackStatic(void* context, ReportingSeverity reportingSeverity, const char32_t* message, size_t length);
 
-      NativeModuleContext BuildNativeModuleContext(const NativeLibraryEntry& nativeLibraryEntry, void* voiceContext, s32 upsampleFactor);
+      NativeModuleContext BuildNativeModuleContext(
+        const NativeLibraryEntry& nativeLibraryEntry,
+        void* voiceContext,
+        s32 upsampleFactor,
+        usz maxSampleCount,
+        usz sampleCount);
 
       void InitializeNativeModuleCallTask(
         NativeLibraryRegistry* nativeLibraryRegistry,
         ConstantManager* constantManager,
         BufferManager* bufferManager,
-        size_t bufferSampleCount,
         const NativeModuleCallProgramGraphNode* node,
         NativeModuleCallTask* task);
 
@@ -149,7 +153,6 @@ namespace Chord
 
       NativeModuleArgument BuildNativeModuleOutputArgument(
         BufferManager* bufferManager,
-        size_t bufferSampleCount,
         NativeModuleCallTask* task,
         const NativeModuleParameter& parameter,
         const IOutputProgramGraphNode* outputNode);
@@ -231,6 +234,7 @@ namespace Chord
       s32 m_sampleRate = 0;
       s32 m_inputChannelCount = 0;
       s32 m_outputChannelCount = 0;
+      usz m_bufferSampleCount = 0;
 
       HashMap<const IOutputProgramGraphNode*, BufferOrConstant> m_buffersAndConstantsFromOutputNodes;
 

@@ -103,6 +103,14 @@ namespace Chord
       static constexpr Vector LoadUnaligned(Span<const TElement> source, basic_integral auto offset)
         { return LoadUnaligned(source.GetBuffer(offset, ElementCount)); }
 
+      static constexpr Vector FromMask(s32 mask)
+        requires Vector::template IsSupported<SimdOperation::FromMask>
+        { return Vector(Run<SimdOperation::FromMask>(mask)); }
+
+      static constexpr Vector Gather(const TElement* baseAddress, const SignedVector& indices)
+        requires Vector::template IsSupported<SimdOperation::Gather>
+        { return Vector(Run<SimdOperation::Gather>(baseAddress, indices.m_data)); }
+
       constexpr void StoreAligned(TElement* destination) const
       {
         // In consteval contexts, we can't convert between int and pointer, so skip this check

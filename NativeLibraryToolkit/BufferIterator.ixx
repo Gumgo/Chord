@@ -8,6 +8,7 @@ import std;
 
 import Chord.Foundation;
 import :NativeModuleTypes;
+import :SetAndExtendConstant;
 
 namespace Chord
 {
@@ -78,6 +79,11 @@ namespace Chord
         return nullptr;
       }
     }
+    else if (std::same_as<Buffer, InputFloatBufferArrayElement>
+      || std::same_as<Buffer, InputDoubleBufferArrayElement>
+      || std::same_as<Buffer, InputIntBufferArrayElement>
+      || std::same_as<Buffer, InputBoolBufferArrayElement>)
+      { return value.GetUnderlyingArgument(); }
     else
     {
       static_assert(AlwaysFalse<T>, "Unsupported buffer type provided to IterateBuffers");
@@ -251,22 +257,6 @@ namespace Chord
       { static_assert(AlwaysFalse<TBufferData>, "Unsupported buffer type"); }
   }
 
-  template<typename TBufferData>
-  void ExtendConstant(const TBufferData& bufferData)
-  {
-    using Element = typename TBufferData::Element;
-    if constexpr (std::same_as<Element, u8>)
-    {
-      u8 value = ((bufferData.m_samples[0] & 1) == 0) ? 0 : 0xff;
-      Span(bufferData.m_samples, BUFFER_CONSTANT_VALUE_BYTE_COUNT).Fill(value);
-    }
-    else
-    {
-      Element value = bufferData.m_samples[0];
-      Span(bufferData.m_samples, BUFFER_CONSTANT_VALUE_BYTE_COUNT / sizeof(Element)).Fill(value);
-    }
-  }
-
   template<IterateBuffersFlags Flags, typename TCallback, typename... TBuffers>
   void IterateBuffersApiTypes(TCallback&& callback, TBuffers... buffers)
   {
@@ -360,8 +350,7 @@ namespace Chord
             if constexpr (!IsInputBuffer<Buffer>())
             {
               // We need to fill the beginning of the buffer with the constant value
-              buffer->m_isConstant = true;
-              ExtendConstant(std::get<BufferIndex>(bufferDataTuple));
+              SetAndExtendConstant(buffer);
             }
           });
       }
@@ -430,5 +419,26 @@ namespace Chord
     template<typename... TBuffersAndCallback>
     void IterateBuffers(TBuffersAndCallback&&... buffersAndCallback)
       { IterateBuffers<None<IterateBuffersFlags>()>(std::forward<TBuffersAndCallback>(buffersAndCallback)...); }
+
+    // This is a utility to convert a bool vector mask back to a scalar type if necessary
+    template<usz ElementCount, typename TMask>
+    auto BoolOutputFromMask(const TMask& mask)
+    {
+      if constexpr (ElementCount > 1 && ElementCount <= 8 && vector<TMask>)
+      {
+        // TMask is Vector<s32, 4> or Vector<s32, 8> and we need to convert it back to a u32 bitmask
+        static_assert(std::same_as<typename TMask::Element, s32> || std::same_as<typename TMask::Element, s64>);
+        return u32(GetMask(mask));
+      }
+      else
+      {
+        // TMask is already either a bool, u32 bitmask, Vector<u32, 4>, or Vector<u32, 8>, so no conversion is necessary
+        if constexpr (vector<TMask>)
+          { static_assert(std::same_as<typename TMask::Element, u32>); }
+        else
+          { static_assert(std::same_as<TMask, bool> || std::same_as<TMask, u32>); }
+        return mask;
+      }
+    }
   }
 }

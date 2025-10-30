@@ -72,7 +72,18 @@
     <ClCompile Include="Foundation\Core\NullTerminatedString.cpp" />
     <ClCompile Include="Foundation\Functional\Callable.cpp" />
     <ClCompile Include="Foundation\Math\MathFunctions.cpp" />
-    <ClCompile Include="Foundation\Math\Simd.cpp" />
+    <ClCompile Include="Foundation\Math\Simd\Arithmetic.cpp" />
+    <ClCompile Include="Foundation\Math\Simd\Comparison.cpp" />
+    <ClCompile Include="Foundation\Math\Simd\ConstructLoadStore.cpp" />
+    <ClCompile Include="Foundation\Math\Simd\Conversion.cpp" />
+    <ClCompile Include="Foundation\Math\Simd\FMAdd.cpp" />
+    <ClCompile Include="Foundation\Math\Simd\Fmod.cpp" />
+    <ClCompile Include="Foundation\Math\Simd\Mask.cpp" />
+    <ClCompile Include="Foundation\Math\Simd\Miscellaneous.cpp" />
+    <ClCompile Include="Foundation\Math\Simd\PowerFunctions.cpp" />
+    <ClCompile Include="Foundation\Math\Simd\Round.cpp" />
+    <ClCompile Include="Foundation\Math\Simd\Shuffle.cpp" />
+    <ClCompile Include="Foundation\Math\Simd\TrigFunctions.cpp" />
     <ClCompile Include="Foundation\Text\Format.cpp" />
     <ClCompile Include="Foundation\Text\String.cpp" />
     <ClCompile Include="Foundation\Utilities\Alignment.cpp" />
@@ -84,6 +95,7 @@
     <ClCompile Include="Foundation\Utilities\Unroll.cpp" />
     <ClCompile Include="NativeLibraryToolkit\DeclareNativeModule.cpp" />
     <ClCompile Include="NativeLibraryToolkit\DeclareOptimizationRule.cpp" />
+    <ClCompile Include="NativeLibraryToolkit\BufferIterator.cpp" />
     <ClCompile Include="NativeLibraryToolkit\StackAllocator.cpp" />
     <ClCompile Include="TestUtilities\ObjectWithConstructorArguments.ixx" />
     <ClCompile Include="TestUtilities\ResizableArrayBaseTests.ixx" />

@@ -8,6 +8,7 @@ namespace Chord
 {
   export
   {
+    // !!! rewrite this to just take a templated lambda instead of integral_constant
     template<usz InclusiveStart, usz ExclusiveEnd, typename TFunc>
     inline constexpr void Unroll(TFunc&& func)
     {

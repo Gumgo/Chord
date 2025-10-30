@@ -74,6 +74,13 @@ import :Math.Simd.SimdOperation;
       };
 
       template<>
+      struct SimdOperationImplementation<s64, 4, SimdOperation::Gather> : public SupportedSimdOperationImplementation
+      {
+        static __m256s64 Run(const s64* baseAddress, const __m256s64& v)
+          { return _mm256_i64gather_epi64(baseAddress, v, sizeof(s64)); }
+      };
+
+      template<>
       struct SimdOperationImplementation<s64, 4, SimdOperation::GetElement> : public SupportedSimdOperationImplementation
       {
         template<usz Index>
@@ -544,6 +551,16 @@ import :Math.Simd.SimdOperation;
       {
         static bool Run(const __m256s64& v)
           { return _mm256_testnzc_si256(v, Mm256SetAllBitsSi256()) != 0; }
+      };
+
+      template<>
+      struct SimdOperationImplementation<s64, 4, SimdOperation::FromMask> : public SupportedSimdOperationImplementation
+      {
+        static __m256s64 Run(s32 mask)
+        {
+          __m256i bits = _mm256_set_epi64x(8, 4, 2, 1);
+          return _mm256_cmpeq_epi64(_mm256_and_si256(_mm256_set1_epi64x(mask), bits), bits);
+        }
       };
     }
   }

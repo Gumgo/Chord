@@ -380,13 +380,13 @@ namespace Chord
       }
       else if constexpr (!Traits::template HasZeroOrOneArgumentsOfType<Span<s32>>())
       {
-        static_assert(AlwaysFalse<TNativeModule>, "Native module 'Prepare' should have at most one 'outArgumentsLatencyOut' argument");
+        static_assert(AlwaysFalse<TNativeModule>, "Native module 'Prepare' should have at most one 'outArgumentsLatency' argument");
         return nullptr;
       }
       else
       {
         auto PrepareWrapper =
-          [](const NativeModuleContext* context, const NativeModuleArguments* arguments, int32_t* outArgumentLatenciesOut) -> bool
+          [](const NativeModuleContext* context, const NativeModuleArguments* arguments, int32_t* outArgumentLatencies) -> bool
           {
             auto ResolveArgument =
               [&]<typename TArgument>()
@@ -396,7 +396,7 @@ namespace Chord
                 else if constexpr (std::derived_from<TArgument, NativeModuleArgumentBase>)
                   { return ResolveNativeModuleArgument<TNativeModule, TArgument>(arguments); }
                 else if constexpr (std::same_as<TArgument, Span<s32>>)
-                  { return Span<s32>(outArgumentLatenciesOut, GetNativeModuleOutParameterCount<TNativeModule>()); }
+                  { return Span<s32>(outArgumentLatencies, GetNativeModuleOutParameterCount<TNativeModule>()); }
                 else
                   { static_assert(AlwaysFalse<TNativeModule>, "Unsupported argument type"); }
               };
@@ -447,7 +447,7 @@ namespace Chord
       else
       {
         auto InitializeVoiceWrapper =
-          [](const NativeModuleContext* context, const NativeModuleArguments* arguments, MemoryRequirement* scratchMemoryRequirementOut) -> void*
+          [](const NativeModuleContext* context, const NativeModuleArguments* arguments, MemoryRequirement* scratchMemoryRequirement) -> void*
           {
             StackAllocatorCalculator scratchMemoryAllocatorCalculator;
 
@@ -482,7 +482,7 @@ namespace Chord
             else
               { result = CallWithArgumentResolution(&TNativeModule::InitializeVoice, ResolveArgument); }
 
-            *scratchMemoryRequirementOut = scratchMemoryAllocatorCalculator.GetMemoryRequirement();
+            *scratchMemoryRequirement = scratchMemoryAllocatorCalculator.GetMemoryRequirement();
             return result;
           };
 
@@ -494,10 +494,10 @@ namespace Chord
       auto InitializeVoiceWrapper =
         []([[maybe_unused]] const NativeModuleContext* context,
           [[maybe_unused]] const NativeModuleArguments* arguments,
-          MemoryRequirement* scratchMemoryRequirementOut) -> void*
+          MemoryRequirement* scratchMemoryRequirement) -> void*
         {
-          scratchMemoryRequirementOut->m_size = 0;
-          scratchMemoryRequirementOut->m_alignment = 0;
+          scratchMemoryRequirement->m_size = 0;
+          scratchMemoryRequirement->m_alignment = 0;
           return new TNativeModule();
         };
 
@@ -748,7 +748,7 @@ namespace Chord
     //   static bool Prepare()
     //     This maps to m_prepare within the returned NativeModule struct. This function may take the following argument types:
     //       NativeModuleCallContext context - the native module call context
-    //       Span<s32> outArgumentsLatencyOut - latency values for each output argument should be written to this array
+    //       Span<s32> outArgumentsLatency - latency values for each output argument should be written to this array
     //       Chord arguments - see below
     //
     //   [static] {void|void*} InitializeVoice()

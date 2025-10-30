@@ -342,10 +342,10 @@ namespace Chord
       EXPECT(constantBufferC.m_sampleCount == 0); // This gets filled in at runtime
       EXPECT(constantBufferC.m_isConstant);
 
-      for (usz i = 0; i < MaxSimdAlignment / sizeof(f32); i++)
-        { EXPECT(constantBufferA.m_samples[i] == -s32(vA)); }
-      for (usz i = 0; i < MaxSimdAlignment / sizeof(f32); i++)
-        { EXPECT(constantBufferB.m_samples[i] == -s32(vB)); }
+      for (usz i = 0; i < MaxSimdAlignment / sizeof(u8); i++)
+        { EXPECT(constantBufferA.m_samples[i] == (vA ? 0xff : 0)); }
+      for (usz i = 0; i < MaxSimdAlignment / sizeof(u8); i++)
+        { EXPECT(constantBufferB.m_samples[i] == (vB ? 0xff : 0)); }
       EXPECT(constantBufferC.m_samples == constantBufferA.m_samples);
     }
 

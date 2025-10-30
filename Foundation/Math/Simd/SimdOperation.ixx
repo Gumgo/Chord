@@ -22,6 +22,10 @@ namespace Chord
       StoreAligned,
       StoreUnaligned,
 
+      // Note: currently, gather expects the index size to match the element size, i.e. f32 indexes using s32, f64 indexes using s64, etc. This isn't ideal but
+      // it avoids some awkward edge cases such as indexing f64x2 using s32x4 where only the bottom two indices are used.
+      Gather,
+
       GetElement,
 
       UnaryPlus,
@@ -108,6 +112,7 @@ namespace Chord
       TestMaskAny,
       TestMaskAll,
       TestMaskSome,
+      FromMask,
     };
 
     // Defines metadata regarding a SIMD operation. Should implement Run() to perform the operation.

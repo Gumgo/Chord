@@ -136,7 +136,7 @@ internal unsafe struct InputStringConstantArray
 [StructLayout(LayoutKind.Sequential)]
 internal unsafe struct InputFloatBuffer
 {
-  public int SampleCount;
+  public SizeT SampleCount;
   public NativeBool IsConstant;
   public float* Samples;
 }
@@ -144,7 +144,7 @@ internal unsafe struct InputFloatBuffer
 [StructLayout(LayoutKind.Sequential)]
 internal unsafe struct InputDoubleBuffer
 {
-  public int SampleCount;
+  public SizeT SampleCount;
   public NativeBool IsConstant;
   public double* Samples;
 }
@@ -152,7 +152,7 @@ internal unsafe struct InputDoubleBuffer
 [StructLayout(LayoutKind.Sequential)]
 internal unsafe struct InputIntBuffer
 {
-  public int SampleCount;
+  public SizeT SampleCount;
   public NativeBool IsConstant;
   public int* Samples;
 }
@@ -160,15 +160,15 @@ internal unsafe struct InputIntBuffer
 [StructLayout(LayoutKind.Sequential)]
 internal unsafe struct InputBoolBuffer
 {
-  public int SampleCount;
+  public SizeT SampleCount;
   public NativeBool IsConstant;
-  public int* Samples;
+  public byte* Samples;
 }
 
 [StructLayout(LayoutKind.Sequential)]
 internal unsafe struct OutputFloatBuffer
 {
-  public int SampleCount;
+  public SizeT SampleCount;
   public NativeBool IsConstant;
   public float* Samples;
 }
@@ -176,7 +176,7 @@ internal unsafe struct OutputFloatBuffer
 [StructLayout(LayoutKind.Sequential)]
 internal unsafe struct OutputDoubleBuffer
 {
-  public int SampleCount;
+  public SizeT SampleCount;
   public NativeBool IsConstant;
   public double* Samples;
 }
@@ -184,7 +184,7 @@ internal unsafe struct OutputDoubleBuffer
 [StructLayout(LayoutKind.Sequential)]
 internal unsafe struct OutputIntBuffer
 {
-  public int SampleCount;
+  public SizeT SampleCount;
   public NativeBool IsConstant;
   public int* Samples;
 }
@@ -192,9 +192,9 @@ internal unsafe struct OutputIntBuffer
 [StructLayout(LayoutKind.Sequential)]
 internal unsafe struct OutputBoolBuffer
 {
-  public int SampleCount;
+  public SizeT SampleCount;
   public NativeBool IsConstant;
-  public int* Samples;
+  public byte* Samples;
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -278,10 +278,12 @@ internal unsafe struct NativeModuleContext
   public int InputChannelCount;
   public int OutputChannelCount;
   public int UpsampleFactor;
+  public SizeT MaxSampleCount;
+  public SizeT SampleCount;
   public NativeBool IsCompileTime;
 
   public void* ReportingContext;
-  public delegate* unmanaged[Cdecl]<void*, ReportingSeverity, uint*, void> Report;
+  public delegate* unmanaged[Cdecl]<void*, ReportingSeverity, uint*, nuint, void> Report;
 }
 
 [StructLayout(LayoutKind.Sequential)]

@@ -62,10 +62,10 @@ namespace Chord
     bool isVoiceGraph,
     ConstantManager* constantManager,
     BufferManager* bufferManager,
-    size_t bufferSampleCount,
+    usz bufferSampleCount,
     std::optional<Span<const BufferManager::BufferHandle>> inputChannelBuffersFloat,
     std::optional<Span<const BufferManager::BufferHandle>> inputChannelBuffersDouble,
-    size_t nativeModuleCallNodeCount,
+    usz nativeModuleCallNodeCount,
     Span<const IProcessorProgramGraphNode*> rootNodes)
     : m_reportCallback(reportCallback)
   {
@@ -74,6 +74,7 @@ namespace Chord
     m_sampleRate = program->ProgramVariantProperties().m_sampleRate;
     m_inputChannelCount = program->ProgramVariantProperties().m_inputChannelCount;
     m_outputChannelCount = program->ProgramVariantProperties().m_outputChannelCount;
+    m_bufferSampleCount = bufferSampleCount;
 
     usz inputChannelCount = Coerce<usz>(m_inputChannelCount);
     usz outputChannelCount = Coerce<usz>(m_outputChannelCount);
@@ -163,7 +164,7 @@ namespace Chord
           {
             const NativeModuleCallProgramGraphNode* nativeModuleCallNode = static_cast<const NativeModuleCallProgramGraphNode*>(node);
             NativeModuleCallTask* task = &m_nativeModuleCallTasks[nextNativeModuleCallIndex];
-            InitializeNativeModuleCallTask(nativeLibraryRegistry, constantManager, bufferManager, bufferSampleCount, nativeModuleCallNode, task);
+            InitializeNativeModuleCallTask(nativeLibraryRegistry, constantManager, bufferManager, nativeModuleCallNode, task);
             taskIndicesFromNodes.Insert(nativeModuleCallNode, nextNativeModuleCallIndex);
             nextNativeModuleCallIndex++;
             break;
@@ -238,7 +239,12 @@ namespace Chord
       if (task.m_nativeModule->m_initializeVoice != nullptr)
       {
         const NativeLibraryEntry& nativeLibraryEntry = m_nativeLibraries[task.m_nativeLibraryEntryIndex];
-        NativeModuleContext nativeModuleContext = BuildNativeModuleContext(nativeLibraryEntry, nullptr, task.m_upsampleFactor);
+        NativeModuleContext nativeModuleContext = BuildNativeModuleContext(
+          nativeLibraryEntry,
+          nullptr,
+          task.m_upsampleFactor,
+          bufferSampleCount * Coerce<usz>(task.m_upsampleFactor),
+          0);
 
         // Non-constant argument buffers are by default set to null
         NativeModuleArguments arguments =
@@ -270,7 +276,12 @@ namespace Chord
       if (task.m_nativeModule->m_deinitializeVoice != nullptr)
       {
         const NativeLibraryEntry& nativeLibraryEntry = m_nativeLibraries[task.m_nativeLibraryEntryIndex];
-        NativeModuleContext nativeModuleContext = BuildNativeModuleContext(nativeLibraryEntry, task.m_voiceContext, task.m_upsampleFactor);
+        NativeModuleContext nativeModuleContext = BuildNativeModuleContext(
+          nativeLibraryEntry,
+          task.m_voiceContext,
+          task.m_upsampleFactor,
+          m_bufferSampleCount * Coerce<usz>(task.m_upsampleFactor),
+          0);
         task.m_nativeModule->m_deinitializeVoice(&nativeModuleContext);
       }
     }
@@ -366,16 +377,18 @@ namespace Chord
     }
   }
 
-  void ProgramStageTaskManager::ReportCallbackStatic(void* context, ReportingSeverity reportingSeverity, const char32_t* message)
+  void ProgramStageTaskManager::ReportCallbackStatic(void* context, ReportingSeverity reportingSeverity, const char32_t* message, size_t length)
   {
-    UnicodeString messageString(Unmanaged, Span<const char32_t>(message, NullTerminatedStringLength(message)));
+    UnicodeString messageString(Unmanaged, Span<const char32_t>(message, length));
     static_cast<ProgramStageTaskManager*>(context)->m_reportCallback(reportingSeverity, messageString);
   }
 
   NativeModuleContext ProgramStageTaskManager::BuildNativeModuleContext(
     const NativeLibraryEntry& nativeLibraryEntry,
     void* voiceContext,
-    s32 upsampleFactor)
+    s32 upsampleFactor,
+    usz maxSampleCount,
+    usz sampleCount)
   {
     return
     {
@@ -387,6 +400,8 @@ namespace Chord
       .m_inputChannelCount = m_inputChannelCount,
       .m_outputChannelCount = m_outputChannelCount,
       .m_upsampleFactor = upsampleFactor,
+      .m_maxSampleCount = maxSampleCount,
+      .m_sampleCount = sampleCount,
       .m_isCompileTime = false,
 
       .m_reportingContext = this,
@@ -398,7 +413,6 @@ namespace Chord
     NativeLibraryRegistry* nativeLibraryRegistry,
     ConstantManager* constantManager,
     BufferManager* bufferManager,
-    size_t bufferSampleCount,
     const NativeModuleCallProgramGraphNode* node,
     NativeModuleCallTask* task)
   {
@@ -444,7 +458,7 @@ namespace Chord
         break;
 
       case ModuleParameterDirectionOut:
-        task->m_arguments[inputIndex] = BuildNativeModuleOutputArgument(bufferManager, bufferSampleCount, task, parameter, node->Outputs()[outputIndex]);
+        task->m_arguments[inputIndex] = BuildNativeModuleOutputArgument(bufferManager, task, parameter, node->Outputs()[outputIndex]);
         outputIndex++;
         break;
 
@@ -470,7 +484,12 @@ namespace Chord
 
       NativeModuleCallTask* task = m_tasksWithSetVoiceActive[index];
       const NativeLibraryEntry& nativeLibraryEntry = m_nativeLibraries[task->m_nativeLibraryEntryIndex];
-      NativeModuleContext nativeModuleContext = BuildNativeModuleContext(nativeLibraryEntry, task->m_voiceContext, task->m_upsampleFactor);
+      NativeModuleContext nativeModuleContext = BuildNativeModuleContext(
+        nativeLibraryEntry,
+        task->m_voiceContext,
+        task->m_upsampleFactor,
+        m_bufferSampleCount * Coerce<usz>(task->m_upsampleFactor),
+        0);
       task->m_nativeModule->m_setVoiceActive(&nativeModuleContext, active);
     }
   }
@@ -758,7 +777,6 @@ namespace Chord
 
   NativeModuleArgument ProgramStageTaskManager::BuildNativeModuleOutputArgument(
     BufferManager* bufferManager,
-    size_t bufferSampleCount,
     NativeModuleCallTask* task,
     const NativeModuleParameter& parameter,
     const IOutputProgramGraphNode* outputNode)
@@ -768,7 +786,7 @@ namespace Chord
     NativeModuleArgument argument;
 
     s32 upsampleFactor = task->m_upsampleFactor * parameter.m_dataType.m_upsampleFactor;
-    auto bufferHandle = bufferManager->AddBuffer(parameter.m_dataType.m_primitiveType, bufferSampleCount, upsampleFactor);
+    auto bufferHandle = bufferManager->AddBuffer(parameter.m_dataType.m_primitiveType, m_bufferSampleCount, upsampleFactor);
 
     // $TODO $FEEDBACK if this task is in a feedback cycle (i.e. if it is concurrent with itself) we need to always disable buffer sharing
     if (!parameter.m_disallowBufferSharing)
@@ -835,7 +853,7 @@ namespace Chord
     #endif
 
     for (const SampleCountInitializer& sampleCountInitializer : task.m_sampleCountInitializers)
-      { *sampleCountInitializer.m_sampleCount = Coerce<int32_t>(m_processContext->m_sampleCount * usz(sampleCountInitializer.m_upsampleFactor)); }
+      { *sampleCountInitializer.m_sampleCount = m_processContext->m_sampleCount * sampleCountInitializer.m_upsampleFactor; }
     for (const SamplesInitializer& samplesInitializer : task.m_samplesInitializers)
     {
       const BufferManager::Buffer& buffer = m_processContext->m_bufferManager->GetBuffer(samplesInitializer.m_bufferHandle);
@@ -848,7 +866,12 @@ namespace Chord
       { *isConstantResolver.m_isConstant = false; }
 
     const NativeLibraryEntry& nativeLibraryEntry = m_nativeLibraries[task.m_nativeLibraryEntryIndex];
-    NativeModuleContext nativeModuleContext = BuildNativeModuleContext(nativeLibraryEntry, task.m_voiceContext, task.m_upsampleFactor);
+    NativeModuleContext nativeModuleContext = BuildNativeModuleContext(
+      nativeLibraryEntry,
+      task.m_voiceContext,
+      task.m_upsampleFactor,
+      m_bufferSampleCount * Coerce<usz>(task.m_upsampleFactor),
+      m_processContext->m_sampleCount * Coerce<usz>(task.m_upsampleFactor));
 
     NativeModuleArguments arguments =
     {

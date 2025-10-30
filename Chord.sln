@@ -31,6 +31,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NativeLibraryToolkit", "Nat
 		{A95EFDCC-40D3-4094-9A26-6783EB2AC1B8} = {A95EFDCC-40D3-4094-9A26-6783EB2AC1B8}
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NativeLibraries", "NativeLibraries", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Core", "NativeLibraries\Core\Core.vcxproj", "{3784D0CF-D4FD-449E-903A-D7BA1377754C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -80,9 +84,18 @@ Global
 		{B3E3A505-6F78-4A04-9CDB-112FD4E29B9A}.Dev|Any CPU.Build.0 = Release|x64
 		{B3E3A505-6F78-4A04-9CDB-112FD4E29B9A}.Release|Any CPU.ActiveCfg = Release|x64
 		{B3E3A505-6F78-4A04-9CDB-112FD4E29B9A}.Release|Any CPU.Build.0 = Release|x64
+		{3784D0CF-D4FD-449E-903A-D7BA1377754C}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{3784D0CF-D4FD-449E-903A-D7BA1377754C}.Debug|Any CPU.Build.0 = Debug|x64
+		{3784D0CF-D4FD-449E-903A-D7BA1377754C}.Dev|Any CPU.ActiveCfg = Release|x64
+		{3784D0CF-D4FD-449E-903A-D7BA1377754C}.Dev|Any CPU.Build.0 = Release|x64
+		{3784D0CF-D4FD-449E-903A-D7BA1377754C}.Release|Any CPU.ActiveCfg = Release|x64
+		{3784D0CF-D4FD-449E-903A-D7BA1377754C}.Release|Any CPU.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{3784D0CF-D4FD-449E-903A-D7BA1377754C} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {AE65FEC2-833F-412D-A0F7-CAD5222B9393}

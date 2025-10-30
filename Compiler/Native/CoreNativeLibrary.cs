@@ -8,22 +8,23 @@ internal static class CoreNativeLibrary
   // Declare these up-front for convenience
   private static readonly AstDataType _float = new(RuntimeMutability.DependentConstant, PrimitiveType.Float, 1, false);
   private static readonly AstDataType _varFloat = new(RuntimeMutability.Variable, PrimitiveType.Float, 1, false);
-  private static readonly AstDataType _constFloat = new(RuntimeMutability.Constant, PrimitiveType.Float, 1, false);
-  private static readonly AstDataType _floatArray = new(RuntimeMutability.DependentConstant, PrimitiveType.Float, 1, true);
+  private static readonly AstDataType _floatArray = new(RuntimeMutability.Variable, PrimitiveType.Float, 1, true);
+  private static readonly AstDataType _constFloatArray = new(RuntimeMutability.Constant, PrimitiveType.Float, 1, true);
   private static readonly AstDataType _double = new(RuntimeMutability.DependentConstant, PrimitiveType.Double, 1, false);
   private static readonly AstDataType _varDouble = new(RuntimeMutability.Variable, PrimitiveType.Double, 1, false);
-  private static readonly AstDataType _constDouble = new(RuntimeMutability.Constant, PrimitiveType.Double, 1, false);
-  private static readonly AstDataType _doubleArray = new(RuntimeMutability.DependentConstant, PrimitiveType.Double, 1, true);
+  private static readonly AstDataType _doubleArray = new(RuntimeMutability.Variable, PrimitiveType.Double, 1, true);
+  private static readonly AstDataType _constDoubleArray = new(RuntimeMutability.Constant, PrimitiveType.Double, 1, true);
   private static readonly AstDataType _int = new(RuntimeMutability.DependentConstant, PrimitiveType.Int, 1, false);
   private static readonly AstDataType _varInt = new(RuntimeMutability.Variable, PrimitiveType.Int, 1, false);
   private static readonly AstDataType _constInt = new(RuntimeMutability.Constant, PrimitiveType.Int, 1, false);
-  private static readonly AstDataType _intArray = new(RuntimeMutability.DependentConstant, PrimitiveType.Int, 1, true);
+  private static readonly AstDataType _intArray = new(RuntimeMutability.Variable, PrimitiveType.Int, 1, true);
+  private static readonly AstDataType _constIntArray = new(RuntimeMutability.Constant, PrimitiveType.Int, 1, true);
   private static readonly AstDataType _bool = new(RuntimeMutability.DependentConstant, PrimitiveType.Bool, 1, false);
   private static readonly AstDataType _varBool = new(RuntimeMutability.Variable, PrimitiveType.Bool, 1, false);
   private static readonly AstDataType _constBool = new(RuntimeMutability.Constant, PrimitiveType.Bool, 1, false);
-  private static readonly AstDataType _boolArray = new(RuntimeMutability.DependentConstant, PrimitiveType.Bool, 1, true);
+  private static readonly AstDataType _boolArray = new(RuntimeMutability.Variable, PrimitiveType.Bool, 1, true);
+  private static readonly AstDataType _constBoolArray = new(RuntimeMutability.Constant, PrimitiveType.Bool, 1, true);
   private static readonly AstDataType _constString = new(RuntimeMutability.Constant, PrimitiveType.String, 1, false);
-  private static readonly AstDataType _constStringArray = new(RuntimeMutability.Constant, PrimitiveType.String, 1, true);
 
   // This warning is suppressed because the above up-front private static members need to be declared before these ones to avoid null warnings
 #pragma warning disable SA1202 // Elements should be ordered by access
@@ -119,21 +120,30 @@ internal static class CoreNativeLibrary
   public static readonly NativeModuleSignature BitwiseNotInt = new("~", 2, In("x", _int), In("y", _int), Out("result", _int));
   public static readonly NativeModuleSignature BitwiseNotBool = new("~", 2, In("x", _bool), In("y", _bool), Out("result", _bool));
 
-  public static readonly NativeModuleSignature IndexFloatFloat = new("[", 2, In("x", _floatArray), In("y", _float), Out("result", _float));
-  public static readonly NativeModuleSignature IndexFloatDouble = new("[", 2, In("x", _floatArray), In("y", _double), Out("result", _float));
-  public static readonly NativeModuleSignature IndexFloatInt = new("[", 2, In("x", _floatArray), In("y", _int), Out("result", _float));
-  public static readonly NativeModuleSignature IndexDoubleFloat = new("[", 2, In("x", _doubleArray), In("y", _float), Out("result", _double));
-  public static readonly NativeModuleSignature IndexDoubleDouble = new("[", 2, In("x", _doubleArray), In("y", _double), Out("result", _double));
-  public static readonly NativeModuleSignature IndexDoubleInt = new("[", 2, In("x", _doubleArray), In("y", _int), Out("result", _double));
-  public static readonly NativeModuleSignature IndexIntFloat = new("[", 2, In("x", _intArray), In("y", _float), Out("result", _int));
-  public static readonly NativeModuleSignature IndexIntDouble = new("[", 2, In("x", _intArray), In("y", _double), Out("result", _int));
-  public static readonly NativeModuleSignature IndexIntInt = new("[", 2, In("x", _intArray), In("y", _int), Out("result", _int));
-  public static readonly NativeModuleSignature IndexBoolFloat = new("[", 2, In("x", _boolArray), In("y", _float), Out("result", _bool));
-  public static readonly NativeModuleSignature IndexBoolDouble = new("[", 2, In("x", _boolArray), In("y", _double), Out("result", _bool));
-  public static readonly NativeModuleSignature IndexBoolInt = new("[", 2, In("x", _boolArray), In("y", _int), Out("result", _bool));
-  public static readonly NativeModuleSignature IndexStringFloat = new("[", 2, In("x", _constStringArray), In("y", _constFloat), Out("result", _constString));
-  public static readonly NativeModuleSignature IndexStringDouble = new("[", 2, In("x", _constStringArray), In("y", _constDouble), Out("result", _constString));
-  public static readonly NativeModuleSignature IndexStringInt = new("[", 2, In("x", _constStringArray), In("y", _constInt), Out("result", _constString));
+  public static readonly NativeModuleSignature IndexFloatFloat = new("[", 2, In("x", _floatArray), In("y", _varFloat), Out("result", _varFloat));
+  public static readonly NativeModuleSignature IndexConstFloatFloat = new("[", 2, In("x", _constFloatArray), In("y", _varFloat), Out("result", _varFloat));
+  public static readonly NativeModuleSignature IndexFloatDouble = new("[", 2, In("x", _floatArray), In("y", _varDouble), Out("result", _varFloat));
+  public static readonly NativeModuleSignature IndexConstFloatDouble = new("[", 2, In("x", _constFloatArray), In("y", _varDouble), Out("result", _varFloat));
+  public static readonly NativeModuleSignature IndexFloatInt = new("[", 2, In("x", _floatArray), In("y", _varInt), Out("result", _varFloat));
+  public static readonly NativeModuleSignature IndexConstFloatInt = new("[", 2, In("x", _constFloatArray), In("y", _varInt), Out("result", _varFloat));
+  public static readonly NativeModuleSignature IndexDoubleFloat = new("[", 2, In("x", _doubleArray), In("y", _varFloat), Out("result", _varDouble));
+  public static readonly NativeModuleSignature IndexConstDoubleFloat = new("[", 2, In("x", _constDoubleArray), In("y", _varFloat), Out("result", _varDouble));
+  public static readonly NativeModuleSignature IndexDoubleDouble = new("[", 2, In("x", _doubleArray), In("y", _varDouble), Out("result", _varDouble));
+  public static readonly NativeModuleSignature IndexConstDoubleDouble = new("[", 2, In("x", _constDoubleArray), In("y", _varDouble), Out("result", _varDouble));
+  public static readonly NativeModuleSignature IndexDoubleInt = new("[", 2, In("x", _doubleArray), In("y", _varInt), Out("result", _double));
+  public static readonly NativeModuleSignature IndexConstDoubleInt = new("[", 2, In("x", _constDoubleArray), In("y", _varInt), Out("result", _varDouble));
+  public static readonly NativeModuleSignature IndexIntFloat = new("[", 2, In("x", _intArray), In("y", _varFloat), Out("result", _varInt));
+  public static readonly NativeModuleSignature IndexConstIntFloat = new("[", 2, In("x", _constIntArray), In("y", _varFloat), Out("result", _varInt));
+  public static readonly NativeModuleSignature IndexIntDouble = new("[", 2, In("x", _intArray), In("y", _varDouble), Out("result", _varInt));
+  public static readonly NativeModuleSignature IndexConstIntDouble = new("[", 2, In("x", _constIntArray), In("y", _varDouble), Out("result", _varInt));
+  public static readonly NativeModuleSignature IndexIntInt = new("[", 2, In("x", _intArray), In("y", _varInt), Out("result", _varInt));
+  public static readonly NativeModuleSignature IndexConstIntInt = new("[", 2, In("x", _constIntArray), In("y", _varInt), Out("result", _varInt));
+  public static readonly NativeModuleSignature IndexBoolFloat = new("[", 2, In("x", _boolArray), In("y", _varFloat), Out("result", _varBool));
+  public static readonly NativeModuleSignature IndexConstBoolFloat = new("[", 2, In("x", _constBoolArray), In("y", _varFloat), Out("result", _varBool));
+  public static readonly NativeModuleSignature IndexBoolDouble = new("[", 2, In("x", _boolArray), In("y", _varDouble), Out("result", _varBool));
+  public static readonly NativeModuleSignature IndexConstBoolDouble = new("[", 2, In("x", _constBoolArray), In("y", _varDouble), Out("result", _varBool));
+  public static readonly NativeModuleSignature IndexBoolInt = new("[", 2, In("x", _boolArray), In("y", _varInt), Out("result", _varBool));
+  public static readonly NativeModuleSignature IndexConstBoolInt = new("[", 2, In("x", _constBoolArray), In("y", _varInt), Out("result", _varBool));
 
   public static readonly NativeModuleSignature ConvertFloatDouble = new("as double", 1, In("x", _float), Out("result", _double));
   public static readonly NativeModuleSignature ConvertFloatInt = new("as int", 1, In("x", _float), Out("result", _int));

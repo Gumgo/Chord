@@ -1,3 +1,7 @@
+module;
+
+#include "../NativeLibraryApi/ChordNativeLibraryApi.h"
+
 export module Chord.Engine:ProgramProcessing.BufferMemory;
 
 import Chord.Foundation;
@@ -6,11 +10,14 @@ namespace Chord
 {
   export
   {
+    // A SIMD type should be able to safely read a constant from the beginning of a buffer
+    static_assert(BUFFER_CONSTANT_VALUE_BYTE_COUNT >= MaxSimdAlignment);
+
     // All buffer allocations are at least this amount of memory
-    constexpr usz MinBufferByteCount = MaxSimdAlignment;
+    constexpr usz MinBufferByteCount = Max(MaxSimdAlignment, BUFFER_CONSTANT_VALUE_BYTE_COUNT);
 
     // When a buffer is m_isConstant set, this many bytes must always be filled with the same constant value
-    constexpr usz BufferConstantValueByteCount = MinBufferByteCount;
+    constexpr usz BufferConstantValueByteCount = BUFFER_CONSTANT_VALUE_BYTE_COUNT;
 
     class BufferMemory
     {

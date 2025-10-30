@@ -101,9 +101,6 @@
     <ClCompile Include="Foundation\Math\MathFunctions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Foundation\Math\Simd.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Foundation\Text\Format.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -141,6 +138,45 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="NativeLibraryToolkit\DeclareOptimizationRule.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NativeLibraryToolkit\BufferIterator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Foundation\Math\Simd\ConstructLoadStore.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Foundation\Math\Simd\Arithmetic.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Foundation\Math\Simd\Comparison.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Foundation\Math\Simd\Conversion.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Foundation\Math\Simd\Shuffle.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Foundation\Math\Simd\Miscellaneous.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Foundation\Math\Simd\Round.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Foundation\Math\Simd\FMAdd.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Foundation\Math\Simd\Mask.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Foundation\Math\Simd\Fmod.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Foundation\Math\Simd\TrigFunctions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Foundation\Math\Simd\PowerFunctions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

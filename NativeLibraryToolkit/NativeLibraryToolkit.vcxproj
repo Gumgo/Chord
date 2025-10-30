@@ -56,6 +56,7 @@
     <ClCompile Include="BufferIterator.ixx" />
     <ClCompile Include="DeclareNativeModule.ixx" />
     <ClCompile Include="DeclareOptimizationRule.ixx" />
+    <ClCompile Include="SetAndExtendConstant.ixx" />
     <ClCompile Include="NativeLibraryToolkit.ixx" />
     <ClCompile Include="NativeModuleArgumentStringParser.ixx" />
     <ClCompile Include="NativeModuleTypes.ixx" />

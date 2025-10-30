@@ -31,40 +31,47 @@ internal class ArrayIndexGraphBuilder(ProgramGraphBuilderContext context)
       Debug.Assert(indexNode.DataType.UpsampleFactor != null);
 
       // We're indexing a primitive type so we just need to call the right native module
+      var constantArray = arrayNode.Elements.All(
+        (element) =>
+        {
+          Debug.Assert(element.Connection != null);
+          return element.Connection.DataType.IsConstant;
+        });
+
       var nativeModuleDefinition = arrayNode.PrimitiveType.Value switch
       {
         PrimitiveType.Float => indexNode.DataType.PrimitiveType.Value switch
         {
-          PrimitiveType.Float => context.CoreNativeModules[CoreNativeLibrary.IndexFloatFloat],
-          PrimitiveType.Double => context.CoreNativeModules[CoreNativeLibrary.IndexFloatDouble],
-          PrimitiveType.Int => context.CoreNativeModules[CoreNativeLibrary.IndexFloatInt],
+          PrimitiveType.Float => context.CoreNativeModules[constantArray ? CoreNativeLibrary.IndexConstFloatFloat : CoreNativeLibrary.IndexFloatFloat],
+          PrimitiveType.Double => context.CoreNativeModules[constantArray ? CoreNativeLibrary.IndexConstFloatDouble : CoreNativeLibrary.IndexFloatDouble],
+          PrimitiveType.Int => context.CoreNativeModules[constantArray ? CoreNativeLibrary.IndexConstFloatInt : CoreNativeLibrary.IndexFloatInt],
           PrimitiveType.Bool => throw new InvalidOperationException("Cannot index array using bool"),
           PrimitiveType.String => throw new InvalidOperationException("Cannot index array using string"),
           _ => throw UnhandledEnumValueException.Create(arrayNode.PrimitiveType.Value),
         },
         PrimitiveType.Double => indexNode.DataType.PrimitiveType.Value switch
         {
-          PrimitiveType.Float => context.CoreNativeModules[CoreNativeLibrary.IndexDoubleFloat],
-          PrimitiveType.Double => context.CoreNativeModules[CoreNativeLibrary.IndexDoubleDouble],
-          PrimitiveType.Int => context.CoreNativeModules[CoreNativeLibrary.IndexDoubleInt],
+          PrimitiveType.Float => context.CoreNativeModules[constantArray ? CoreNativeLibrary.IndexConstDoubleFloat : CoreNativeLibrary.IndexDoubleFloat],
+          PrimitiveType.Double => context.CoreNativeModules[constantArray ? CoreNativeLibrary.IndexConstDoubleDouble : CoreNativeLibrary.IndexDoubleDouble],
+          PrimitiveType.Int => context.CoreNativeModules[constantArray ? CoreNativeLibrary.IndexConstDoubleInt : CoreNativeLibrary.IndexDoubleInt],
           PrimitiveType.Bool => throw new InvalidOperationException("Cannot index array using bool"),
           PrimitiveType.String => throw new InvalidOperationException("Cannot index array using string"),
           _ => throw UnhandledEnumValueException.Create(arrayNode.PrimitiveType.Value),
         },
         PrimitiveType.Int => indexNode.DataType.PrimitiveType.Value switch
         {
-          PrimitiveType.Float => context.CoreNativeModules[CoreNativeLibrary.IndexIntFloat],
-          PrimitiveType.Double => context.CoreNativeModules[CoreNativeLibrary.IndexIntDouble],
-          PrimitiveType.Int => context.CoreNativeModules[CoreNativeLibrary.IndexIntInt],
+          PrimitiveType.Float => context.CoreNativeModules[constantArray ? CoreNativeLibrary.IndexConstIntFloat : CoreNativeLibrary.IndexIntFloat],
+          PrimitiveType.Double => context.CoreNativeModules[constantArray ? CoreNativeLibrary.IndexConstIntDouble : CoreNativeLibrary.IndexIntDouble],
+          PrimitiveType.Int => context.CoreNativeModules[constantArray ? CoreNativeLibrary.IndexConstIntInt : CoreNativeLibrary.IndexIntInt],
           PrimitiveType.Bool => throw new InvalidOperationException("Cannot index array using bool"),
           PrimitiveType.String => throw new InvalidOperationException("Cannot index array using string"),
           _ => throw UnhandledEnumValueException.Create(arrayNode.PrimitiveType.Value),
         },
         PrimitiveType.Bool => indexNode.DataType.PrimitiveType.Value switch
         {
-          PrimitiveType.Float => context.CoreNativeModules[CoreNativeLibrary.IndexBoolFloat],
-          PrimitiveType.Double => context.CoreNativeModules[CoreNativeLibrary.IndexBoolDouble],
-          PrimitiveType.Int => context.CoreNativeModules[CoreNativeLibrary.IndexBoolInt],
+          PrimitiveType.Float => context.CoreNativeModules[constantArray ? CoreNativeLibrary.IndexConstBoolFloat : CoreNativeLibrary.IndexBoolFloat],
+          PrimitiveType.Double => context.CoreNativeModules[constantArray ? CoreNativeLibrary.IndexConstBoolDouble : CoreNativeLibrary.IndexBoolDouble],
+          PrimitiveType.Int => context.CoreNativeModules[constantArray ? CoreNativeLibrary.IndexConstBoolInt : CoreNativeLibrary.IndexBoolInt],
           PrimitiveType.Bool => throw new InvalidOperationException("Cannot index array using bool"),
           PrimitiveType.String => throw new InvalidOperationException("Cannot index array using string"),
           _ => throw UnhandledEnumValueException.Create(arrayNode.PrimitiveType.Value),

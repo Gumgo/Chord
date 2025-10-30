@@ -460,7 +460,7 @@ public unsafe class NativeLibraryInteropTests
 
     var nativeModuleCallReporting = new Reporting();
 
-    NativeModuleContext CreateNativeModuleContext()
+    NativeModuleContext CreateNativeModuleContext(nuint sampleCount)
       => new()
       {
         NativeLibraryContext = nativeLibraryContext,
@@ -470,6 +470,7 @@ public unsafe class NativeLibraryInteropTests
         InputChannelCount = 1,
         OutputChannelCount = 1,
         UpsampleFactor = 1,
+        SampleCount = sampleCount,
         Reporting = nativeModuleCallReporting,
       };
 
@@ -482,30 +483,30 @@ public unsafe class NativeLibraryInteropTests
       new(NativeModuleArgumentType.DoubleBufferOut),
     };
 
-    var didPrepare = nativeModule.Prepare(CreateNativeModuleContext(), nativeModuleArguments, out var outArgumentLatencies);
+    var didPrepare = nativeModule.Prepare(CreateNativeModuleContext(0), nativeModuleArguments, out var outArgumentLatencies);
     Assert.True(didPrepare);
     Assert.Equal([10], outArgumentLatencies);
 
-    nativeModuleVoiceContext = nativeModule.InitializeVoice(CreateNativeModuleContext(), nativeModuleArguments, out var scratchMemoryRequirement);
+    nativeModuleVoiceContext = nativeModule.InitializeVoice(CreateNativeModuleContext(0), nativeModuleArguments, out var scratchMemoryRequirement);
     Assert.Equal(16u, scratchMemoryRequirement.Size);
     Assert.Equal(4u, scratchMemoryRequirement.Alignment);
 
-    nativeModule.SetVoiceActive(CreateNativeModuleContext(), true);
+    nativeModule.SetVoiceActive(CreateNativeModuleContext(0), true);
 
     Assert.Empty(nativeModuleCallReporting.WarningIdentifiers);
     Assert.Empty(nativeModuleCallReporting.ErrorIdentifiers);
 
     Assert.NotNull(nativeModule.InvokeCompileTime);
-    nativeModule.InvokeCompileTime(SourceLocation.FromNativeLibrary("test"), CreateNativeModuleContext(), nativeModuleArguments);
+    nativeModule.InvokeCompileTime(SourceLocation.FromNativeLibrary("test"), CreateNativeModuleContext(1), nativeModuleArguments);
 
     Assert.Equal(["NativeModuleCall"], nativeModuleCallReporting.WarningIdentifiers);
     Assert.Equal(["NativeModuleCall"], nativeModuleCallReporting.ErrorIdentifiers);
 
     Assert.NotNull(nativeModule.Invoke);
-    nativeModule.Invoke(SourceLocation.FromNativeLibrary("test"), CreateNativeModuleContext(), nativeModuleArguments, 0, scratchMemoryRequirement.Size);
+    nativeModule.Invoke(SourceLocation.FromNativeLibrary("test"), CreateNativeModuleContext(1), nativeModuleArguments, 0, scratchMemoryRequirement.Size);
 
-    nativeModule.SetVoiceActive(CreateNativeModuleContext(), false);
-    nativeModule.DeinitializeVoice(CreateNativeModuleContext());
+    nativeModule.SetVoiceActive(CreateNativeModuleContext(0), false);
+    nativeModule.DeinitializeVoice(CreateNativeModuleContext(0));
     nativeModuleVoiceContext = null;
     nativeLibrary.DeinitializeVoice(nativeLibraryContext, nativeLibraryVoiceContext);
     nativeLibrary.Deinitialize(nativeLibraryContext);
@@ -736,6 +737,7 @@ public unsafe class NativeLibraryInteropTests
       InputChannelCount = 1,
       OutputChannelCount = 1,
       UpsampleFactor = 1,
+      SampleCount = 1,
       Reporting = reporting,
     };
 
@@ -788,6 +790,7 @@ public unsafe class NativeLibraryInteropTests
       InputChannelCount = 1,
       OutputChannelCount = 1,
       UpsampleFactor = 1,
+      SampleCount = 1,
       Reporting = reporting,
     };
 
@@ -861,6 +864,7 @@ public unsafe class NativeLibraryInteropTests
       InputChannelCount = 1,
       OutputChannelCount = 1,
       UpsampleFactor = 1,
+      SampleCount = 0,
       Reporting = reporting,
     };
 

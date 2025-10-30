@@ -163,6 +163,7 @@ internal class NativeModuleCallProgramGraphNode : IProcessorProgramGraphNode
       InputChannelCount = programVariantProperties.InputChannelCount,
       OutputChannelCount = programVariantProperties.OutputChannelCount,
       UpsampleFactor = upsampleFactor,
+      SampleCount = 0,
       Reporting = nativeModuleReporting,
     };
 

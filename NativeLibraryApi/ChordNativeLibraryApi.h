@@ -12,6 +12,9 @@ extern "C"
 // Note: library and module names (and other char32_t* types without an accompanying size) should be null-terminated UTF32-encoded strings
 // $TODO we may want to make a native library function which queries "am I compatible with a program compiled using X.Y.Z version?"
 
+// $TODO is there a good way to make this a per-platform value?
+#define BUFFER_CONSTANT_VALUE_BYTE_COUNT (32)
+
 typedef enum
 {
   ModuleParameterDirectionIn,
@@ -160,58 +163,58 @@ typedef struct
 
 typedef struct
 {
-  int32_t m_sampleCount;
+  size_t m_sampleCount;
   bool m_isConstant;
   const float* m_samples;
 } InputFloatBuffer;
 
 typedef struct
 {
-  int32_t m_sampleCount;
+  size_t m_sampleCount;
   bool m_isConstant;
   const double* m_samples;
 } InputDoubleBuffer;
 
 typedef struct
 {
-  int32_t m_sampleCount;
+  size_t m_sampleCount;
   bool m_isConstant;
   const int32_t* m_samples;
 } InputIntBuffer;
 
 typedef struct
 {
-  int32_t m_sampleCount;
+  size_t m_sampleCount;
   bool m_isConstant;
-  const int32_t* m_samples; // !!! we might want to just make this u8 to avoid endian ambiguity
+  const uint8_t* m_samples;
 } InputBoolBuffer;
 
 typedef struct
 {
-  int32_t m_sampleCount;
+  size_t m_sampleCount;
   bool m_isConstant;
   float* m_samples;
 } OutputFloatBuffer;
 
 typedef struct
 {
-  int32_t m_sampleCount;
+  size_t m_sampleCount;
   bool m_isConstant;
   double* m_samples;
 } OutputDoubleBuffer;
 
 typedef struct
 {
-  int32_t m_sampleCount;
+  size_t m_sampleCount;
   bool m_isConstant;
   int32_t* m_samples;
 } OutputIntBuffer;
 
 typedef struct
 {
-  int32_t m_sampleCount;
+  size_t m_sampleCount;
   bool m_isConstant;
-  int32_t* m_samples;
+  uint8_t* m_samples;
 } OutputBoolBuffer;
 
 // For buffer array argument types, when native module callbacks are invoked at compile time (Prepare, InitializeVoice, Invoke, etc.), the m_samples field of
@@ -220,25 +223,25 @@ typedef struct
 typedef struct
 {
   size_t m_count;
-  const InputFloatBuffer* m_elements;
+  InputFloatBuffer* m_elements;
 } InputFloatBufferArray;
 
 typedef struct
 {
   size_t m_count;
-  const InputDoubleBuffer* m_elements;
+  InputDoubleBuffer* m_elements;
 } InputDoubleBufferArray;
 
 typedef struct
 {
   size_t m_count;
-  const InputIntBuffer* m_elements;
+  InputIntBuffer* m_elements;
 } InputIntBufferArray;
 
 typedef struct
 {
   size_t m_count;
-  const InputBoolBuffer* m_elements;
+  InputBoolBuffer* m_elements;
 } InputBoolBufferArray;
 
 typedef struct
@@ -285,7 +288,7 @@ typedef struct
   size_t m_argumentCount;
 } NativeModuleArguments;
 
-typedef void (*Report)(void* reportingContext, ReportingSeverity severity, const char32_t* message);
+typedef void (*Report)(void* reportingContext, ReportingSeverity severity, const char32_t* message, size_t length);
 
 typedef struct
 {
@@ -303,8 +306,17 @@ typedef struct
   int32_t m_inputChannelCount;
   int32_t m_outputChannelCount;
   int32_t m_upsampleFactor;
+
+  // The maximum number of samples that a single call will ever process. This takes upsample factor into account.
+  size_t m_maxSampleCount;
+
+  // The number of samples that this call is processing. This takes upsample factor into account.
+  size_t m_sampleCount;
+
+  // If true, the current call is running in a compile-time context.
   bool m_isCompileTime;
 
+  // These are used for reporting. m_reportingContext should be passed as the first argument to m_report.
   void* m_reportingContext;
   Report m_report;
 } NativeModuleContext;
