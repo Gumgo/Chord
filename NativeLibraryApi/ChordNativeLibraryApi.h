@@ -324,25 +324,25 @@ typedef struct
 // Called before a native module is going to be inserted into the graph. Any necessary argument validation should occur here and latency should be output.
 // outArgumentLatenciesOut is an array whose length is equal to the number of output arguments. Each output latency should be specified in terms of that
 // argument's upsample factor.
-typedef bool (*NativeModulePrepare)(const NativeModuleContext* context, const NativeModuleArguments* arguments, int32_t* outArgumentLatenciesOut);
+typedef bool (*NativeModulePrepareFunc)(const NativeModuleContext* context, const NativeModuleArguments* arguments, int32_t* outArgumentLatenciesOut);
 
 // Called on program initialization. This should allocate/initialize any necessary memory and report scratch memory requirements.
-typedef void* (*NativeModuleInitializeVoice)(
+typedef void* (*NativeModuleInitializeVoiceFunc)(
   const NativeModuleContext* context,
   const NativeModuleArguments* arguments,
   MemoryRequirement* scratchMemoryRequirementOut);
 
 // Called on program deinitialization. This should free any previously allocated memory.
-typedef void (*NativeModuleDeinitializeVoice)(const NativeModuleContext* context);
+typedef void (*NativeModuleDeinitializeVoiceFunc)(const NativeModuleContext* context);
 
 // Called when a native module within a voice becomes active. When a voice is activated, things like filter states and delay lines should be reset.
-typedef void (*NativeModuleSetVoiceActive)(const NativeModuleContext* context, bool voiceActive);
+typedef void (*NativeModuleSetVoiceActiveFunc)(const NativeModuleContext* context, bool voiceActive);
 
 // Called to invoke a native module at compile time.
-typedef void (*NativeModuleInvokeCompileTime)(const NativeModuleContext* context, const NativeModuleArguments* arguments);
+typedef void (*NativeModuleInvokeCompileTimeFunc)(const NativeModuleContext* context, const NativeModuleArguments* arguments);
 
 // Called to invoke a native module at runtime or compile time if InvokeCompileTime was not provided.
-typedef void (*NativeModuleInvoke)(
+typedef void (*NativeModuleInvokeFunc)(
   const NativeModuleContext* context, // !!! we probably want sample count provided
   const NativeModuleArguments* arguments,
   void* scratchMemory,
@@ -359,12 +359,12 @@ typedef struct
   // If true, this native module will never be invoked at compile time (and thus cannot contribute to constant-folding)
   bool m_alwaysRuntime;
 
-  NativeModulePrepare m_prepare;
-  NativeModuleInitializeVoice m_initializeVoice;
-  NativeModuleDeinitializeVoice m_deinitializeVoice;
-  NativeModuleSetVoiceActive m_setVoiceActive;
-  NativeModuleInvokeCompileTime m_invokeCompileTime;
-  NativeModuleInvoke m_invoke;
+  NativeModulePrepareFunc m_prepare;
+  NativeModuleInitializeVoiceFunc m_initializeVoice;
+  NativeModuleDeinitializeVoiceFunc m_deinitializeVoice;
+  NativeModuleSetVoiceActiveFunc m_setVoiceActive;
+  NativeModuleInvokeCompileTimeFunc m_invokeCompileTime;
+  NativeModuleInvokeFunc m_invoke;
 } NativeModule;
 
 typedef struct
@@ -447,16 +447,16 @@ typedef struct
 } NativeLibraryVersion;
 
 // Called when a native library is first loaded. Optionally returns a context pointer.
-typedef void* (*NativeLibraryInitialize)();
+typedef void* (*NativeLibraryInitializeFunc)();
 
 // Called when a native library is unloaded.
-typedef void (*NativeLibraryDeinitialize)(void* context);
+typedef void (*NativeLibraryDeinitializeFunc)(void* context);
 
 // Called when a voice is created. Optionally returns a context pointer.
-typedef void* (*NativeLibraryInitializeVoice)(void* context);
+typedef void* (*NativeLibraryInitializeVoiceFunc)(void* context);
 
 // Called when a voice is destroyed.
-typedef void (*NativeLibraryDeinitializeVoice)(void* context, void* voiceContext);
+typedef void (*NativeLibraryDeinitializeVoiceFunc)(void* context, void* voiceContext);
 
 typedef struct
 {
@@ -465,10 +465,10 @@ typedef struct
   uint8_t m_id[16];
   NativeLibraryVersion m_version;
   const char32_t* m_name;
-  NativeLibraryInitialize m_initialize;
-  NativeLibraryDeinitialize m_deinitialize;
-  NativeLibraryInitializeVoice m_initializeVoice;
-  NativeLibraryDeinitializeVoice m_deinitializeVoice;
+  NativeLibraryInitializeFunc m_initialize;
+  NativeLibraryDeinitializeFunc m_deinitialize;
+  NativeLibraryInitializeVoiceFunc m_initializeVoice;
+  NativeLibraryDeinitializeVoiceFunc m_deinitializeVoice;
 
   const NativeModule* const* m_nativeModules;
   size_t m_nativeModuleCount;
@@ -478,10 +478,10 @@ typedef struct
 } NativeLibrary;
 
 // Callback provided to ListNativeLibraries.
-typedef void (*ListNativeLibrariesCallback)(void* context, const NativeLibrary* nativeLibrary);
+typedef void (*ListNativeLibrariesCallbackFunc)(void* context, const NativeLibrary* nativeLibrary);
 
 // Called to list all native libraries. The provided callback should be called once for each native library.
-typedef void (*ListNativeLibraries)(void* context, ListNativeLibrariesCallback callback);
+typedef void (*ListNativeLibrariesFunc)(void* context, ListNativeLibrariesCallbackFunc callback);
 
 #ifdef __cplusplus
 }

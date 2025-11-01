@@ -7,7 +7,7 @@ module Chord.CoreNativeLibrary;
 import Chord.Foundation;
 import Chord.NativeLibraryToolkit;
 
-extern "C" __declspec(dllexport) void ListNativeLibrariesASDF(void* context, ListNativeLibrariesCallback callback) // !!! name conflict with the typedef
+extern "C" __declspec(dllexport) void ListNativeLibraries(void* context, ListNativeLibrariesCallbackFunc callback)
 {
   using namespace Chord;
 

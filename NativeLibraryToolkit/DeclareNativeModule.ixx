@@ -353,7 +353,7 @@ namespace Chord
   }
 
   template<typename TNativeModule>
-  NativeModulePrepare BuildNativeModulePrepare()
+  NativeModulePrepareFunc BuildNativeModulePrepare()
   {
     if constexpr (requires { &TNativeModule::Prepare; })
     {
@@ -412,7 +412,7 @@ namespace Chord
   }
 
   template<typename TNativeModule>
-  NativeModuleInitializeVoice BuildNativeModuleInitializeVoice()
+  NativeModuleInitializeVoiceFunc BuildNativeModuleInitializeVoice()
   {
     static constexpr bool ShouldInstantiateClass = ShouldInstantiateNativeModuleClass<TNativeModule>();
 
@@ -508,7 +508,7 @@ namespace Chord
   }
 
   template<typename TNativeModule>
-  NativeModuleDeinitializeVoice BuildNativeModuleDeinitializeVoice()
+  NativeModuleDeinitializeVoiceFunc BuildNativeModuleDeinitializeVoice()
   {
     static constexpr bool ShouldInstantiateClass = ShouldInstantiateNativeModuleClass<TNativeModule>();
 
@@ -569,7 +569,7 @@ namespace Chord
   }
 
   template<typename TNativeModule>
-  NativeModuleSetVoiceActive BuildNativeModuleSetVoiceActive()
+  NativeModuleSetVoiceActiveFunc BuildNativeModuleSetVoiceActive()
   {
     if constexpr (requires { &TNativeModule::SetVoiceActive; })
     {
@@ -624,7 +624,7 @@ namespace Chord
   }
 
   template<typename TNativeModule>
-  NativeModuleInvoke BuildNativeModuleInvoke()
+  NativeModuleInvokeFunc BuildNativeModuleInvoke()
   {
     if constexpr (requires { &TNativeModule::Invoke; })
     {
@@ -686,7 +686,7 @@ namespace Chord
   }
 
   template<typename TNativeModule>
-  NativeModuleInvokeCompileTime BuildNativeModuleInvokeCompileTime()
+  NativeModuleInvokeCompileTimeFunc BuildNativeModuleInvokeCompileTime()
   {
     if constexpr (requires { &TNativeModule::InvokeCompileTime; })
     {

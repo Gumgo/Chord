@@ -65,7 +65,7 @@ namespace Chord
 
     for (auto& nativeLibraryDllPath : nativeLibraryDllPaths)
     {
-      ListNativeLibraries listNativeLibraries;
+      ListNativeLibrariesFunc listNativeLibraries;
 
       #if TARGET_WINDOWS
         ChordWindowsTypes::HMODULE dllHandle = ChordWindows::LoadLibrary(nativeLibraryDllPath.native().c_str());
@@ -92,7 +92,7 @@ namespace Chord
           continue;
         }
 
-        listNativeLibraries = static_cast<ListNativeLibraries>(functionHandle);
+        listNativeLibraries = static_cast<ListNativeLibrariesFunc>(functionHandle);
 
         m_dllHandles.Append(dllHandle);
 
