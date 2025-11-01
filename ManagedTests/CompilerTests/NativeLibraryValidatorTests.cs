@@ -1392,15 +1392,18 @@ public class NativeLibraryValidatorTests
   }
 
   [Fact]
-  public void InputReferenceOptimizationRuleComponentOnlyAllowedInOutputPattern()
+  public void InputReferenceOptimizationRuleComponentCanOnlyReferenceConstantsWhenUsedInInputPattern()
   {
     var optimizationRule = new UnvalidatedOptimizationRule()
     {
       Name = "Rule",
       InputPattern =
       [
-        new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatOutId, 1, 0),
-        new UnvalidatedInputReferenceOptimizationRuleComponent(0),
+        new UnvalidatedNativeModuleCallOptimizationRuleComponent(_nativeLibraryId, _nativeModuleFloatArrayInFloatOutId, 1, 1),
+        new UnvalidatedArrayOptimizationRuleComponent(2),
+        new UnvalidatedInputOptimizationRuleComponent(false),
+        new UnvalidatedInputReferenceOptimizationRuleComponent(2),
+        new UnvalidatedOutputOptimizationRuleComponent(),
       ],
       OutputPatterns =
       [[new UnvalidatedConstantOptimizationRuleComponent(1.0f)]],
@@ -1409,7 +1412,7 @@ public class NativeLibraryValidatorTests
     var result = ValidateOptimizationRule(_optimizationRuleNativeModules, optimizationRule, out var reporting);
 
     Assert.Null(result);
-    Assert.Equal(["InputReferenceOptimizationRuleComponentOnlyAllowedInOutputPattern"], reporting.ErrorIdentifiers);
+    Assert.Equal(["InputReferenceOptimizationRuleComponentCanOnlyReferenceConstantsWhenUsedInInputPattern"], reporting.ErrorIdentifiers);
   }
 
   [Theory]

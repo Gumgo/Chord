@@ -39,6 +39,7 @@ file static class ProcessorProgramGraphNodeExtensions
 internal class OptimizationRuleRecognizer
 {
   private readonly Dictionary<RootNativeModuleCallKey, RootOptimizationRuleTreeNode> _rootNodes = [];
+  private readonly Dictionary<OptimizationRuleComponent, OptimizationRuleTreeNode> _nodesFromComponents = [];
 
   public OptimizationRuleRecognizer(IReadOnlyList<OptimizationRule> optimizationRules)
   {
@@ -73,6 +74,12 @@ internal class OptimizationRuleRecognizer
     var initialState = new OptimizationRuleTreeState(rootNode);
     initialState.Stack.Add(new(node, 0));
 
+    // To resolve input references within the input pattern, we need to know which graph nodes match which tree nodes
+    var graphProcessorNodesFromTreeNodes = new Dictionary<OptimizationRuleTreeNode, IProcessorProgramGraphNode>()
+    {
+      { rootNode, node },
+    };
+
     var branchedStates = new Stack<OptimizationRuleTreeState>();
     branchedStates.Push(initialState);
 
@@ -80,16 +87,30 @@ internal class OptimizationRuleRecognizer
     {
       Debug.Assert(state.TreeNode != null);
 
-      // Add any optimization rules reached from entering this state, either via the initial state or via a branch
-      matchedOptimizationRules.AddRange(state.TreeNode.OptimizationRules);
+      // Add any optimization rules reached from entering this state, either via the initial state or via a branch. If any input references were used, we need
+      // to validate that the matched constant is identical to the referenced constant.
+      foreach (var matchedOptimizationRule in state.TreeNode.OptimizationRules)
+      {
+        if (ValidateInputReferences(matchedOptimizationRule, graphProcessorNodesFromTreeNodes))
+        {
+          matchedOptimizationRules.Add(matchedOptimizationRule);
+        }
+      }
 
       while (state.TreeNode != null)
       {
-        state.TreeNode.Advance(upsampleFactorMultiplier, state, branchedStates);
+        state.TreeNode.Advance(upsampleFactorMultiplier, state, branchedStates, graphProcessorNodesFromTreeNodes);
         if (state.TreeNode != null)
         {
-          // We've reached a new state so add any associated optimization rules
-          matchedOptimizationRules.AddRange(state.TreeNode.OptimizationRules);
+          // We've reached a new state so add any associated optimization rules. If any input references were used, we need to validate that the matched
+          // constant is identical to the referenced constant.
+          foreach (var matchedOptimizationRule in state.TreeNode.OptimizationRules)
+          {
+            if (ValidateInputReferences(matchedOptimizationRule, graphProcessorNodesFromTreeNodes))
+            {
+              matchedOptimizationRules.Add(matchedOptimizationRule);
+            }
+          }
         }
       }
     }
@@ -115,13 +136,122 @@ internal class OptimizationRuleRecognizer
       _rootNodes.Add(rootNodeKey, rootNode);
     }
 
+    _nodesFromComponents.Add(rootNativeModuleCallComponent, rootNode);
+
     OptimizationRuleTreeNode currentNode = rootNode;
     foreach (var parameterComponent in rootNativeModuleCallComponent.Parameters)
     {
-      currentNode = currentNode.EnsureChildNode(parameterComponent);
+      currentNode = currentNode.EnsureChildNode(parameterComponent, _nodesFromComponents);
     }
 
     currentNode.AddOptimizationRule(optimizationRule);
+  }
+
+  private bool ValidateInputReferences(
+    OptimizationRule optimizationRule,
+    Dictionary<OptimizationRuleTreeNode, IProcessorProgramGraphNode> graphProcessorNodesFromTreeNodes)
+  {
+    var componentStack = new Stack<OptimizationRuleComponent>();
+    componentStack.Push(optimizationRule.InputPattern);
+
+    while (componentStack.TryPop(out var component))
+    {
+      switch (component)
+      {
+        case NativeModuleCallOptimizationRuleComponent nativeModuleCallComponent:
+          foreach (var parameterComponent in nativeModuleCallComponent.Parameters)
+          {
+            componentStack.Push(parameterComponent);
+          }
+
+          break;
+
+        case ConstantOptimizationRuleComponent:
+          break;
+
+        case ArrayOptimizationRuleComponent arrayComponent:
+          foreach (var elementComponent in arrayComponent.Elements)
+          {
+            componentStack.Push(elementComponent);
+          }
+
+          break;
+
+        case InputOptimizationRuleComponent:
+          break;
+
+        case OutputOptimizationRuleComponent:
+          break;
+
+        case InputReferenceOptimizationRuleComponent inputReferenceComponent:
+          {
+            var node = _nodesFromComponents[component];
+            var referencedNode = _nodesFromComponents[inputReferenceComponent.ReferencedComponent];
+            var graphNode = graphProcessorNodesFromTreeNodes[node];
+            var referencedGraphNode = graphProcessorNodesFromTreeNodes[referencedNode];
+
+            // The referenced node should be the same type and the same data type
+            Debug.Assert(graphNode.GetType() == referencedGraphNode.GetType());
+            switch (graphNode)
+            {
+              case ArrayProgramGraphNode array:
+                {
+                  var referencedArray = (ArrayProgramGraphNode)referencedGraphNode;
+                  Debug.Assert(array.Output.DataType.IsConstant);
+                  Debug.Assert(referencedArray.Output.DataType.IsConstant);
+                  Debug.Assert(array.Output.DataType.PrimitiveType == referencedArray.Output.DataType.PrimitiveType);
+
+                  if (array.Elements.Count != referencedArray.Elements.Count)
+                  {
+                    return false;
+                  }
+
+                  foreach (var (element, referencedElement) in array.Elements.ZipSafe(referencedArray.Elements))
+                  {
+                    Debug.Assert(element.Connection != null);
+                    Debug.Assert(referencedElement.Connection != null);
+                    var constant = (ConstantProgramGraphNode)element.Connection.Processor;
+                    var referencedConstant = (ConstantProgramGraphNode)referencedElement.Connection.Processor;
+                    if (!constant.Value.Equals(referencedConstant.Value))
+                    {
+                      return false;
+                    }
+                  }
+
+                  break;
+                }
+
+              case ConstantProgramGraphNode constant:
+                {
+                  var referencedConstant = (ConstantProgramGraphNode)referencedGraphNode;
+                  Debug.Assert(constant.Output.DataType.PrimitiveType == referencedConstant.Output.DataType.PrimitiveType);
+                  if (!constant.Value.Equals(referencedConstant.Value))
+                  {
+                    return false;
+                  }
+
+                  break;
+                }
+
+              case GraphInputProgramGraphNode:
+              case GraphOutputProgramGraphNode:
+              case NativeModuleCallProgramGraphNode:
+              case StructProgramGraphNode:
+                throw new InvalidOperationException("Only array and constant nodes should be referenced within an input pattern");
+
+              default:
+                throw UnhandledSubclassException.Create(node);
+            }
+
+            break;
+          }
+
+        default:
+          throw UnhandledSubclassException.Create(component);
+      }
+    }
+
+    return true;
   }
 
   public class DetectOptimizationRuleResult
@@ -145,7 +275,9 @@ internal class OptimizationRuleRecognizer
 
     public IReadOnlyList<OptimizationRule> OptimizationRules => _optimizationRules;
 
-    public OptimizationRuleTreeNode EnsureChildNode(OptimizationRuleComponent component)
+    public OptimizationRuleTreeNode EnsureChildNode(
+      OptimizationRuleComponent component,
+      Dictionary<OptimizationRuleComponent, OptimizationRuleTreeNode> nodesFromComponents)
     {
       var currentNode = this;
       switch (component)
@@ -163,10 +295,12 @@ internal class OptimizationRuleRecognizer
               currentNode._nativeModuleCallChildNodes.Add(key, node);
             }
 
+            nodesFromComponents.Add(component, node);
+
             currentNode = node;
             foreach (var parameterComponent in nativeModuleCallComponent.Parameters)
             {
-              currentNode = currentNode.EnsureChildNode(parameterComponent);
+              currentNode = currentNode.EnsureChildNode(parameterComponent, nodesFromComponents);
             }
 
             return currentNode;
@@ -180,6 +314,7 @@ internal class OptimizationRuleRecognizer
               _constantChildNodes.Add(constantComponent.Value, node);
             }
 
+            nodesFromComponents.Add(component, node);
             return node;
           }
 
@@ -191,10 +326,12 @@ internal class OptimizationRuleRecognizer
               _arrayChildNodes.Add(arrayComponent.Elements.Count, node);
             }
 
+            nodesFromComponents.Add(component, node);
+
             currentNode = node;
-            foreach (var element in arrayComponent.Elements)
+            foreach (var elementComponent in arrayComponent.Elements)
             {
-              currentNode = currentNode.EnsureChildNode(element);
+              currentNode = currentNode.EnsureChildNode(elementComponent, nodesFromComponents);
             }
 
             return currentNode;
@@ -208,6 +345,7 @@ internal class OptimizationRuleRecognizer
               _inputChildNodes.Add(inputComponent.MustBeConstant, node);
             }
 
+            nodesFromComponents.Add(component, node);
             return node;
           }
 
@@ -216,7 +354,18 @@ internal class OptimizationRuleRecognizer
           return this;
 
         case InputReferenceOptimizationRuleComponent:
-          throw new InvalidOperationException("Input reference component should not occur in optimization rule input pattern");
+          {
+            // Input references will always point to constants so we can simply treat this as a constant input. We'll validate that the constants match after
+            // the rule is fully identified.
+            if (!_inputChildNodes.TryGetValue(true, out var node))
+            {
+              node = new();
+              _inputChildNodes.Add(true, node);
+            }
+
+            nodesFromComponents.Add(component, node);
+            return node;
+          }
 
         default:
           throw UnhandledSubclassException.Create(component);
@@ -228,11 +377,17 @@ internal class OptimizationRuleRecognizer
 
     // This method is called to advance down all possible optimization rule branches simultaneously. If multiple optimization rule branches may be matched,
     // additional states will be cloned into branchedStates. After calling this method, state.TreeNode will have been updated.
-    public void Advance(int upsampleFactorMultiplier, OptimizationRuleTreeState state, Stack<OptimizationRuleTreeState> branchedStates)
+    public void Advance(
+      int upsampleFactorMultiplier,
+      OptimizationRuleTreeState state,
+      Stack<OptimizationRuleTreeState> branchedStates,
+      Dictionary<OptimizationRuleTreeNode, IProcessorProgramGraphNode> graphProcessorNodesFromTreeNodes)
     {
       var didUpdate = false;
-      OptimizationRuleTreeState UpdateOrBranch(OptimizationRuleTreeNode newNode)
+      OptimizationRuleTreeState UpdateOrBranch(OptimizationRuleTreeNode newNode, IProcessorProgramGraphNode graphNode)
       {
+        graphProcessorNodesFromTreeNodes.Add(newNode, graphNode);
+
         if (!didUpdate)
         {
           state.TreeNode = newNode;
@@ -293,7 +448,7 @@ internal class OptimizationRuleRecognizer
           outputParameterIndex);
         if (_nativeModuleCallChildNodes.TryGetValue(key, out var nextTreeNode))
         {
-          var updatedState = UpdateOrBranch(nextTreeNode);
+          var updatedState = UpdateOrBranch(nextTreeNode, nextNode);
           updatedState.Stack.Add(new(nextNode, 0));
         }
       }
@@ -302,7 +457,7 @@ internal class OptimizationRuleRecognizer
       {
         if (nextNode is ConstantProgramGraphNode constantNode && _constantChildNodes.TryGetValue(constantNode.Value, out var nextTreeNode))
         {
-          UpdateOrBranch(nextTreeNode);
+          UpdateOrBranch(nextTreeNode, nextNode);
         }
       }
 
@@ -310,7 +465,7 @@ internal class OptimizationRuleRecognizer
       {
         if (nextNode is ArrayProgramGraphNode arrayNode && _arrayChildNodes.TryGetValue(arrayNode.Elements.Count, out var nextTreeNode))
         {
-          var updatedState = UpdateOrBranch(nextTreeNode);
+          var updatedState = UpdateOrBranch(nextTreeNode, nextNode);
           updatedState.Stack.Add(new(nextNode, 0));
         }
       }
@@ -329,7 +484,7 @@ internal class OptimizationRuleRecognizer
           }
         }
 
-        UpdateOrBranch(inputChildNode);
+        UpdateOrBranch(inputChildNode, nextNode);
       }
     }
 

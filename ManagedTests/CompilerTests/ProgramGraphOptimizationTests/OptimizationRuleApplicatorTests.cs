@@ -49,7 +49,7 @@ public class OptimizationRuleApplicatorTests
   }
 
   [Fact]
-  public void InputReference()
+  public void InputReferenceInOutputPattern()
   {
     var inputComponent = new InputOptimizationRuleComponent(false);
     var optimizationRule = new OptimizationRule()
@@ -65,6 +65,39 @@ public class OptimizationRuleApplicatorTests
 
     var constantNode = new ConstantProgramGraphNode(1.0f);
     var nativeModuleCallNode = CreateNativeModuleCallNode(_nativeLibraryRegistry.GetCoreNativeModule(CoreNativeLibrary.NegateFloat), [constantNode.Output]);
+
+    var outputNode = new GraphOutputProgramGraphNode(PrimitiveType.Float, nativeModuleCallNode.Outputs[0]);
+
+    var context = new OptimizationRuleApplicatorContext() { Reporting = new Reporting(), NativeLibraryRegistry = _nativeLibraryRegistry };
+    var optimizationRuleApplicator = new OptimizationRuleApplicator(context);
+
+    var newNodes = optimizationRuleApplicator.ApplyOptimizationRule(_programVariantProperties, optimizationRule, nativeModuleCallNode, 1);
+
+    Assert.NotNull(outputNode.Input.Connection);
+    Assert.Equal(constantNode, outputNode.Input.Connection.Processor);
+    Assert.Equal([constantNode], newNodes);
+  }
+
+  [Fact]
+  public void InputReferenceInInputPattern()
+  {
+    var inputComponent = new InputOptimizationRuleComponent(true);
+    var inputReferenceComponent = new InputReferenceOptimizationRuleComponent(inputComponent);
+    var optimizationRule = new OptimizationRule()
+    {
+      Name = "test",
+      InputPattern = new NativeModuleCallOptimizationRuleComponent(
+        _nativeLibraryRegistry.GetCoreNativeModule(CoreNativeLibrary.AddFloatFloat),
+        1,
+        2,
+        [inputComponent, inputReferenceComponent, new OutputOptimizationRuleComponent()]),
+      OutputPatterns = [new InputReferenceOptimizationRuleComponent(inputReferenceComponent)],
+    };
+
+    var constantNode = new ConstantProgramGraphNode(1.0f);
+    var nativeModuleCallNode = CreateNativeModuleCallNode(
+      _nativeLibraryRegistry.GetCoreNativeModule(CoreNativeLibrary.AddFloatFloat),
+      [constantNode.Output, constantNode.Output]);
 
     var outputNode = new GraphOutputProgramGraphNode(PrimitiveType.Float, nativeModuleCallNode.Outputs[0]);
 

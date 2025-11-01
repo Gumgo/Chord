@@ -134,7 +134,8 @@ internal class OptimizationRuleApplicator(OptimizationRuleApplicatorContext cont
         throw new InvalidOperationException("Output components should be handled within the native module call case");
 
       case InputReferenceOptimizationRuleComponent:
-        throw new InvalidOperationException("Input reference component should not occur in optimization rule input pattern");
+        data.InputNodes.Add(component, outputNode);
+        break;
 
       default:
         throw UnhandledSubclassException.Create(component);

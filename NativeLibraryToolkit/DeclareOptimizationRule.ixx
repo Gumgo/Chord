@@ -396,6 +396,10 @@ namespace Chord
     //
     //   Array(<el0>, <el1>, ...)
     //     Matches against an array with specific elements.
+    //
+    //   InRef(<name>)
+    //     Used within output patterns to reference a named value in the input pattern. Within input patterns, can be used to reference a previous named
+    //     constant value (non-constant values cannot be referenced).
     template<typename TInputPattern, typename TReturnPattern, typename... TOutputPatterns>
     auto DeclareOptimizationRule(
       const Guid& nativeLibraryId,
@@ -429,7 +433,6 @@ namespace Chord
         [&](const char* name) -> s32
         {
           ASSERT(name != nullptr, "Input name not provided");
-          ASSERT(inputPatternBuilt, "Input references can only be used in output patterns");
 
           std::optional<usz> result;
           usz index = 0;
@@ -548,7 +551,6 @@ namespace Chord
           }
           else if constexpr (Component::Type == ComponentType::InRef)
           {
-            ASSERT(inputPatternBuilt, "Input references can only be used in output patterns");
             outputComponent.m_type = OptimizationRuleComponentTypeInputReference;
             outputComponent.m_data.m_inputReferenceData.m_index = FindInputComponentIndex(name);
           }

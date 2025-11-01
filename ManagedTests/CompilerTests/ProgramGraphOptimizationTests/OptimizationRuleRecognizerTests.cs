@@ -350,6 +350,137 @@ public class OptimizationRuleRecognizerTests
     }
   }
 
+  [Fact]
+  public void DetectConstantInputReference()
+  {
+    var inputComponent = new InputOptimizationRuleComponent(true);
+    var optimizationRule = new OptimizationRule()
+    {
+      Name = "test",
+      InputPattern = new NativeModuleCallOptimizationRuleComponent(
+        _nativeLibraryRegistry.GetCoreNativeModule(CoreNativeLibrary.AddFloatFloat),
+        1,
+        2,
+        [
+          inputComponent,
+          new InputReferenceOptimizationRuleComponent(inputComponent),
+          new OutputOptimizationRuleComponent(),
+        ]),
+      OutputPatterns = [new ConstantOptimizationRuleComponent(0.0f)],
+    };
+
+    var optimizationRuleRecognizer = new OptimizationRuleRecognizer([optimizationRule]);
+
+    {
+      var result = optimizationRuleRecognizer.DetectOptimizationRule(
+        CreateNativeModuleCallNode(
+          _nativeLibraryRegistry.GetCoreNativeModule(CoreNativeLibrary.AddFloatFloat),
+          [new ConstantProgramGraphNode(0.0f).Output, new ConstantProgramGraphNode(1.0f).Output]));
+
+      Assert.Null(result);
+    }
+
+    {
+      var result = optimizationRuleRecognizer.DetectOptimizationRule(
+        CreateNativeModuleCallNode(
+          _nativeLibraryRegistry.GetCoreNativeModule(CoreNativeLibrary.AddFloatFloat),
+          [new ConstantProgramGraphNode(0.0f).Output, new ConstantProgramGraphNode(0.0f).Output]));
+
+      Assert.NotNull(result);
+      Assert.Equal(optimizationRule, result.OptimizationRule);
+      Assert.Equal(1, result.UpsampleFactorMultiplier);
+    }
+  }
+
+  [Fact]
+  public void DetectArrayInputReference()
+  {
+    var arrayComponent = new ArrayOptimizationRuleComponent(
+      [
+        new InputOptimizationRuleComponent(true),
+        new InputOptimizationRuleComponent(true),
+      ]);
+
+    var optimizationRule = new OptimizationRule()
+    {
+      Name = "test",
+      InputPattern = new NativeModuleCallOptimizationRuleComponent(
+        _nativeLibraryRegistry.GetCoreNativeModule(CoreNativeLibrary.AddFloatFloat),
+        1,
+        2,
+        [
+          new NativeModuleCallOptimizationRuleComponent(
+            _nativeLibraryRegistry.GetCoreNativeModule(CoreNativeLibrary.IndexFloatFloat),
+            1,
+            2,
+            [arrayComponent, new InputOptimizationRuleComponent(false), new OutputOptimizationRuleComponent()]),
+          new NativeModuleCallOptimizationRuleComponent(
+            _nativeLibraryRegistry.GetCoreNativeModule(CoreNativeLibrary.IndexFloatFloat),
+            1,
+            2,
+            [new InputReferenceOptimizationRuleComponent(arrayComponent), new InputOptimizationRuleComponent(false), new OutputOptimizationRuleComponent()]),
+          new OutputOptimizationRuleComponent(),
+        ]),
+      OutputPatterns = [new ConstantOptimizationRuleComponent(0.0f)],
+    };
+
+    var optimizationRuleRecognizer = new OptimizationRuleRecognizer([optimizationRule]);
+
+    {
+      var result = optimizationRuleRecognizer.DetectOptimizationRule(
+        CreateNativeModuleCallNode(
+          _nativeLibraryRegistry.GetCoreNativeModule(CoreNativeLibrary.AddFloatFloat),
+          [
+            CreateNativeModuleCallNode(
+              _nativeLibraryRegistry.GetCoreNativeModule(CoreNativeLibrary.IndexFloatFloat),
+              [
+                new ArrayProgramGraphNode(
+                  PrimitiveType.Float,
+                  [new ConstantProgramGraphNode(1.0f).Output, new ConstantProgramGraphNode(2.0f).Output]).Output,
+                new ConstantProgramGraphNode(0.0f).Output,
+              ]).Outputs[0],
+            CreateNativeModuleCallNode(
+              _nativeLibraryRegistry.GetCoreNativeModule(CoreNativeLibrary.IndexFloatFloat),
+              [
+                new ArrayProgramGraphNode(
+                  PrimitiveType.Float,
+                  [new ConstantProgramGraphNode(1.0f).Output, new ConstantProgramGraphNode(3.0f).Output]).Output,
+                new ConstantProgramGraphNode(0.0f).Output,
+              ]).Outputs[0],
+          ]));
+
+      Assert.Null(result);
+    }
+
+    {
+      var result = optimizationRuleRecognizer.DetectOptimizationRule(
+        CreateNativeModuleCallNode(
+          _nativeLibraryRegistry.GetCoreNativeModule(CoreNativeLibrary.AddFloatFloat),
+          [
+            CreateNativeModuleCallNode(
+              _nativeLibraryRegistry.GetCoreNativeModule(CoreNativeLibrary.IndexFloatFloat),
+              [
+                new ArrayProgramGraphNode(
+                  PrimitiveType.Float,
+                  [new ConstantProgramGraphNode(1.0f).Output, new ConstantProgramGraphNode(2.0f).Output]).Output,
+                new ConstantProgramGraphNode(0.0f).Output,
+              ]).Outputs[0],
+            CreateNativeModuleCallNode(
+              _nativeLibraryRegistry.GetCoreNativeModule(CoreNativeLibrary.IndexFloatFloat),
+              [
+                new ArrayProgramGraphNode(
+                  PrimitiveType.Float,
+                  [new ConstantProgramGraphNode(1.0f).Output, new ConstantProgramGraphNode(2.0f).Output]).Output,
+                new ConstantProgramGraphNode(0.0f).Output,
+              ]).Outputs[0],
+          ]));
+
+      Assert.NotNull(result);
+      Assert.Equal(optimizationRule, result.OptimizationRule);
+      Assert.Equal(1, result.UpsampleFactorMultiplier);
+    }
+  }
+
   [Theory]
   [InlineData(1, null)]
   [InlineData(2, null)]

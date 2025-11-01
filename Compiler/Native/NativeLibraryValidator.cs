@@ -313,14 +313,14 @@ file static class ReportingExtensions
       sourceLocation,
       $"Optimization rule '{optimizationRule.Name}' {PatternName(outputPatternIndex)} contains an input component which is only allowed in input patterns");
 
-  public static void InputReferenceOptimizationRuleComponentOnlyAllowedInOutputPatternError(
+  public static void InputReferenceOptimizationRuleComponentCanOnlyReferenceConstantsWhenUsedInInputPatternError(
     this IReporting reporting,
     SourceLocation sourceLocation,
     UnvalidatedOptimizationRule optimizationRule)
     => reporting.Error(
-      "InputReferenceOptimizationRuleComponentOnlyAllowedInOutputPattern",
+      "InputReferenceOptimizationRuleComponentCanOnlyReferenceConstantsWhenUsedInInputPattern",
       sourceLocation,
-      $"Optimization rule '{optimizationRule.Name}' input pattern contains an input reference component which is only allowed in output patterns");
+      $"Optimization rule '{optimizationRule.Name}' input pattern contains an input reference component which does not reference a constant");
 
   public static void InvalidInputReferenceOptimizationRuleComponentIndexError(
     this IReporting reporting,
@@ -546,6 +546,27 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
     }
 
     var validatedInputPattern = inputPatternResult.Component;
+    var inputPatternComponentResults = inputPatternValidateContext.Components.Select((v) => inputPatternValidateContext.ComponentResults[v]).ToArray();
+
+    // Then, revalidate the input pattern but this time, also validate input references
+    var inputPatternRevalidateContext = new ValidateOptimizationRulePatternContext()
+    {
+      NativeLibraries = nativeLibraries,
+      SourceLocation = sourceLocation,
+      OptimizationRule = unvalidatedOptimizationRule,
+      OutputPatternIndex = null,
+      Components = unvalidatedOptimizationRule.InputPattern,
+      InputPatternComponentResults = inputPatternComponentResults,
+    };
+
+    var revalidatedInputPatternResult = ValidateOptimizationRulePattern(inputPatternRevalidateContext);
+    if (revalidatedInputPatternResult == null)
+    {
+      return null;
+    }
+
+    validatedInputPattern = revalidatedInputPatternResult.Component;
+    inputPatternComponentResults = inputPatternRevalidateContext.Components.Select((v) => inputPatternRevalidateContext.ComponentResults[v]).ToArray();
 
     // Next, validate each output pattern
     var unconsumedOutputs = unvalidatedOptimizationRule.InputPattern
@@ -575,7 +596,7 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
         OptimizationRule = unvalidatedOptimizationRule,
         OutputPatternIndex = outputPatternIndex,
         Components = outputPattern,
-        InputPatternComponentResults = inputPatternValidateContext.Components.Select((v) => inputPatternValidateContext.ComponentResults[v]).ToArray(),
+        InputPatternComponentResults = inputPatternComponentResults,
       };
 
       var result = ValidateOptimizationRulePattern(outputPatternValidateContext);
@@ -918,13 +939,11 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
     ValidateOptimizationRulePatternContext validateContext,
     UnvalidatedInputReferenceOptimizationRuleComponent component)
   {
-    // This component type is only allowed to appear in output patterns
-    if (validateContext.OutputPatternIndex == null)
+    if (validateContext.InputPatternComponentResults == null)
     {
-      context.Reporting.InputReferenceOptimizationRuleComponentOnlyAllowedInOutputPatternError(
-        validateContext.SourceLocation,
-        validateContext.OptimizationRule);
-      return null;
+      // This is the first validation pass on the input pattern so we can't resolve input references yet. Return a placeholder value for now.
+      Debug.Assert(validateContext.OutputPatternIndex == null);
+      return new(new OptimizationRuleComponent(), ModuleParameterDirection.In, null);
     }
 
     Debug.Assert(validateContext.InputPatternComponentResults != null);
@@ -938,6 +957,20 @@ internal class NativeLibraryValidator(NativeLibraryValidatorContext context)
         validateContext.OptimizationRule,
         validateContext.OutputPatternIndex);
       return null;
+    }
+
+    if (validateContext.OutputPatternIndex == null)
+    {
+      // This is an input reference within the input pattern so it points back to another point within the same pattern. These are only allowed to point to
+      // constants.
+      if (inputComponentResult.Component is not ConstantOptimizationRuleComponent
+        && (inputComponentResult.Component is not InputOptimizationRuleComponent inputComponent || !inputComponent.MustBeConstant))
+      {
+        context.Reporting.InputReferenceOptimizationRuleComponentCanOnlyReferenceConstantsWhenUsedInInputPatternError(
+          validateContext.SourceLocation,
+          validateContext.OptimizationRule);
+        return null;
+      }
     }
 
     // All inputs within the input pattern are either module calls or should be passed into a module call so their data types should be known
