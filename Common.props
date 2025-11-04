@@ -6,6 +6,9 @@
     <OutDir>$(SolutionDir)Output\msvc-$(Platform)\$(Configuration)\bins\</OutDir>
     <IntDir>$(SolutionDir)Output\msvc-$(Platform)\$(Configuration)\intermediates\$(ProjectName)\</IntDir>
   </PropertyGroup>
+  <PropertyGroup Condition="$(ProjectDir.StartsWith('$(SolutionDir)NativeLibraries\'))">
+    <OutDir>$(SolutionDir)Output\msvc-$(Platform)\$(Configuration)\native-libraries\</OutDir>
+  </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
       <WarningLevel>EnableAllWarnings</WarningLevel>

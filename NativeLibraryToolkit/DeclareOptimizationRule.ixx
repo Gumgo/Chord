@@ -10,6 +10,20 @@ import Chord.Foundation;
 
 namespace Chord
 {
+  export
+  {
+    struct UpsampleFactor
+    {
+      s32 m_value = 0;
+    };
+
+    constexpr UpsampleFactor operator""_x(unsigned long long value)
+    {
+      ASSERT(value >= 1, "Upsample factor must be at least 1");
+      return UpsampleFactor(Coerce<s32>(value));
+    }
+  }
+
   template<typename T>
   concept constant_value = std::same_as<T, f32>
     || std::same_as<T, f64>
@@ -19,43 +33,46 @@ namespace Chord
 
   enum class ComponentType
   {
+    Variable,
+    Constant,
+    NativeModuleCallReference,
     NativeModuleCall,
-    In,
-    Out,
+    ArrayReference,
     Array,
-    InRef,
+    Output,
+    Return,
+    OutputPattern,
   };
+
+  // !!! should these stay out of syntax namespace?
+  struct OptimizationRuleComponentBase
+    { };
 
   template<typename T>
   consteval usz CountComponents()
   {
     if constexpr (constant_value<T>)
       { return 1; }
-    else if constexpr (requires { { T::ComponentCount } -> std::convertible_to<usz>; })
-      { return T::ComponentCount; }
     else
     {
-      static_assert(AlwaysFalse<T>, "Unsupported optimization rule component type");
-      return 0;
+      static_assert(std::derived_from<T, OptimizationRuleComponentBase>, "Unsupported optimization rule component type");
+      if constexpr (requires { { T::ComponentCount } -> std::convertible_to<usz>; })
+        { return T::ComponentCount; }
+      else
+        { return 1; }
     }
   }
 
-  struct OptimizationRuleComponentBase
-    { };
-
-  template<typename TValue>
-  struct NamedOptimizationRuleComponent
+  template<ComponentType ComponentTypeArg, s32 ReferenceIdArg>
+  struct TypedOptimizationRuleComponent : public OptimizationRuleComponentBase
   {
-    using Value = TValue;
-    static constexpr usz ComponentCount = CountComponents<TValue>();
-    const char* m_name = nullptr;
-    TValue m_value;
+    static constexpr ComponentType ComponentType = ComponentTypeArg;
+    static constexpr s32 ReferenceId = ReferenceIdArg;
   };
 
-  template<typename... TArguments>
-  struct NativeModuleCallOptimizationRuleComponent : public OptimizationRuleComponentBase
+  template<s32 ReferenceIdArg, typename... TArguments>
+  struct NativeModuleCallOptimizationRuleComponent : public TypedOptimizationRuleComponent<ComponentType::NativeModuleCall, ReferenceIdArg>
   {
-    static constexpr ComponentType Type = ComponentType::NativeModuleCall;
     static constexpr usz ComponentCount =
       []()
       {
@@ -71,26 +88,35 @@ namespace Chord
     std::tuple<TArguments...> m_arguments;
   };
 
-  template<bool MustBeConstantArg>
-  struct InOptimizationRuleComponent : public OptimizationRuleComponentBase
+  template<s32 ReferenceIdArg>
+  struct NativeModuleCallReferenceOptimizationRuleComponent : public TypedOptimizationRuleComponent<ComponentType::NativeModuleCallReference, ReferenceIdArg>
   {
-    static constexpr ComponentType Type = ComponentType::In;
-    static constexpr usz ComponentCount = 1;
-    static constexpr bool MustBeConstant = MustBeConstantArg;
+    template<typename... TArgs>
+    auto operator()(const NativeModule* nativeModule, const TArgs&... args) const
+    {
+      return NativeModuleCallOptimizationRuleComponent<ReferenceIdArg, TArgs...>
+      {
+        .m_nativeModule = nativeModule,
+        .m_upsampleFactor = 1,
+        .m_arguments = std::make_tuple(args...),
+      };
+    }
+
+    template<typename... TArgs>
+    auto operator()(const NativeModule* nativeModule, UpsampleFactor upsampleFactor, const TArgs&... args) const
+    {
+      return NativeModuleCallOptimizationRuleComponent<ReferenceIdArg, TArgs...>
+      {
+        .m_nativeModule = nativeModule,
+        .m_upsampleFactor = upsampleFactor.m_value,
+        .m_arguments = std::make_tuple(args...),
+      };
+    }
   };
 
-  template<bool IsReturnArg>
-  struct OutOptimizationRuleComponent : public OptimizationRuleComponentBase
+  template<s32 ReferenceIdArg, typename... TElements>
+  struct ArrayOptimizationRuleComponent : public TypedOptimizationRuleComponent<ComponentType::Array, ReferenceIdArg>
   {
-    static constexpr ComponentType Type = ComponentType::Out;
-    static constexpr usz ComponentCount = 1;
-    static constexpr bool IsReturn = IsReturnArg;
-  };
-
-  template<typename... TElements>
-  struct ArrayOptimizationRuleComponent : public OptimizationRuleComponentBase
-  {
-    static constexpr ComponentType Type = ComponentType::Array;
     static constexpr usz ComponentCount =
       []()
       {
@@ -104,50 +130,41 @@ namespace Chord
     std::tuple<TElements...> m_elements;
   };
 
-  struct InRefOptimizationRuleComponent : public OptimizationRuleComponentBase
+  template<s32 ReferenceIdArg>
+  struct ArrayReferenceOptimizationRuleComponent : public TypedOptimizationRuleComponent<ComponentType::ArrayReference, ReferenceIdArg>
   {
-    static constexpr ComponentType Type = ComponentType::InRef;
-    static constexpr usz ComponentCount = 1;
+    template<typename... TElements>
+    auto operator()(const TElements&... elements) const
+      { return ArrayOptimizationRuleComponent<ReferenceIdArg, TElements...> { .m_elements = std::make_tuple(elements...) }; }
   };
 
-  template<typename T>
-  struct UnnamedComponentType
+  template<s32 ReferenceIdArg, typename TPattern>
+  struct OutputPatternOptimizationRuleComponent : public TypedOptimizationRuleComponent<ComponentType::OutputPattern, ReferenceIdArg>
   {
-    using Type = T;
+    TPattern m_pattern;
   };
 
-  template<typename T>
-    requires (requires (T c) { { c.m_name }; })
-  struct UnnamedComponentType<T>
+  template<s32 ReferenceIdArg>
+  struct OutputOptimizationRuleComponent : public TypedOptimizationRuleComponent<ComponentType::Output, ReferenceIdArg>
   {
-    using Type = T::Value;
+    template<typename TPattern>
+    auto operator()(const TPattern& pattern) const
+      { return OutputPatternOptimizationRuleComponent<ReferenceIdArg, TPattern> { .m_pattern = pattern }; }
   };
-
-  template<typename T>
-  using UnnamedComponent = typename UnnamedComponentType<T>::Type;
 
   template<typename T, typename TFunc>
   void IterateComponents(const T& component, TFunc&& func)
   {
-    if constexpr (requires (T c) { { c.m_name }; })
-      { IterateComponentsNamed(component.m_value, component.m_name, std::forward<TFunc>(func)); }
-    else
-      { IterateComponentsNamed(component, nullptr, std::forward<TFunc>(func)); }
-  }
-
-  template<typename T, typename TFunc>
-  void IterateComponentsNamed(const T& component, const char* name, TFunc&& func)
-  {
-    func(component, name);
+    func(component);
     if constexpr (std::derived_from<T, OptimizationRuleComponentBase>)
     {
-      if constexpr (T::Type == ComponentType::NativeModuleCall)
+      if constexpr (T::ComponentType == ComponentType::NativeModuleCall)
       {
         Unroll<0, std::tuple_size_v<decltype(component.m_arguments)>>(
           [&](auto i)
             { IterateComponents(std::get<decltype(i)::value>(component.m_arguments), std::forward<TFunc>(func)); });
       }
-      else if constexpr (T::Type == ComponentType::Array)
+      else if constexpr (T::ComponentType == ComponentType::Array)
       {
         Unroll<0, std::tuple_size_v<decltype(component.m_elements)>>(
           [&](auto i)
@@ -165,16 +182,13 @@ namespace Chord
       [&](auto i)
       {
         static constexpr usz ArgumentIndex = decltype(i)::value;
-        using Argument = UnnamedComponent<std::tuple_element_t<ArgumentIndex, decltype(Component::m_arguments)>>;
+        using Argument = std::tuple_element_t<ArgumentIndex, decltype(Component::m_arguments)>;
         if constexpr (std::derived_from<Argument, OptimizationRuleComponentBase>)
         {
-          if constexpr (Argument::Type == ComponentType::Out)
+          if constexpr (Argument::ComponentType == ComponentType::Return)
           {
-            if constexpr (Argument::IsReturn)
-            {
-              ASSERT(!index.has_value(), "Multiple return out arguments specified");
-              index = ArgumentIndex;
-            }
+            ASSERT(!index.has_value(), "Multiple return out arguments specified");
+            index = ArgumentIndex;
           }
         }
       });
@@ -183,20 +197,8 @@ namespace Chord
     return index.value();
   }
 
-
   export
   {
-    struct UpsampleFactor
-    {
-      s32 m_value = 0;
-    };
-
-    constexpr UpsampleFactor operator""_x(unsigned long long value)
-    {
-      ASSERT(value >= 1, "Upsample factor must be at least 1");
-      return UpsampleFactor(Coerce<s32>(value));
-    }
-
     template<usz ComponentCount, usz OutputPatternCount>
     class BuiltOptimizationRule
     {
@@ -251,85 +253,67 @@ namespace Chord
 
     namespace OptimizationRuleSyntax
     {
-      template<typename TValue>
-      auto Named(const char* name, const TValue& value)
-        { return NamedOptimizationRuleComponent { .m_name = name, .m_value = value }; }
+      inline constexpr TypedOptimizationRuleComponent<ComponentType::Variable, -1> V;
+      inline constexpr TypedOptimizationRuleComponent<ComponentType::Variable, 0> V0;
+      inline constexpr TypedOptimizationRuleComponent<ComponentType::Variable, 1> V1;
+      inline constexpr TypedOptimizationRuleComponent<ComponentType::Variable, 2> V2;
+      inline constexpr TypedOptimizationRuleComponent<ComponentType::Variable, 3> V3;
+      inline constexpr TypedOptimizationRuleComponent<ComponentType::Variable, 4> V4;
+      inline constexpr TypedOptimizationRuleComponent<ComponentType::Variable, 5> V5;
+      inline constexpr TypedOptimizationRuleComponent<ComponentType::Variable, 6> V6;
+      inline constexpr TypedOptimizationRuleComponent<ComponentType::Variable, 7> V7;
+      inline constexpr TypedOptimizationRuleComponent<ComponentType::Variable, 8> V8;
+      inline constexpr TypedOptimizationRuleComponent<ComponentType::Variable, 9> V9;
 
-      template<typename... TArgs>
-      auto Call(const NativeModule* nativeModule, const TArgs&... args)
-      {
-        return NativeModuleCallOptimizationRuleComponent
-        {
-          .m_nativeModule = nativeModule,
-          .m_upsampleFactor = 1,
-          .m_arguments = std::make_tuple(args...),
-        };
-      }
+      inline constexpr TypedOptimizationRuleComponent<ComponentType::Constant, -1> C;
+      inline constexpr TypedOptimizationRuleComponent<ComponentType::Constant, 0> C0;
+      inline constexpr TypedOptimizationRuleComponent<ComponentType::Constant, 1> C1;
+      inline constexpr TypedOptimizationRuleComponent<ComponentType::Constant, 2> C2;
+      inline constexpr TypedOptimizationRuleComponent<ComponentType::Constant, 3> C3;
+      inline constexpr TypedOptimizationRuleComponent<ComponentType::Constant, 4> C4;
+      inline constexpr TypedOptimizationRuleComponent<ComponentType::Constant, 5> C5;
+      inline constexpr TypedOptimizationRuleComponent<ComponentType::Constant, 6> C6;
+      inline constexpr TypedOptimizationRuleComponent<ComponentType::Constant, 7> C7;
+      inline constexpr TypedOptimizationRuleComponent<ComponentType::Constant, 8> C8;
+      inline constexpr TypedOptimizationRuleComponent<ComponentType::Constant, 9> C9;
 
-      template<typename... TArgs>
-      auto Call(const char* name, const NativeModule* nativeModule, const TArgs&... args)
-      {
-        return NamedOptimizationRuleComponent
-        {
-          .m_name = name,
-          .m_upsampleFactor = 1,
-          .m_value = NativeModuleCallOptimizationRuleComponent { .m_nativeModule = nativeModule, .m_arguments = std::make_tuple(args...) },
-        };
-      }
+      inline constexpr NativeModuleCallReferenceOptimizationRuleComponent<-1> Call;
+      inline constexpr NativeModuleCallReferenceOptimizationRuleComponent<0> Call0;
+      inline constexpr NativeModuleCallReferenceOptimizationRuleComponent<1> Call1;
+      inline constexpr NativeModuleCallReferenceOptimizationRuleComponent<2> Call2;
+      inline constexpr NativeModuleCallReferenceOptimizationRuleComponent<3> Call3;
+      inline constexpr NativeModuleCallReferenceOptimizationRuleComponent<4> Call4;
+      inline constexpr NativeModuleCallReferenceOptimizationRuleComponent<5> Call5;
+      inline constexpr NativeModuleCallReferenceOptimizationRuleComponent<6> Call6;
+      inline constexpr NativeModuleCallReferenceOptimizationRuleComponent<7> Call7;
+      inline constexpr NativeModuleCallReferenceOptimizationRuleComponent<8> Call8;
+      inline constexpr NativeModuleCallReferenceOptimizationRuleComponent<9> Call9;
 
-      template<typename... TArgs>
-      auto Call(const NativeModule* nativeModule, UpsampleFactor upsampleFactor, const TArgs&... args)
-      {
-        return NativeModuleCallOptimizationRuleComponent
-        {
-          .m_nativeModule = nativeModule,
-          .m_upsampleFactor = upsampleFactor.m_value,
-          .m_arguments = std::make_tuple(args...),
-        };
-      }
+      inline constexpr ArrayReferenceOptimizationRuleComponent<-1> Array;
+      inline constexpr ArrayReferenceOptimizationRuleComponent<0> Array0;
+      inline constexpr ArrayReferenceOptimizationRuleComponent<1> Array1;
+      inline constexpr ArrayReferenceOptimizationRuleComponent<2> Array2;
+      inline constexpr ArrayReferenceOptimizationRuleComponent<3> Array3;
+      inline constexpr ArrayReferenceOptimizationRuleComponent<4> Array4;
+      inline constexpr ArrayReferenceOptimizationRuleComponent<5> Array5;
+      inline constexpr ArrayReferenceOptimizationRuleComponent<6> Array6;
+      inline constexpr ArrayReferenceOptimizationRuleComponent<7> Array7;
+      inline constexpr ArrayReferenceOptimizationRuleComponent<8> Array8;
+      inline constexpr ArrayReferenceOptimizationRuleComponent<9> Array9;
 
-      template<typename... TArgs>
-      auto Call(const char* name, const NativeModule* nativeModule, UpsampleFactor upsampleFactor, const TArgs&... args)
-      {
-        return NamedOptimizationRuleComponent
-        {
-          .m_name = name,
-          .m_upsampleFactor = upsampleFactor.m_value,
-          .m_value = NativeModuleCallOptimizationRuleComponent {.m_nativeModule = nativeModule, .m_arguments = std::make_tuple(args...) },
-        };
-      }
+      inline constexpr OutputOptimizationRuleComponent<-1> Out;
+      inline constexpr OutputOptimizationRuleComponent<0> Out0;
+      inline constexpr OutputOptimizationRuleComponent<1> Out1;
+      inline constexpr OutputOptimizationRuleComponent<2> Out2;
+      inline constexpr OutputOptimizationRuleComponent<3> Out3;
+      inline constexpr OutputOptimizationRuleComponent<4> Out4;
+      inline constexpr OutputOptimizationRuleComponent<5> Out5;
+      inline constexpr OutputOptimizationRuleComponent<6> Out6;
+      inline constexpr OutputOptimizationRuleComponent<7> Out7;
+      inline constexpr OutputOptimizationRuleComponent<8> Out8;
+      inline constexpr OutputOptimizationRuleComponent<9> Out9;
 
-      auto In()
-        { return InOptimizationRuleComponent<false>{}; }
-
-      auto In(const char* name)
-        { return NamedOptimizationRuleComponent { .m_name = name, .m_value = InOptimizationRuleComponent<false>{} }; }
-
-      auto Constant()
-        { return InOptimizationRuleComponent<true>{}; }
-
-      auto Constant(const char* name)
-        { return NamedOptimizationRuleComponent { .m_name = name, .m_value = InOptimizationRuleComponent<true>{} }; }
-
-      auto Out()
-        { return OutOptimizationRuleComponent<false>{}; }
-
-      auto Out(const char* name)
-        { return NamedOptimizationRuleComponent { .m_name = name, .m_value = OutOptimizationRuleComponent<false>{} }; }
-
-      auto OutReturn()
-        { return OutOptimizationRuleComponent<true>{}; }
-
-      template<typename... TElements>
-      auto Array(const TElements&... elements)
-        { return ArrayOptimizationRuleComponent { .m_elements = std::make_tuple(elements...) }; }
-
-      template<typename... TElements>
-      auto Array(const char* name, const TElements&... elements)
-        { return NamedOptimizationRuleComponent { .m_name = name, .m_value = ArrayOptimizationRuleComponent { .m_elements = std::make_tuple(elements...) } }; }
-
-      auto InRef(const char* name)
-        { return NamedOptimizationRuleComponent { .m_name = name, .m_value = InRefOptimizationRuleComponent{} }; }
+      inline constexpr TypedOptimizationRuleComponent<ComponentType::Return, -1> Ret;
     }
 
     // This function is used to declare an optimization rule using a convenient shorthand syntax. It returns a BuiltOptimizationRule instance which holds both
@@ -339,67 +323,67 @@ namespace Chord
     // function calls intended to appear similar to how the function would appear in a Chord script (though more verbose). These functions are found within the
     // OptimizationRuleSyntax namespace. Here is an example of an input pattern:
     //
-    //   Call(&add, In("a"), Call(&negate, In("b"), OutReturn()), OutReturn())
+    //   Call(&add, V0, Call(&negate, V1, Ret), Ret)
     //
-    // This pattern would match against Chord expressions of the form "a + -b". We could associate this input pattern with the following output pattern:
+    // This pattern would match against Chord expressions of the form "V0 + -V1". We could associate this input pattern with the following output pattern:
     //
-    //   Call(&subtract, InRef("a"), InRef("b"), OutReturn())
+    //   Call(&subtract, V0, V1, Ret)
     //
-    // This would cause Chord expressions of the form "a + -b" to be replaced with "a - b".
+    // This would cause Chord expressions of the form "V0 + -V1" to be replaced with "V0 - V1".
     //
     // Because native modules support multiple output parameters, an optimization rule must have an output pattern for every non-consumed output within the
     // input pattern. An output is "consumed" when it is passed down to a nested call. For example, in "Foo(Bar())", the return value of Bar() is consumed by
     // Foo(). Internally, native modules don't actually "return" values, but rather one output parameter may optionally be marked as "return". Therefore, when
-    // declaring optimization rules, the consumed output parameter must be explicitly specified with OutReturn(). So the previous example would actually appear
-    // as "Call(&foo, Call(&bar, OutReturn()), OutReturn())", which means: the first (output) argument of Bar() is consumed as the first (input) argument to
-    // Foo() and the second (output) argument of Foo() is consumed as the pattern's final resulting value.
+    // declaring optimization rules, the consumed output parameter must be explicitly specified with Ret. So the previous example would actually appear as
+    // "Call(&foo, Call(&bar, Ret), Ret)", which means: the first (output) argument of Bar() is consumed as the first (input) argument to Foo() and the second
+    // (output) argument of Foo() is consumed as the pattern's final resulting value.
     //
-    // When additional output arguments are present, they are marked with Out("name") in the input pattern. For each named output argument in the input pattern,
-    // an additional named output pattern must be specified using the syntax: Named("name", <pattern>). The following is an example where three output patterns
-    // are required:
+    // When additional output arguments are present, they are marked with Out<N> in the input pattern, where N is an integer. For each named output argument in
+    // the input pattern, an additional named output pattern must be specified using the syntax: Out<N>(<pattern>). The following is an example where three
+    // output patterns are required:
     //
     //   DeclareOptimizationRule(
     //     nativeLibraryId,
     //     U"rule",
-    //     Call(&foo, OutReturn(), Out("outA"), Out("outB")),
+    //     Call(&foo, Ret, Out0, Out1),
     //     1.0f,
-    //     Named("outA", 2.0f),
-    //     Named("outB", 3.0f))
+    //     Out0(2.0f),
+    //     Out1(3.0f))
     //
     // In this example, foo's first output argument is replaced with 1.0f, its second with 2.0f, and its third with 3.0f.
     //
     // The following pattern syntax is supported:
     //
-    //   Named(name, <value>)
-    //     Wraps a value (such as a constant) in a name so that it can be referenced in an output pattern. Also used to declare named output patterns.
-    //
-    //   Call([name], nativeModule, [upsampleFactor], <arg0>, <arg1>, ...)
-    //     Matches against a call of the provided native module with the provided arguments. upsampleFactor is specified by appending _x to an integer, e.g.
-    //     2_x, 3_x, etc.
-    //
     //   <constant>
     //     A constant of type f32, f64, s32, bool, or const char32_t* can be specified to match against a constant with this exact value.
     //
-    //   In([name])
-    //     Matches against any input value.
+    //   V[<N>]
+    //     Matches against any input value within an input pattern. References the correspondingly indexed input pattern value within an output pattern.
     //
-    //   Constant([name])
-    //     Matches against an input value only if it is a compile-time constant.
+    //   C[<N>]
+    //     Matches against an input value only if it is a compile-time constant within an input pattern. References the correspondingly indexed input pattern
+    //     value within an output pattern.
     //
-    //   Out([name])
-    //     Used as a placeholder for an output argument. A name must be provided when used within input patterns and a correspondingly named output pattern must
-    //     then be provided. This can also be used to represent a "throwaway" output argument within output patterns.
+    //   Call[<N>](nativeModule, [upsampleFactor], <arg0>, <arg1>, ...)
+    //     Matches against a call of the provided native module with the provided arguments. upsampleFactor is specified by appending _x to an integer, e.g.
+    //     2_x, 3_x, etc.
     //
-    //   OutReturn()
-    //     Used to mark the output argument with a native module call which is to be consumed either by an outer call, an array, or as the pattern's final
-    //     resulting value.
+    //   Call<N>
+    //     References the correspondingly indexed native module call within the input pattern. Only allowed in output patterns.
     //
-    //   Array(<el0>, <el1>, ...)
+    //   Array[<N>](<el0>, <el1>, ...)
     //     Matches against an array with specific elements.
     //
-    //   InRef(<name>)
-    //     Used within output patterns to reference a named value in the input pattern. Within input patterns, can be used to reference a previous named
-    //     constant value (non-constant values cannot be referenced).
+    //   Array<N>
+    //     References the correspondingly indexed array within the input pattern. Only allowed in output patterns.
+    //
+    //   Out[<N>]
+    //     Used as a placeholder for an output argument. An index must be provided when used within input patterns and a correspondingly indexed output pattern
+    //     must then be provided. This can also be used to represent a "throwaway" output argument within output patterns.
+    //
+    //   Ret
+    //     Used to mark the output argument with a native module call which is to be consumed either by an outer call, an array, or as the pattern's final
+    //     resulting value.
     template<typename TInputPattern, typename TReturnPattern, typename... TOutputPatterns>
     auto DeclareOptimizationRule(
       const Guid& nativeLibraryId,
@@ -426,59 +410,99 @@ namespace Chord
       BuiltOptimizationRule<ComponentCount, 1 + sizeof...(TOutputPatterns)> result;
       result.m_optimizationRule.m_name = name;
       usz componentIndex = 0;
-      BoundedArray<const char*, InputPatternComponentCount> inputPatternOutputNames;
-      bool inputPatternBuilt = false;
+      BoundedArray<s32, InputPatternComponentCount> inputPatternOutputReferenceIds;
+
+      auto ValidateUniqueInputComponentReferenceId =
+        [&](ComponentType componentType, s32 referenceId)
+        {
+          if (referenceId < 0)
+            { return; }
+
+          bool found = false;
+          IterateComponents(
+            inputPattern,
+            [&](const auto& component)
+            {
+              using Component = decltype(component);
+              if constexpr (std::derived_from<Component, OptimizationRuleComponentBase>)
+              {
+                if (Component::ComponentType == componentType && Component::ReferenceId == referenceId)
+                {
+                  ASSERT(!found, "Optimization rule uses multiple components with the same reference ID");
+                  found = true;
+                }
+              }
+            });
+        };
 
       auto FindInputComponentIndex =
-        [&](const char* name) -> s32
+        [&](ComponentType componentType, s32 referenceId) -> s32
         {
-          ASSERT(name != nullptr, "Input name not provided");
-
           std::optional<usz> result;
           usz index = 0;
           IterateComponents(
             inputPattern,
-            [&]([[maybe_unused]] const auto& component, const char* componentName)
+            [&](const auto& component)
             {
-              if (componentName != nullptr && NullTerminatedStringsEqual(name, componentName))
+              if (!result.has_value())
               {
-                ASSERT(!result.has_value(), "Multiple input components use the same name");
-                result = index;
+                using Component = std::remove_cvref_t<decltype(component)>;
+                if constexpr (std::derived_from<Component, OptimizationRuleComponentBase>)
+                {
+                  if (Component::ComponentType == componentType && Component::ReferenceId == referenceId)
+                    { result = index; }
+                }
               }
 
               index++;
             });
 
-          ASSERT(result.has_value(), "Input component with the provided name not found");
+          ASSERT(result.has_value(), "Optimization rule input pattern does not contain a component with the referenced type and ID");
           return Coerce<s32>(result.value());
         };
 
-      auto AddInputPatternOutputName =
-        [&](const char* name)
+      auto GetInputComponentIndex =
+        [&](const auto& component) -> s32
         {
-          for (const char* existingName : inputPatternOutputNames)
-            { ASSERT(!NullTerminatedStringsEqual(name, existingName), "Two input pattern outputs share the same name"); }
-          inputPatternOutputNames.Append(name);
+          std::optional<usz> result;
+          usz index = 0;
+          IterateComponents(
+            inputPattern,
+            [&](const auto& otherComponent)
+            {
+              if constexpr (std::same_as<std::remove_cvref_t<decltype(component)>, std::remove_cvref_t<decltype(otherComponent)>>)
+              {
+                if (&component == &otherComponent)
+                  { result = index; }
+              }
+
+              index++;
+            });
+
+          ASSERT(result.has_value());
+          return Coerce<s32>(result.value());
+        };
+
+      auto AddInputPatternOutputReferenceId =
+        [&](s32 referenceId)
+        {
+          ASSERT(referenceId >= 0);
+          ASSERT(!inputPatternOutputReferenceIds.Contains(referenceId), "Two input pattern outputs share the same reference ID");
+          inputPatternOutputReferenceIds.Append(referenceId);
         };
 
       auto GetAndRemoveInputPatternOutputIndex =
-        [&](const char* name) -> usz
+        [&](s32 referenceId) -> usz
         {
-          for (usz i = 0; i < inputPatternOutputNames.Count(); i++)
-          {
-            if (inputPatternOutputNames[i] != nullptr && NullTerminatedStringsEqual(name, inputPatternOutputNames[i]))
-            {
-              inputPatternOutputNames[i] = nullptr;
-              return i;
-            }
-          }
-
-          ASSERT(false, "Input pattern does not contain an output with the provided name");
-          return 0;
+          ASSERT(referenceId >= 0);
+          auto index = inputPatternOutputReferenceIds.FirstIndexOf(referenceId);
+          ASSERT(index.has_value(), "Input pattern does not contain an output with the provided reference ID");
+          inputPatternOutputReferenceIds[index.value()] = -1;
+          return index.value();
         };
 
       auto ProcessComponent =
-        [&](const auto& component, const char* name)
+        [&]<bool IsOutputPattern>(const auto& component)
         {
           using Component = std::remove_cvref_t<decltype(component)>;
           OptimizationRuleComponent& outputComponent = result.m_components[componentIndex++];
@@ -513,8 +537,68 @@ namespace Chord
             else
               { static_assert(AlwaysFalse<Component>, "Unsupported optimization rule constant type"); }
           }
-          else if constexpr (Component::Type == ComponentType::NativeModuleCall)
+          else if constexpr (Component::ComponentType == ComponentType::Variable)
           {
+            if constexpr (!IsOutputPattern)
+            {
+              ValidateUniqueInputComponentReferenceId(Component::ComponentType, Component::ReferenceId);
+              outputComponent.m_type = OptimizationRuleComponentTypeInput;
+              outputComponent.m_data.m_inputData.m_mustBeConstant = false;
+            }
+            else
+            {
+              static_assert(Component::ReferenceId >= 0, "Optimization rule output pattern variable component must reference the input pattern");
+              s32 index = FindInputComponentIndex(Component::ComponentType, Component::ReferenceId);
+              ASSERT(index >= 0, "Optimization rule input pattern variable component with the given reference ID does not exist");
+              outputComponent.m_type = OptimizationRuleComponentTypeInputReference;
+              outputComponent.m_data.m_inputReferenceData.m_index = index;
+            }
+          }
+          else if constexpr (Component::ComponentType == ComponentType::Constant)
+          {
+            if constexpr (!IsOutputPattern)
+            {
+              // Constants can be reused within an input pattern. The later uses refer to the initial usage.
+              if constexpr (Component::ReferenceId < 0)
+              {
+                // This constant doesn't have a reference ID
+                outputComponent.m_type = OptimizationRuleComponentTypeInput;
+                outputComponent.m_data.m_inputData.m_mustBeConstant = true;
+              }
+              else
+              {
+                if (FindInputComponentIndex(Component::ComponentType, Component::ReferenceId) == GetInputComponentIndex(component))
+                {
+                  // This constant is the first use with this reference ID
+                  outputComponent.m_type = OptimizationRuleComponentTypeInput;
+                  outputComponent.m_data.m_inputData.m_mustBeConstant = true;
+                }
+                else
+                {
+                  // This constant refers back to the first use of a constant with this ID
+                  outputComponent.m_type = OptimizationRuleComponentTypeInputReference;
+                  outputComponent.m_data.m_inputReferenceData.m_index = FindInputComponentIndex(Component::ComponentType, Component::ReferenceId);
+                }
+              }
+            }
+            else
+            {
+              static_assert(Component::ReferenceId >= 0, "Optimization rule output pattern constant component must reference the input pattern");
+              outputComponent.m_type = OptimizationRuleComponentTypeInputReference;
+              outputComponent.m_data.m_inputReferenceData.m_index = FindInputComponentIndex(Component::ComponentType, Component::ReferenceId);
+            }
+          }
+          else if constexpr (Component::ComponentType == ComponentType::NativeModuleCallReference)
+          {
+            static_assert(IsOutputPattern, "Optimization rule input pattern native module call component cannot be a reference");
+            outputComponent.m_type = OptimizationRuleComponentTypeInputReference;
+            outputComponent.m_data.m_inputReferenceData.m_index = FindInputComponentIndex(ComponentType::NativeModuleCall, Component::ReferenceId);
+          }
+          else if constexpr (Component::ComponentType == ComponentType::NativeModuleCall)
+          {
+            if constexpr (IsOutputPattern)
+              { static_assert(Component::ReferenceId < 0, "Optimization rule output pattern native module call component cannot have a reference ID"); }
+
             static constexpr s32 OutputParameterIndex = Coerce<s32>(FindReturnOutParameterIndex<Component>());
             outputComponent.m_type = OptimizationRuleComponentTypeNativeModuleCall;
             Span(outputComponent.m_data.m_nativeModuleCallData.m_nativeLibraryId).CopyElementsFrom(nativeLibraryId.Bytes());
@@ -522,48 +606,45 @@ namespace Chord
             outputComponent.m_data.m_nativeModuleCallData.m_upsampleFactor = component.m_upsampleFactor;
             outputComponent.m_data.m_nativeModuleCallData.m_outputParameterIndex = OutputParameterIndex;
           }
-          else if constexpr (Component::Type == ComponentType::In)
+          else if constexpr (Component::ComponentType == ComponentType::ArrayReference)
           {
-            ASSERT(!inputPatternBuilt, "Wildcard inputs can only be used in input patterns");
-            outputComponent.m_type = OptimizationRuleComponentTypeInput;
-            outputComponent.m_data.m_inputData.m_mustBeConstant = Component::MustBeConstant;
+            static_assert(IsOutputPattern, "Optimization rule input pattern array component cannot be a reference");
+            outputComponent.m_type = OptimizationRuleComponentTypeInputReference;
+            outputComponent.m_data.m_inputReferenceData.m_index = FindInputComponentIndex(ComponentType::Array, Component::ReferenceId);
           }
-          else if constexpr (Component::Type == ComponentType::Out)
+          else if constexpr (Component::ComponentType == ComponentType::Array)
           {
-            outputComponent.m_type = OptimizationRuleComponentTypeOutput;
+            if constexpr (IsOutputPattern)
+              { static_assert(Component::ReferenceId < 0, "Optimization rule output pattern array component cannot have a reference ID"); }
 
-            if (!inputPatternBuilt)
-            {
-              // Build up the named outputs
-              if constexpr (!Component::IsReturn)
-              {
-                ASSERT(name != nullptr, "Input pattern non-return outputs must be named");
-                AddInputPatternOutputName(name);
-              }
-            }
-            else
-              { ASSERT(name == nullptr, "Output pattern outputs should not be named when used in output patterns"); }
-          }
-          else if constexpr (Component::Type == ComponentType::Array)
-          {
             outputComponent.m_type = OptimizationRuleComponentTypeArray;
             outputComponent.m_data.m_arrayData.m_elementCount = Coerce<int32_t>(std::tuple_size_v<decltype(component.m_elements)>);
           }
-          else if constexpr (Component::Type == ComponentType::InRef)
+          else if constexpr (Component::ComponentType == ComponentType::Output)
           {
-            outputComponent.m_type = OptimizationRuleComponentTypeInputReference;
-            outputComponent.m_data.m_inputReferenceData.m_index = FindInputComponentIndex(name);
+            if constexpr (!IsOutputPattern)
+            {
+              static_assert(Component::ReferenceId >= 0, "Optimization rule output components within the input pattern must have reference IDs");
+              AddInputPatternOutputReferenceId(Component::ReferenceId);
+            }
+            else
+              { static_assert(Component::ReferenceId < 0, "Optimization rule output components within the output pattern cannot have reference IDs"); }
+            outputComponent.m_type = OptimizationRuleComponentTypeOutput;
           }
+          else if constexpr (Component::ComponentType == ComponentType::Return)
+            { outputComponent.m_type = OptimizationRuleComponentTypeOutput; }
           else
             { static_assert(AlwaysFalse<Component>, "Unsupported optimization rule component type"); }
         };
 
-      IterateComponents(inputPattern, ProcessComponent);
+      auto ProcessComponentInputPattern = [&](const auto& c) { ProcessComponent.operator()<false>(c); };
+      auto ProcessComponentOutputPattern = [&](const auto& c) { ProcessComponent.operator()<true>(c); };
+
+      IterateComponents(inputPattern, ProcessComponentInputPattern);
       result.m_components[componentIndex++].m_type = OptimizationRuleComponentTypeEndOfList;
-      inputPatternBuilt = true;
 
       result.m_outputPatterns[0] = &result.m_components[componentIndex];
-      IterateComponents(returnPattern, ProcessComponent);
+      IterateComponents(returnPattern, ProcessComponentOutputPattern);
       result.m_components[componentIndex++].m_type = OptimizationRuleComponentTypeEndOfList;
 
       auto outputPatternsTuple = std::make_tuple(outputPatterns...);
@@ -572,16 +653,16 @@ namespace Chord
         {
           static constexpr usz OutputPatternIndex = decltype(i)::value;
           const auto& outputPattern = std::get<OutputPatternIndex>(outputPatternsTuple);
-          using OutputPattern = decltype(outputPattern);
-          if constexpr (!requires (OutputPattern p) { { p.m_name }; })
-            { static_assert(AlwaysFalse<OutputPattern>, "Output patterns must be named"); }
-          else
-          {
-            usz outputIndex = GetAndRemoveInputPatternOutputIndex(outputPattern.m_name);
-            result.m_outputPatterns[outputIndex + 1] = &result.m_components[componentIndex]; // Add 1 because the 0th pattern is for OutReturn()
-            IterateComponents(outputPattern.m_value, ProcessComponent);
-            result.m_components[componentIndex++].m_type = OptimizationRuleComponentTypeEndOfList;
-          }
+          using OutputPattern = std::remove_cvref_t<decltype(outputPattern)>;
+          static_assert(std::derived_from<OutputPattern, OptimizationRuleComponentBase>, "Output patterns must be wrapped in Out<i>(...)");
+          static_assert(
+            OutputPattern::ComponentType == ComponentType::OutputPattern && OutputPattern::ReferenceId >= 0,
+            "Output patterns must be wrapped in Out<i>(...)");
+
+          usz outputIndex = GetAndRemoveInputPatternOutputIndex(OutputPattern::ReferenceId);
+          result.m_outputPatterns[outputIndex + 1] = &result.m_components[componentIndex]; // Add 1 because the 0th pattern is for OutReturn()
+          IterateComponents(outputPattern.m_pattern, ProcessComponentOutputPattern);
+          result.m_components[componentIndex++].m_type = OptimizationRuleComponentTypeEndOfList;
         });
 
 

@@ -57,7 +57,7 @@ namespace Chord
     class DelayFloat
     {
     public:
-      static constexpr Guid Id = Guid::Parse("00000000-0000-0000-0000-000000000000");
+      static constexpr Guid Id = Guid::Parse("2b25884a-c094-497d-b13d-a95a8c7efcb8");
       static constexpr const char32_t* Name = U"Delay";
       static constexpr bool AlwaysRuntime = true;
 
@@ -81,7 +81,7 @@ namespace Chord
     class DelayDouble
     {
     public:
-      static constexpr Guid Id = Guid::Parse("00000000-0000-0000-0000-000000000000");
+      static constexpr Guid Id = Guid::Parse("ca98e59b-8de3-4208-ba70-e984733878a3");
       static constexpr const char32_t* Name = U"Delay";
       static constexpr bool AlwaysRuntime = true;
 
@@ -105,7 +105,7 @@ namespace Chord
     class DelayInt
     {
     public:
-      static constexpr Guid Id = Guid::Parse("00000000-0000-0000-0000-000000000000");
+      static constexpr Guid Id = Guid::Parse("a79fc345-b7d7-4d43-8092-783fa68d1ce0");
       static constexpr const char32_t* Name = U"Delay";
       static constexpr bool AlwaysRuntime = true;
 
@@ -129,7 +129,7 @@ namespace Chord
     class DelayBool
     {
     public:
-      static constexpr Guid Id = Guid::Parse("00000000-0000-0000-0000-000000000000");
+      static constexpr Guid Id = Guid::Parse("b2b31091-d8eb-42eb-b161-515167bf89b3");
       static constexpr const char32_t* Name = U"Delay";
       static constexpr bool AlwaysRuntime = true;
 

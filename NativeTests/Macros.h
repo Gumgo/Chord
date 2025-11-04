@@ -5,19 +5,23 @@
 // Disable this to speed up build time when constexpr tests aren't needed
 #define CONSTEXPR_TESTS_ENABLED 1
 
-#define TEST_CLASS(name) \
+#define REGISTER_TEST_CLASS(name, shared) \
   static TestClassInfo s_testClassInfo__ ## name = \
     []() \
     { \
       return TestClassInfo \
       { \
         .m_name = #name, \
+        .m_shared = shared, \
       }; \
     }(); \
   \
   static inline s32 s_testClassInfoRegistration__ ## name = RegisterTestClass(&s_testClassInfo__ ## name); \
   \
   class TestClass__ ## name : public TestClass<TestClass__ ## name>
+
+#define TEST_CLASS(name) REGISTER_TEST_CLASS(name, false)
+#define TEST_CLASS_SHARED(name) REGISTER_TEST_CLASS(name, true)
 
 #define REGISTER_TEST_METHOD_(name) \
   static inline TestMethodInfo s_testMethodInfo__ ## name = \

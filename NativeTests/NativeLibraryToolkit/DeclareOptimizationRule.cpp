@@ -95,7 +95,7 @@ namespace Chord
     {
       using namespace OptimizationRuleSyntax;
 
-      auto builtRule = DeclareOptimizationRule(NativeLibraryId, U"test", Array(In(), In("a"), Constant(), Constant("b")), 0);
+      auto builtRule = DeclareOptimizationRule(NativeLibraryId, U"test", Array(V, V0, C, C0), 0);
       auto rule = builtRule.GetOptimizationRule();
 
       EXPECT(rule->m_inputPattern[0].m_type == OptimizationRuleComponentTypeArray);
@@ -118,9 +118,9 @@ namespace Chord
       NativeModule nm;
       Span(nm.m_id).CopyElementsFrom(NativeModuleId.Bytes());
 
-      auto builtRuleA = DeclareOptimizationRule(NativeLibraryId, U"test", Call(&nm, OutReturn()), 0);
-      auto builtRuleB = DeclareOptimizationRule(NativeLibraryId, U"test", Call(&nm, 2_x, OutReturn()), 0);
-      auto builtRuleC = DeclareOptimizationRule(NativeLibraryId, U"test", Call(&nm, 3_x, In(), OutReturn()), 0);
+      auto builtRuleA = DeclareOptimizationRule(NativeLibraryId, U"test", Call(&nm, Ret), 0);
+      auto builtRuleB = DeclareOptimizationRule(NativeLibraryId, U"test", Call(&nm, 2_x, Ret), 0);
+      auto builtRuleC = DeclareOptimizationRule(NativeLibraryId, U"test", Call(&nm, 3_x, V, Ret), 0);
 
       auto ruleA = builtRuleA.GetOptimizationRule();
       EXPECT(ruleA->m_inputPattern[0].m_type == OptimizationRuleComponentTypeNativeModuleCall);
@@ -155,29 +155,60 @@ namespace Chord
     {
       using namespace OptimizationRuleSyntax;
 
+      NativeModule nm;
+      Span(nm.m_id).CopyElementsFrom(NativeModuleId.Bytes());
+
       auto builtRule = DeclareOptimizationRule(
         NativeLibraryId,
         U"test",
-        Array("a", In("b"), 3.0f, Named("c", 1)),
-        Array(InRef("b"), InRef("a"), InRef("b"), InRef("c")));
+        Array3(V0, V1, 3.0f, C0, Call4(&nm, Ret)),
+        Array(V1, Array3, V0, V1, C0, Call4));
       auto rule = builtRule.GetOptimizationRule();
 
       EXPECT(rule->m_inputPattern[0].m_type == OptimizationRuleComponentTypeArray);
       EXPECT(rule->m_inputPattern[1].m_type == OptimizationRuleComponentTypeInput);
-      EXPECT(rule->m_inputPattern[2].m_type == OptimizationRuleComponentTypeConstant);
+      EXPECT(rule->m_inputPattern[2].m_type == OptimizationRuleComponentTypeInput);
       EXPECT(rule->m_inputPattern[3].m_type == OptimizationRuleComponentTypeConstant);
-      EXPECT(rule->m_inputPattern[4].m_type == OptimizationRuleComponentTypeEndOfList);
+      EXPECT(rule->m_inputPattern[4].m_type == OptimizationRuleComponentTypeInput);
+      EXPECT(rule->m_inputPattern[5].m_type == OptimizationRuleComponentTypeNativeModuleCall);
+      EXPECT(rule->m_inputPattern[6].m_type == OptimizationRuleComponentTypeOutput);
+      EXPECT(rule->m_inputPattern[7].m_type == OptimizationRuleComponentTypeEndOfList);
 
       EXPECT(rule->m_outputPatterns[0][0].m_type == OptimizationRuleComponentTypeArray);
       EXPECT(rule->m_outputPatterns[0][1].m_type == OptimizationRuleComponentTypeInputReference);
-      EXPECT(rule->m_outputPatterns[0][1].m_data.m_inputReferenceData.m_index == 1);
+      EXPECT(rule->m_outputPatterns[0][1].m_data.m_inputReferenceData.m_index == 2);
       EXPECT(rule->m_outputPatterns[0][2].m_type == OptimizationRuleComponentTypeInputReference);
       EXPECT(rule->m_outputPatterns[0][2].m_data.m_inputReferenceData.m_index == 0);
       EXPECT(rule->m_outputPatterns[0][3].m_type == OptimizationRuleComponentTypeInputReference);
       EXPECT(rule->m_outputPatterns[0][3].m_data.m_inputReferenceData.m_index == 1);
       EXPECT(rule->m_outputPatterns[0][4].m_type == OptimizationRuleComponentTypeInputReference);
-      EXPECT(rule->m_outputPatterns[0][4].m_data.m_inputReferenceData.m_index == 3);
-      EXPECT(rule->m_outputPatterns[0][5].m_type == OptimizationRuleComponentTypeEndOfList);
+      EXPECT(rule->m_outputPatterns[0][4].m_data.m_inputReferenceData.m_index == 2);
+      EXPECT(rule->m_outputPatterns[0][5].m_type == OptimizationRuleComponentTypeInputReference);
+      EXPECT(rule->m_outputPatterns[0][5].m_data.m_inputReferenceData.m_index == 4);
+      EXPECT(rule->m_outputPatterns[0][6].m_type == OptimizationRuleComponentTypeInputReference);
+      EXPECT(rule->m_outputPatterns[0][6].m_data.m_inputReferenceData.m_index == 5);
+      EXPECT(rule->m_outputPatterns[0][7].m_type == OptimizationRuleComponentTypeEndOfList);
+    }
+
+    TEST_METHOD(InputReferenceWithinInputPattern)
+    {
+      using namespace OptimizationRuleSyntax;
+
+      auto builtRule = DeclareOptimizationRule(
+        NativeLibraryId,
+        U"test",
+        Array(C0, C0, C1, C1),
+        0);
+      auto rule = builtRule.GetOptimizationRule();
+
+      EXPECT(rule->m_inputPattern[0].m_type == OptimizationRuleComponentTypeArray);
+      EXPECT(rule->m_inputPattern[1].m_type == OptimizationRuleComponentTypeInput);
+      EXPECT(rule->m_inputPattern[2].m_type == OptimizationRuleComponentTypeInputReference);
+      EXPECT(rule->m_inputPattern[2].m_data.m_inputReferenceData.m_index == 1);
+      EXPECT(rule->m_inputPattern[3].m_type == OptimizationRuleComponentTypeInput);
+      EXPECT(rule->m_inputPattern[4].m_type == OptimizationRuleComponentTypeInputReference);
+      EXPECT(rule->m_inputPattern[4].m_data.m_inputReferenceData.m_index == 3);
+      EXPECT(rule->m_inputPattern[5].m_type == OptimizationRuleComponentTypeEndOfList);
     }
 
     TEST_METHOD(MultipleOutputPatterns)
@@ -190,11 +221,11 @@ namespace Chord
       auto builtRule = DeclareOptimizationRule(
         NativeLibraryId,
         U"test",
-        Call(&nm, Out("a"), Out("b"), OutReturn(), Out("c")),
+        Call(&nm, Out0, Out1, Ret, Out5),
         1.0f,
-        Named("b", 20.0f),
-        Named("a", 10.0f),
-        Named("c", 30.0f));
+        Out1(20.0f),
+        Out0(10.0f),
+        Out5(30.0f));
       auto rule = builtRule.GetOptimizationRule();
 
       EXPECT(rule->m_inputPattern[0].m_type == OptimizationRuleComponentTypeNativeModuleCall);

@@ -33,6 +33,7 @@ namespace Chord
     struct TestClassInfo : public TestInfoListNode<TestClassInfo>
     {
       const char* m_name = nullptr;
+      bool m_shared = false;
       CreateTestClass m_create = nullptr;
       TestMethodInfo* m_methods = nullptr;
     };

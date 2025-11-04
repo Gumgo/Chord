@@ -19,14 +19,15 @@ namespace Chord
     class AddLatencyFloat
     {
     public:
-      static constexpr Guid Id = Guid::Parse("00000000-0000-0000-0000-000000000000");
+      static constexpr Guid Id = Guid::Parse("243551d7-fced-4324-9bfa-f453f149d79c");
       static constexpr const char32_t* Name = U"AddLatency";
       static constexpr bool AlwaysRuntime = true;
 
-      static void Prepare(CHORD_IN(const int, samples), Span<s32> outArgumentsLatency)
+      static bool Prepare(CHORD_IN(const int, samples), Span<s32> outArgumentsLatency)
       {
         ASSERT(outArgumentsLatency.Count() == 1);
         outArgumentsLatency[0] = samples;
+        return true;
       }
 
       static void Invoke(
@@ -40,14 +41,15 @@ namespace Chord
     class AddLatencyDouble
     {
     public:
-      static constexpr Guid Id = Guid::Parse("00000000-0000-0000-0000-000000000000");
+      static constexpr Guid Id = Guid::Parse("3d112e40-2fba-4201-9beb-3a7abe338818");
       static constexpr const char32_t* Name = U"AddLatency";
       static constexpr bool AlwaysRuntime = true;
 
-      static void Prepare(CHORD_IN(const int, samples), Span<s32> outArgumentsLatency)
+      static bool Prepare(CHORD_IN(const int, samples), Span<s32> outArgumentsLatency)
       {
         ASSERT(outArgumentsLatency.Count() == 1);
         outArgumentsLatency[0] = samples;
+        return true;
       }
 
       static void Invoke(
@@ -61,14 +63,15 @@ namespace Chord
     class AddLatencyInt
     {
     public:
-      static constexpr Guid Id = Guid::Parse("00000000-0000-0000-0000-000000000000");
+      static constexpr Guid Id = Guid::Parse("a6bdc665-80ba-4ae5-98af-41a82aae7efb");
       static constexpr const char32_t* Name = U"AddLatency";
       static constexpr bool AlwaysRuntime = true;
 
-      static void Prepare(CHORD_IN(const int, samples), Span<s32> outArgumentsLatency)
+      static bool Prepare(CHORD_IN(const int, samples), Span<s32> outArgumentsLatency)
       {
         ASSERT(outArgumentsLatency.Count() == 1);
         outArgumentsLatency[0] = samples;
+        return true;
       }
 
       static void Invoke(
@@ -82,14 +85,15 @@ namespace Chord
     class AddLatencyBool
     {
     public:
-      static constexpr Guid Id = Guid::Parse("00000000-0000-0000-0000-000000000000");
+      static constexpr Guid Id = Guid::Parse("a6a5e7fa-9c78-42de-912e-a1dd650f3f2d");
       static constexpr const char32_t* Name = U"AddLatency";
       static constexpr bool AlwaysRuntime = true;
 
-      static void Prepare(CHORD_IN(const int, samples), Span<s32> outArgumentsLatency)
+      static bool Prepare(CHORD_IN(const int, samples), Span<s32> outArgumentsLatency)
       {
         ASSERT(outArgumentsLatency.Count() == 1);
         outArgumentsLatency[0] = samples;
+        return true;
       }
 
       static void Invoke(

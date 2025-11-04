@@ -108,6 +108,10 @@ s32 main(s32 argc, char** argv)
 
     std::cout << "Running tests in " << ConsoleCommand::Bold << testClass->m_name << ConsoleCommand::Reset << ":\n";
 
+    auto sharedTestClassInstance = testClass->m_shared
+      ? testClass->m_create()
+      : nullptr;
+
     TestMethodInfo* testMethod = testClass->m_methods;
     usz successCount = 0;
     usz failureCount = 0;
@@ -126,8 +130,13 @@ s32 main(s32 argc, char** argv)
 
       try
       {
-        auto testClassInstance = testClass->m_create();
-        testMethod->m_testMethod(testClassInstance.get());
+        if (sharedTestClassInstance != nullptr)
+          { testMethod->m_testMethod(sharedTestClassInstance.get()); }
+        else
+        {
+          auto testClassInstance = testClass->m_create();
+          testMethod->m_testMethod(testClassInstance.get());
+        }
       }
       catch (const TestFailedException&)
         { }

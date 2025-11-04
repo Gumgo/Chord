@@ -164,7 +164,7 @@ namespace Chord
     class IndexFloatFloat
     {
     public:
-      static constexpr Guid Id = Guid::Parse("00000000-0000-0000-0000-000000000000");
+      static constexpr Guid Id = Guid::Parse("38977bcb-5781-4aa1-b7f3-3ecf2d07bb8b");
       static constexpr const char32_t* Name = U"[";
 
       static void Invoke(CHORD_IN(float[], x), CHORD_IN(float, y), CHORD_RETURN(float, result))
@@ -174,7 +174,7 @@ namespace Chord
     class IndexConstFloatFloat
     {
     public:
-      static constexpr Guid Id = Guid::Parse("00000000-0000-0000-0000-000000000000");
+      static constexpr Guid Id = Guid::Parse("810c4f1d-646d-463a-8017-6bc7b2a8110f");
       static constexpr const char32_t* Name = U"[";
 
       static void Invoke(CHORD_IN(const float[], x), CHORD_IN(float, y), CHORD_RETURN(float, result))
@@ -184,7 +184,7 @@ namespace Chord
     class IndexFloatDouble
     {
     public:
-      static constexpr Guid Id = Guid::Parse("00000000-0000-0000-0000-000000000000");
+      static constexpr Guid Id = Guid::Parse("78e1b51e-fc6a-4c21-b8ed-e8e3743ed12f");
       static constexpr const char32_t* Name = U"[";
 
       static void Invoke(CHORD_IN(float[], x), CHORD_IN(double, y), CHORD_RETURN(float, result))
@@ -194,7 +194,7 @@ namespace Chord
     class IndexConstFloatDouble
     {
     public:
-      static constexpr Guid Id = Guid::Parse("00000000-0000-0000-0000-000000000000");
+      static constexpr Guid Id = Guid::Parse("58e68f69-a975-44e3-8177-0e3449f6d8f6");
       static constexpr const char32_t* Name = U"[";
 
       static void Invoke(CHORD_IN(const float[], x), CHORD_IN(double, y), CHORD_RETURN(float, result))
@@ -204,7 +204,7 @@ namespace Chord
     class IndexFloatInt
     {
     public:
-      static constexpr Guid Id = Guid::Parse("00000000-0000-0000-0000-000000000000");
+      static constexpr Guid Id = Guid::Parse("1b6b608f-53b7-418a-9971-2a5aa1f72cd3");
       static constexpr const char32_t* Name = U"[";
 
       static void Invoke(CHORD_IN(float[], x), CHORD_IN(int, y), CHORD_RETURN(float, result))
@@ -214,7 +214,7 @@ namespace Chord
     class IndexConstFloatInt
     {
     public:
-      static constexpr Guid Id = Guid::Parse("00000000-0000-0000-0000-000000000000");
+      static constexpr Guid Id = Guid::Parse("e22e994f-d978-4987-b187-140ef6bf9da2");
       static constexpr const char32_t* Name = U"[";
 
       static void Invoke(CHORD_IN(const float[], x), CHORD_IN(int, y), CHORD_RETURN(float, result))
@@ -224,7 +224,7 @@ namespace Chord
     class IndexDoubleFloat
     {
     public:
-      static constexpr Guid Id = Guid::Parse("00000000-0000-0000-0000-000000000000");
+      static constexpr Guid Id = Guid::Parse("565ad30e-2853-40fb-a73b-dd6825c68abc");
       static constexpr const char32_t* Name = U"[";
 
       static void Invoke(CHORD_IN(double[], x), CHORD_IN(float, y), CHORD_RETURN(double, result))
@@ -234,7 +234,7 @@ namespace Chord
     class IndexConstDoubleFloat
     {
     public:
-      static constexpr Guid Id = Guid::Parse("00000000-0000-0000-0000-000000000000");
+      static constexpr Guid Id = Guid::Parse("2753d55d-1f69-4dfb-a5da-8d337a760554");
       static constexpr const char32_t* Name = U"[";
 
       static void Invoke(CHORD_IN(const double[], x), CHORD_IN(float, y), CHORD_RETURN(double, result))
@@ -244,7 +244,7 @@ namespace Chord
     class IndexDoubleDouble
     {
     public:
-      static constexpr Guid Id = Guid::Parse("00000000-0000-0000-0000-000000000000");
+      static constexpr Guid Id = Guid::Parse("c57ccff9-f666-4b34-b486-cdacf81293b1");
       static constexpr const char32_t* Name = U"[";
 
       static void Invoke(CHORD_IN(double[], x), CHORD_IN(double, y), CHORD_RETURN(double, result))
@@ -254,7 +254,7 @@ namespace Chord
     class IndexConstDoubleDouble
     {
     public:
-      static constexpr Guid Id = Guid::Parse("00000000-0000-0000-0000-000000000000");
+      static constexpr Guid Id = Guid::Parse("267c0b08-f48d-484a-8b53-1d978e283d3a");
       static constexpr const char32_t* Name = U"[";
 
       static void Invoke(CHORD_IN(const double[], x), CHORD_IN(double, y), CHORD_RETURN(double, result))
@@ -264,7 +264,7 @@ namespace Chord
     class IndexDoubleInt
     {
     public:
-      static constexpr Guid Id = Guid::Parse("00000000-0000-0000-0000-000000000000");
+      static constexpr Guid Id = Guid::Parse("e3d60201-68e3-4e06-9eae-b82904a20c47");
       static constexpr const char32_t* Name = U"[";
 
       static void Invoke(CHORD_IN(double[], x), CHORD_IN(int, y), CHORD_RETURN(double, result))
@@ -274,7 +274,7 @@ namespace Chord
     class IndexConstDoubleInt
     {
     public:
-      static constexpr Guid Id = Guid::Parse("00000000-0000-0000-0000-000000000000");
+      static constexpr Guid Id = Guid::Parse("d05807aa-2a0a-480f-a290-3a567d8f4152");
       static constexpr const char32_t* Name = U"[";
 
       static void Invoke(CHORD_IN(const double[], x), CHORD_IN(int, y), CHORD_RETURN(double, result))
@@ -284,7 +284,7 @@ namespace Chord
     class IndexIntFloat
     {
     public:
-      static constexpr Guid Id = Guid::Parse("00000000-0000-0000-0000-000000000000");
+      static constexpr Guid Id = Guid::Parse("fb8ff164-6300-4caa-8f5e-d8fd4e4fce08");
       static constexpr const char32_t* Name = U"[";
 
       static void Invoke(CHORD_IN(int[], x), CHORD_IN(float, y), CHORD_RETURN(int, result))
@@ -294,7 +294,7 @@ namespace Chord
     class IndexConstIntFloat
     {
     public:
-      static constexpr Guid Id = Guid::Parse("00000000-0000-0000-0000-000000000000");
+      static constexpr Guid Id = Guid::Parse("67f499ba-ee3d-4292-bbea-75885c0b33e7");
       static constexpr const char32_t* Name = U"[";
 
       static void Invoke(CHORD_IN(const int[], x), CHORD_IN(float, y), CHORD_RETURN(int, result))
@@ -304,7 +304,7 @@ namespace Chord
     class IndexIntDouble
     {
     public:
-      static constexpr Guid Id = Guid::Parse("00000000-0000-0000-0000-000000000000");
+      static constexpr Guid Id = Guid::Parse("b48c30f3-95b7-40ba-937b-db90428a65e9");
       static constexpr const char32_t* Name = U"[";
 
       static void Invoke(CHORD_IN(int[], x), CHORD_IN(double, y), CHORD_RETURN(int, result))
@@ -314,7 +314,7 @@ namespace Chord
     class IndexConstIntDouble
     {
     public:
-      static constexpr Guid Id = Guid::Parse("00000000-0000-0000-0000-000000000000");
+      static constexpr Guid Id = Guid::Parse("3bfe8bdc-3fde-413e-b4cf-31ef254fe88f");
       static constexpr const char32_t* Name = U"[";
 
       static void Invoke(CHORD_IN(const int[], x), CHORD_IN(double, y), CHORD_RETURN(int, result))
@@ -324,7 +324,7 @@ namespace Chord
     class IndexIntInt
     {
     public:
-      static constexpr Guid Id = Guid::Parse("00000000-0000-0000-0000-000000000000");
+      static constexpr Guid Id = Guid::Parse("9f738dbd-4aa4-46b4-a337-4a84c0a43fa2");
       static constexpr const char32_t* Name = U"[";
 
       static void Invoke(CHORD_IN(int[], x), CHORD_IN(int, y), CHORD_RETURN(int, result))
@@ -334,7 +334,7 @@ namespace Chord
     class IndexConstIntInt
     {
     public:
-      static constexpr Guid Id = Guid::Parse("00000000-0000-0000-0000-000000000000");
+      static constexpr Guid Id = Guid::Parse("457ce997-353d-4240-9aa1-5887e3ef27d8");
       static constexpr const char32_t* Name = U"[";
 
       static void Invoke(CHORD_IN(const int[], x), CHORD_IN(int, y), CHORD_RETURN(int, result))
@@ -344,7 +344,7 @@ namespace Chord
     class IndexBoolFloat
     {
     public:
-      static constexpr Guid Id = Guid::Parse("00000000-0000-0000-0000-000000000000");
+      static constexpr Guid Id = Guid::Parse("aae6b6de-2175-4e9b-bdba-de442c7cd7c8");
       static constexpr const char32_t* Name = U"[";
 
       static void Invoke(CHORD_IN(bool[], x), CHORD_IN(float, y), CHORD_RETURN(bool, result))
@@ -354,7 +354,7 @@ namespace Chord
     class IndexConstBoolFloat
     {
     public:
-      static constexpr Guid Id = Guid::Parse("00000000-0000-0000-0000-000000000000");
+      static constexpr Guid Id = Guid::Parse("5bdc2977-179a-411d-849e-78d8fe2e8926");
       static constexpr const char32_t* Name = U"[";
 
       static void Invoke(CHORD_IN(const bool[], x), CHORD_IN(float, y), CHORD_RETURN(bool, result))
@@ -364,7 +364,7 @@ namespace Chord
     class IndexBoolDouble
     {
     public:
-      static constexpr Guid Id = Guid::Parse("00000000-0000-0000-0000-000000000000");
+      static constexpr Guid Id = Guid::Parse("df3a8fd2-be44-4632-8fad-d46ace44db55");
       static constexpr const char32_t* Name = U"[";
 
       static void Invoke(CHORD_IN(bool[], x), CHORD_IN(double, y), CHORD_RETURN(bool, result))
@@ -374,7 +374,7 @@ namespace Chord
     class IndexConstBoolDouble
     {
     public:
-      static constexpr Guid Id = Guid::Parse("00000000-0000-0000-0000-000000000000");
+      static constexpr Guid Id = Guid::Parse("21b9a46f-8418-408d-a24b-e3012af0436b");
       static constexpr const char32_t* Name = U"[";
 
       static void Invoke(CHORD_IN(const bool[], x), CHORD_IN(double, y), CHORD_RETURN(bool, result))
@@ -384,7 +384,7 @@ namespace Chord
     class IndexBoolInt
     {
     public:
-      static constexpr Guid Id = Guid::Parse("00000000-0000-0000-0000-000000000000");
+      static constexpr Guid Id = Guid::Parse("35c14642-eb4a-4edf-a152-e2f711b9d7ac");
       static constexpr const char32_t* Name = U"[";
 
       static void Invoke(CHORD_IN(bool[], x), CHORD_IN(int, y), CHORD_RETURN(bool, result))
@@ -394,7 +394,7 @@ namespace Chord
     class IndexConstBoolInt
     {
     public:
-      static constexpr Guid Id = Guid::Parse("00000000-0000-0000-0000-000000000000");
+      static constexpr Guid Id = Guid::Parse("103a8a05-13c2-415e-bd73-e14f962c8ac3");
       static constexpr const char32_t* Name = U"[";
 
       static void Invoke(CHORD_IN(const bool[], x), CHORD_IN(int, y), CHORD_RETURN(bool, result))
