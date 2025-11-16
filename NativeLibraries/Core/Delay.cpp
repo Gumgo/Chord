@@ -257,7 +257,7 @@ namespace Chord::DelayInternal
 
 namespace Chord
 {
-  void DelayFloat::Initialize(
+  void DelayFloat::InitializeVoice(
     NativeModuleCallContext context,
     CHORD_IN(const int, samples),
     CHORD_IN(const float, initialValue))
@@ -288,7 +288,7 @@ namespace Chord
       { m_delayBuffer.Reset(); }
   }
 
-  void DelayDouble::Initialize(
+  void DelayDouble::InitializeVoice(
     NativeModuleCallContext context,
     CHORD_IN(const int, samples),
     CHORD_IN(const double, initialValue))
@@ -319,7 +319,7 @@ namespace Chord
       { m_delayBuffer.Reset(); }
   }
 
-  void DelayInt::Initialize(
+  void DelayInt::InitializeVoice(
     NativeModuleCallContext context,
     CHORD_IN(const int, samples),
     CHORD_IN(const int, initialValue))
@@ -350,7 +350,7 @@ namespace Chord
       { m_delayBuffer.Reset(); }
   }
 
-  void DelayBool::Initialize(
+  void DelayBool::InitializeVoice(
     NativeModuleCallContext context,
     CHORD_IN(const int, samples),
     CHORD_IN(const bool, initialValue))

@@ -191,5 +191,17 @@
     <ClCompile Include="TestUtilities\NativeModuleTesting.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="NativeLibraries\Core\ArrayIndexing.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NativeLibraries\Core\Conversion.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NativeLibraries\Core\Delay.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NativeLibraries\Core\Latency.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

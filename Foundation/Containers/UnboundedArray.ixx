@@ -100,7 +100,7 @@ namespace Chord
         }
 
         if (m_elements != nullptr)
-          { std::allocator<TElement>().deallocate(m_elements, this->m_count); }
+          { std::allocator<TElement>().deallocate(m_elements, m_capacity); }
 
         m_elements = newElements;
         m_capacity = newCapacity;
@@ -113,7 +113,7 @@ namespace Chord
           { std::destroy_at(&m_elements[this->m_count - i - 1]); }
 
         if (m_elements != nullptr)
-          { std::allocator<TElement>().deallocate(m_elements, this->m_count); }
+          { std::allocator<TElement>().deallocate(m_elements, m_capacity); }
       }
 
       TElement* m_elements = nullptr;

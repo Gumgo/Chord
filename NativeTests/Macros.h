@@ -5,6 +5,8 @@
 // Disable this to speed up build time when constexpr tests aren't needed
 #define CONSTEXPR_TESTS_ENABLED 1
 
+#define TEST_CLASS_NAME(name) TestClass__ ## name
+
 #define REGISTER_TEST_CLASS(name, shared) \
   static TestClassInfo s_testClassInfo__ ## name = \
     []() \
@@ -18,7 +20,15 @@
   \
   static inline s32 s_testClassInfoRegistration__ ## name = RegisterTestClass(&s_testClassInfo__ ## name); \
   \
-  class TestClass__ ## name : public TestClass<TestClass__ ## name>
+  class TEST_CLASS_NAME(name) : public TestClass<TEST_CLASS_NAME(name)>
+
+#define NON_TRIVIAL_TEST_CLASS(name) \
+  public: \
+    TEST_CLASS_NAME(name)() = default; \
+    TEST_CLASS_NAME(name)(const TEST_CLASS_NAME(name)&) = delete; \
+    TEST_CLASS_NAME(name)& operator=(const TEST_CLASS_NAME(name)&) = delete; \
+  \
+  private:
 
 #define TEST_CLASS(name) REGISTER_TEST_CLASS(name, false)
 #define TEST_CLASS_SHARED(name) REGISTER_TEST_CLASS(name, true)

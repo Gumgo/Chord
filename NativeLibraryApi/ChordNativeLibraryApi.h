@@ -222,26 +222,26 @@ typedef struct
 
 typedef struct
 {
-  size_t m_count;
   InputFloatBuffer* m_elements;
+  size_t m_count;
 } InputFloatBufferArray;
 
 typedef struct
 {
-  size_t m_count;
   InputDoubleBuffer* m_elements;
+  size_t m_count;
 } InputDoubleBufferArray;
 
 typedef struct
 {
-  size_t m_count;
   InputIntBuffer* m_elements;
+  size_t m_count;
 } InputIntBufferArray;
 
 typedef struct
 {
-  size_t m_count;
   InputBoolBuffer* m_elements;
+  size_t m_count;
 } InputBoolBufferArray;
 
 typedef struct

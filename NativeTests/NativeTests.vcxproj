@@ -95,6 +95,10 @@
     <ClCompile Include="Foundation\Utilities\Sha256.cpp" />
     <ClCompile Include="Foundation\Utilities\Unroll.cpp" />
     <ClCompile Include="NativeLibraries\Core\Arithmetic.cpp" />
+    <ClCompile Include="NativeLibraries\Core\ArrayIndexing.cpp" />
+    <ClCompile Include="NativeLibraries\Core\Conversion.cpp" />
+    <ClCompile Include="NativeLibraries\Core\Delay.cpp" />
+    <ClCompile Include="NativeLibraries\Core\Latency.cpp" />
     <ClCompile Include="NativeLibraryToolkit\DeclareNativeModule.cpp" />
     <ClCompile Include="NativeLibraryToolkit\DeclareOptimizationRule.cpp" />
     <ClCompile Include="NativeLibraryToolkit\BufferIterator.cpp" />

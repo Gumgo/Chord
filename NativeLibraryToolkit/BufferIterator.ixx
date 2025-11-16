@@ -162,7 +162,6 @@ namespace Chord
       { return OutputBufferData<Element> { .m_samples = buffer->m_samples }; }
   }
 
-  // !!! for u32, the reinterpret_casts may not be allowed, not sure
   template<usz ElementCount, typename TBufferData>
   auto LoadBufferValue(const TBufferData& bufferData, usz index) -> decltype(auto)
   {

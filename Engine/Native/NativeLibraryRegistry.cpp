@@ -49,7 +49,7 @@ namespace Chord
       {
         #if TARGET_WINDOWS
           // $TODO handle case-insensitive compare
-          if (entry.path().extension() == "dll")
+          if (entry.path().extension() == ".dll")
             { nativeLibraryDllPaths.Append(entry.path()); }
         #else
           // $TODO support .so files on linux

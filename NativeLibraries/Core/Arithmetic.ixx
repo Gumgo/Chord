@@ -50,7 +50,7 @@ namespace Chord
       static constexpr Guid Id = Guid::Parse("c6c894cb-fbef-4b30-8675-a94cd4901c6a");
       static constexpr const char32_t* Name = U"|";
 
-      static void Invoke(CHORD_IN(const? int, x), CHORD_IN(const? int, y), CHORD_RETURN(const? int, result))
+      static void Invoke(CHORD_IN(const? bool, x), CHORD_IN(const? bool, y), CHORD_RETURN(const? bool, result))
         { IterateBuffers<IterateBuffersFlags::PropagateConstants>(x, y, result, [](auto&& xVal, auto&& yVal, auto&& resultVal) { resultVal = xVal | yVal; }); }
     };
 
@@ -1013,7 +1013,7 @@ namespace Chord
     class DivideDoubleDouble
     {
     public:
-      static constexpr Guid Id = Guid::Parse("d6321673-ff57-4504-9c8a-29b5ca6b928e");
+      static constexpr Guid Id = Guid::Parse("6c1073eb-fb2c-4e0c-a2ed-5559bc6a68c1");
       static constexpr const char32_t* Name = U"/";
 
       static void Invoke(CHORD_IN(const? double, x), CHORD_IN(const? double, y), CHORD_RETURN(const? double, result))
@@ -1070,32 +1070,49 @@ namespace Chord
       static constexpr Guid Id = Guid::Parse("2b53cf15-1730-473e-859a-78ddc7d9125f");
       static constexpr const char32_t* Name = U"/";
 
+      void SetVoiceActive(bool voiceActive)
+      {
+        if (voiceActive)
+          { m_rateLimiter.Reset(); }
+      }
+
       void Invoke(NativeModuleCallContext context, CHORD_IN(const? int, x), CHORD_IN(const? int, y), CHORD_RETURN(const? int, result))
       {
         s32 divideByZeroMask = 0;
+        s32 overflowMask = 0;
         IterateBuffers<IterateBuffersFlags::PropagateConstants>(
           x,
           y,
           result,
           [&]<usz IterationStepSize>(auto&& xVal, auto&& yVal, auto&& resultVal)
           {
-            // To avoid divide-by-zero, if y is 0 we set it to an (arbitrary) non-zero value and then mask out the final result
+            // To avoid divide-by-zero, if y is 0 we set it to an (arbitrary) non-zero value and then mask out the final result. We also need to filter out
+            // intMin / -1 since that overflows.
             if constexpr (IterationStepSize == 1)
             {
               s32 yIsZeroMask = -s32(yVal == 0);
-              resultVal = AndNot(yIsZeroMask, xVal) / (yVal + yIsZeroMask);
+              s32 yIsIntMinAndXIsNegativeOneMask = -s32(xVal == std::numeric_limits<s32>::min() && yVal == -1);
+              s32 mask = yIsZeroMask | yIsIntMinAndXIsNegativeOneMask;
+              resultVal = AndNot(mask, xVal) / (yVal + yIsZeroMask);
               divideByZeroMask |= yIsZeroMask;
+              overflowMask |= yIsIntMinAndXIsNegativeOneMask;
             }
             else
             {
+              using s32xC = Vector<s32, IterationStepSize>;
               auto yIsZeroMask = yVal == Zero;
-              resultVal = AndNot(yIsZeroMask, xVal) / (yVal + yIsZeroMask);
+              auto yIsIntMinAndXIsNegativeOneMask = xVal == s32xC(std::numeric_limits<s32>::min()) && yVal == s32xC(-1);
+              auto mask = yIsZeroMask | yIsIntMinAndXIsNegativeOneMask;
+              resultVal = AndNot(mask, xVal) / (yVal + yIsZeroMask);
               divideByZeroMask |= GetMask(yIsZeroMask);
+              overflowMask |= GetMask(yIsIntMinAndXIsNegativeOneMask);
             }
           });
 
         if (divideByZeroMask != 0)
           { context.ReportError(m_rateLimiter, U"Divide by zero"); }
+        else if (overflowMask != 0)
+          { context.ReportError(m_rateLimiter, U"Division overflow"); }
       }
 
     private:
@@ -1186,34 +1203,52 @@ namespace Chord
       static constexpr Guid Id = Guid::Parse("dd918728-1dee-47a8-b1cf-bd07bef9dd70");
       static constexpr const char32_t* Name = U"%";
 
+      void SetVoiceActive(bool voiceActive)
+      {
+        if (voiceActive)
+          { m_rateLimiter.Reset(); }
+      }
+
       void Invoke(NativeModuleCallContext context, CHORD_IN(const? int, x), CHORD_IN(const? int, y), CHORD_RETURN(const? int, result))
       {
         s32 modByZeroMask = 0;
+        s32 overflowMask = 0;
         IterateBuffers<IterateBuffersFlags::PropagateConstants>(
           x,
           y,
           result,
           [&]<usz IterationStepSize>(auto&& xVal, auto&& yVal, auto&& resultVal)
           {
-            // To avoid divide-by-zero, if y is 0 we set it to an (arbitrary) non-zero value and then mask out the final result
+            // To avoid divide-by-zero, if y is 0 we set it to an (arbitrary) non-zero value and then mask out the final result. We also need to filter out
+            // intMin / -1 since that overflows.
             if constexpr (IterationStepSize == 1)
             {
               s32 yIsZeroMask = -s32(yVal == 0);
-              resultVal = AndNot(yIsZeroMask, xVal) % (yVal + yIsZeroMask);
+              s32 yIsIntMinAndXIsNegativeOneMask = -s32(xVal == std::numeric_limits<s32>::min() && yVal == -1);
+              s32 mask = yIsZeroMask | yIsIntMinAndXIsNegativeOneMask;
+              resultVal = AndNot(mask, xVal) % (yVal + yIsZeroMask);
               modByZeroMask |= yIsZeroMask;
+              overflowMask |= yIsIntMinAndXIsNegativeOneMask;
             }
             else
             {
               // Emulate % using division
+              using s32xC = Vector<s32, IterationStepSize>;
               auto yIsZeroMask = yVal == Zero;
-              auto xOverY = xVal / (yVal + yIsZeroMask);
-              resultVal = AndNot(yIsZeroMask, xVal - yVal * xOverY);
+              auto yIsIntMinAndXIsNegativeOneMask = xVal == s32xC(std::numeric_limits<s32>::min()) && yVal == s32xC(-1);
+              auto mask = yIsZeroMask | yIsIntMinAndXIsNegativeOneMask;
+              auto xMasked = AndNot(mask, xVal);
+              auto xOverY = xMasked / (yVal + yIsZeroMask);
+              resultVal = xMasked - yVal * xOverY;
               modByZeroMask |= GetMask(yIsZeroMask);
+              overflowMask |= GetMask(yIsIntMinAndXIsNegativeOneMask);
             }
           });
 
         if (modByZeroMask != 0)
           { context.ReportError(m_rateLimiter, U"Mod by zero"); }
+        else if (overflowMask != 0)
+          { context.ReportError(m_rateLimiter, U"Mod overflow"); }
       }
 
     private:

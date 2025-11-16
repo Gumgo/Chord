@@ -200,29 +200,29 @@ internal unsafe struct OutputBoolBuffer
 [StructLayout(LayoutKind.Sequential)]
 internal unsafe struct InputFloatBufferArray
 {
-  public SizeT Count;
   public InputFloatBuffer* Elements;
+  public SizeT Count;
 }
 
 [StructLayout(LayoutKind.Sequential)]
 internal unsafe struct InputDoubleBufferArray
 {
-  public SizeT Count;
   public InputDoubleBuffer* Elements;
+  public SizeT Count;
 }
 
 [StructLayout(LayoutKind.Sequential)]
 internal unsafe struct InputIntBufferArray
 {
-  public SizeT Count;
   public InputIntBuffer* Elements;
+  public SizeT Count;
 }
 
 [StructLayout(LayoutKind.Sequential)]
 internal unsafe struct InputBoolBufferArray
 {
-  public SizeT Count;
   public InputBoolBuffer* Elements;
+  public SizeT Count;
 }
 
 [StructLayout(LayoutKind.Explicit)]

@@ -205,7 +205,7 @@ namespace Chord
         { return SignedVector(Run<SimdOperation::LessEqual>(m_data, v.m_data)); }
 
       template<typename TTo>
-      constexpr operator TTo() const
+      explicit constexpr operator TTo() const
       {
         if constexpr (IsVectorOfType<TTo, s32, ElementCount>())
         {

@@ -34,7 +34,7 @@ namespace Chord
       // Prefer signed types because if there is any signed value, resulting min value may be less than 0 but cannot be greater than the signed type's max
       using TResult = CommonIntPreferSigned<TA, TBs...>;
       auto result = clamp_cast<TResult>(a);
-      ((result = std::cmp_less(result, bs) ? result : bs), ...);
+      ((result = std::cmp_less(result, bs) ? TResult(result) : TResult(bs)), ...);
       return result;
     }
 
@@ -44,7 +44,7 @@ namespace Chord
       // Prefer unsigned types because if there is any unsigned value, resulting max value will be at least 0
       using TResult = CommonIntPreferUnsigned<TA, TBs...>;
       auto result = clamp_cast<TResult>(a);
-      ((result = std::cmp_greater(result, bs) ? result : bs), ...);
+      ((result = std::cmp_greater(result, bs) ? TResult(result) : TResult(bs)), ...);
       return result;
     }
 

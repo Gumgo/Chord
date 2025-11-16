@@ -4,6 +4,7 @@ namespace Chord
 {
   export
   {
+    // !!! maybe instead make a single function with a severity enum
     class IReporting
     {
     public:

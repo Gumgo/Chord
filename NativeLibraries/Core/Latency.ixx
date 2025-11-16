@@ -11,7 +11,6 @@ import Chord.NativeLibraryToolkit;
 
 namespace Chord
 {
-  // !!! I think these need an optimization rule to get rid of them
   export
   {
     // These native modules exist only to declare latency. They are always removed by optimization rules.

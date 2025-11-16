@@ -44,7 +44,7 @@ namespace Chord
     return { product, FMSub(a, b, product) }; // FMSub has infinite precision so we can accurately measure the error
   }
 
-  template<floating_point_scalar_or_vector T>
+  template<std::floating_point T>
   static constexpr std::tuple<T, T> FastDoubleSubtract(const T& aHigh, const T& aLow, const T& bHigh, const T& bLow)
   {
     // In our specific use case, a > b, they share signs, and their exponents are within 1, so we don't lose any precision here
@@ -54,6 +54,21 @@ namespace Chord
     // These values are known to be non-overlapping, i.e. a + b == a. This is possible when a's exponent is high enough compared to b's that 100% of b's
     // precision is lost. Therefore, the high/low exponent ranges should still be ordered or, if the high parts were equal, they should cancel to 0.
     ASSERT(TestMaskAll(subHigh >= subLow || subHigh == T(0.0)));
+    T resultHigh = subHigh + subLow;
+    return { resultHigh, subLow - (resultHigh - subHigh) };
+  }
+
+  template<floating_point_vector T>
+  static constexpr std::tuple<T, T> FastDoubleSubtract(const T& aHigh, const T& aLow, const T& bHigh, const T& bLow, const T& assertMask)
+  {
+    // In our specific use case, a > b, they share signs, and their exponents are within 1, so we don't lose any precision here
+    T subHigh = aHigh - bHigh;
+    T subLow = aLow - bLow;
+
+    // These values are known to be non-overlapping, i.e. a + b == a. This is possible when a's exponent is high enough compared to b's that 100% of b's
+    // precision is lost. Therefore, the high/low exponent ranges should still be ordered or, if the high parts were equal, they should cancel to 0.
+    using sBBxC = ScalarOrVectorSignedType<T>;
+    ASSERT(TestMaskAll(subHigh >= subLow | subHigh == T(0.0) | ~std::bit_cast<sBBxC>(assertMask)));
     T resultHigh = subHigh + subLow;
     return { resultHigh, subLow - (resultHigh - subHigh) };
   }
@@ -142,7 +157,7 @@ namespace Chord
           [&](s32 targetExponent)
           {
             T valueWithTargetExponent = std::bit_cast<T>(
-              (std::bit_cast<uBBxC>(yAbsOrigScaled) & uBBxC(FloatTraits<T>::MantissaMask))
+              (std::bit_cast<sBBxC>(yAbsOrigScaled) & sBBxC(FloatTraits<T>::MantissaMask))
                 | sBBxC(sBB(FloatTraits<T>::ExponentBias + targetExponent) << FloatTraits<T>::MantissaBitCount));
             return Max(yAbsOrig, valueWithTargetExponent);
           };
@@ -166,15 +181,16 @@ namespace Chord
 
               // This is equivalent to xRemainder -= q * yAbs but with enhanced precision
               auto [productHigh, productLow] = ProductWithError(q, yAbs);
-              auto [subtractHigh, subtractLow] = FastDoubleSubtract(xRemainderHigh, xRemainderLow, productHigh, productLow);
 
               if constexpr (vector<T>)
               {
+                auto [subtractHigh, subtractLow] = FastDoubleSubtract(xRemainderHigh, xRemainderLow, productHigh, productLow, std::bit_cast<T>(mask));
                 xRemainderHigh = std::bit_cast<T>(mask) & subtractHigh;
                 xRemainderLow = std::bit_cast<T>(mask) & subtractLow;
               }
               else
               {
+                auto [subtractHigh, subtractLow] = FastDoubleSubtract(xRemainderHigh, xRemainderLow, productHigh, productLow);
                 xRemainderHigh = subtractHigh;
                 xRemainderLow = subtractLow;
               }

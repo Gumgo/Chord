@@ -36,7 +36,7 @@ namespace Chord
         { isValid &= TTargetIndex(index >= Zero); }
 
       // If the index is invalid, change it to 0
-      integerIndex &= ~isValid;
+      integerIndex &= isValid;
     }
 
     return std::make_tuple(integerIndex, isValid);
@@ -46,7 +46,16 @@ namespace Chord
   {
     using ArrayElement = std::remove_cvref_t<decltype(array[0].Samples()[0])>;
     static constexpr bool IsBoolArray = std::same_as<ArrayElement, u8>;
-    if (index.IsConstant())
+
+    // If we have no elements, every indexing attempt will be invalid
+    if (array.Count() == 0)
+    {
+      if constexpr (IsBoolArray)
+        { SetAndExtendConstant(result.GetUnderlyingArgument(), false); }
+      else
+        { SetAndExtendConstant(result.GetUnderlyingArgument(), ArrayElement(0)); }
+    }
+    else if (index.IsConstant())
     {
       // The index is constant so we can just grab the element directly
       auto [integerIndex, isValid] = ValidateIndex<s64>(index.Samples()[0], array.Count());
@@ -75,7 +84,7 @@ namespace Chord
     {
       for (usz sampleIndex = 0; sampleIndex < index.Samples().Count(); sampleIndex++)
       {
-        auto [integerIndex, isValid] = ValidateIndex<s64>(index.Samples()[0], array.Count());
+        auto [integerIndex, isValid] = ValidateIndex<s64>(index.Samples()[sampleIndex], array.Count());
         ArrayElement resultValue;
         if (isValid)
         {
@@ -153,7 +162,7 @@ namespace Chord
             using SizeMatchedIndex = Vector<SizeMatchedIndexElement, IterationStepSize>;
             using Result = Vector<ArrayElement, IterationStepSize>;
             auto [integerIndex, isValid] = ValidateIndex<SizeMatchedIndex>(indexVal, arrayCount);
-            resultVal = Result::Gather(array.Elements(), AndNot(isValid, integerIndex)) & std::bit_cast<Result>(isValid);
+            resultVal = Result::Gather(array.Elements(), integerIndex) & std::bit_cast<Result>(isValid);
           }
         });
     }

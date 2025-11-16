@@ -15,6 +15,12 @@ namespace Chord
     public:
       virtual constexpr ~TestClassBase() noexcept
         { }
+
+      virtual void Setup()
+        { }
+
+      virtual void Teardown()
+        { }
     };
 
     using CreateTestClass = std::unique_ptr<TestClassBase> (*)();

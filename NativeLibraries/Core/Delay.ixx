@@ -61,7 +61,7 @@ namespace Chord
       static constexpr const char32_t* Name = U"Delay";
       static constexpr bool AlwaysRuntime = true;
 
-      void Initialize(
+      void InitializeVoice(
         NativeModuleCallContext context,
         CHORD_IN(const int, samples),
         CHORD_IN(const float, initialValue));
@@ -85,7 +85,7 @@ namespace Chord
       static constexpr const char32_t* Name = U"Delay";
       static constexpr bool AlwaysRuntime = true;
 
-      void Initialize(
+      void InitializeVoice(
         NativeModuleCallContext context,
         CHORD_IN(const int, samples),
         CHORD_IN(const double, initialValue));
@@ -109,7 +109,7 @@ namespace Chord
       static constexpr const char32_t* Name = U"Delay";
       static constexpr bool AlwaysRuntime = true;
 
-      void Initialize(
+      void InitializeVoice(
         NativeModuleCallContext context,
         CHORD_IN(const int, samples),
         CHORD_IN(const int, initialValue));
@@ -133,7 +133,7 @@ namespace Chord
       static constexpr const char32_t* Name = U"Delay";
       static constexpr bool AlwaysRuntime = true;
 
-      void Initialize(
+      void InitializeVoice(
         NativeModuleCallContext context,
         CHORD_IN(const int, samples),
         CHORD_IN(const bool, initialValue));
@@ -149,10 +149,5 @@ namespace Chord
     private:
       DelayInternal::DelayBuffer<bool> m_delayBuffer;
     };
-
-    // !!! optimization rules:
-    // delay(x, 0, y) -> x
-    // delay(c, n, c) -> 0
-    // delay(delay(x, m, a), n, a) -> delay(x, m+n, a)
   }
 }

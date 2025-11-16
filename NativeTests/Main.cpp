@@ -111,6 +111,8 @@ s32 main(s32 argc, char** argv)
     auto sharedTestClassInstance = testClass->m_shared
       ? testClass->m_create()
       : nullptr;
+    if (sharedTestClassInstance != nullptr)
+      { sharedTestClassInstance->Setup(); }
 
     TestMethodInfo* testMethod = testClass->m_methods;
     usz successCount = 0;
@@ -135,7 +137,9 @@ s32 main(s32 argc, char** argv)
         else
         {
           auto testClassInstance = testClass->m_create();
+          testClassInstance->Setup();
           testMethod->m_testMethod(testClassInstance.get());
+          testClassInstance->Teardown();
         }
       }
       catch (const TestFailedException&)
@@ -168,6 +172,9 @@ s32 main(s32 argc, char** argv)
 
       testMethod = testMethod->m_next;
     }
+
+    if (sharedTestClassInstance != nullptr)
+      { sharedTestClassInstance->Teardown(); }
 
     std::cout << "  " << successCount << " succeeded, " << failureCount << " failed\n\n";
     totalSuccessCount += successCount;

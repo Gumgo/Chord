@@ -76,8 +76,6 @@ namespace Chord
       Shuffle4,
       Shuffle8,
 
-      // !!! consider adding these (could call to Shuffle though): ReverseElements DuplicateEvenElements DuplicateOddElements SwapEvenOddElements,
-
       Abs,
       Floor,
       Ceil,

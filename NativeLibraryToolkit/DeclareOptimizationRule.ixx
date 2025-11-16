@@ -44,7 +44,6 @@ namespace Chord
     OutputPattern,
   };
 
-  // !!! should these stay out of syntax namespace?
   struct OptimizationRuleComponentBase
     { };
 

@@ -664,7 +664,7 @@ namespace Chord
                 { bufferManager->AddBufferInputTask(*bufferHandle, task, !parameter.m_disallowBufferSharing); }
             }
 
-            argument.m_floatBufferArrayIn = { .m_count = arrayNode->Elements().Count(), .m_elements = buffers.Elements() };
+            argument.m_floatBufferArrayIn = { .m_elements = buffers.Elements(), .m_count = arrayNode->Elements().Count() };
             break;
           }
 
@@ -684,7 +684,7 @@ namespace Chord
                 { bufferManager->AddBufferInputTask(*bufferHandle, task, !parameter.m_disallowBufferSharing); }
             }
 
-            argument.m_doubleBufferArrayIn = { .m_count = arrayNode->Elements().Count(), .m_elements = buffers.Elements() };
+            argument.m_doubleBufferArrayIn = { .m_elements = buffers.Elements(), .m_count = arrayNode->Elements().Count() };
             break;
           }
 
@@ -704,7 +704,7 @@ namespace Chord
                 { bufferManager->AddBufferInputTask(*bufferHandle, task, !parameter.m_disallowBufferSharing); }
             }
 
-            argument.m_intBufferArrayIn = { .m_count = arrayNode->Elements().Count(), .m_elements = buffers.Elements() };
+            argument.m_intBufferArrayIn = { .m_elements = buffers.Elements(), .m_count = arrayNode->Elements().Count() };
             break;
           }
 
@@ -724,7 +724,7 @@ namespace Chord
                 { bufferManager->AddBufferInputTask(*bufferHandle, task, !parameter.m_disallowBufferSharing); }
             }
 
-            argument.m_boolBufferArrayIn = { .m_count = arrayNode->Elements().Count(), .m_elements = buffers.Elements() };
+            argument.m_boolBufferArrayIn = { .m_elements = buffers.Elements(), .m_count = arrayNode->Elements().Count() };
             break;
           }
 

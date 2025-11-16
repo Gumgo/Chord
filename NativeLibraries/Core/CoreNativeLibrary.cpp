@@ -872,6 +872,68 @@ extern "C" __declspec(dllexport) void ListNativeLibraries(void* context, ListNat
     Call(&delayBool, Call(&delayBool, V0, C1, C0, Ret), C2, C0, Ret),
     Call(&delayBool, V0, Call(&addInt, C1, C2, Ret), C0, Ret));
 
+  // Index const buffer array as const array
+  auto indexFloatFloatConstantBufferArrayAsConstantArray = DeclareOptimizationRule(
+    nativeLibraryId,
+    U"IndexFloatFloatConstantBufferArrayAsConstantArray",
+    Call(&indexFloatFloat, C0, V0, Ret),
+    Call(&indexConstFloatFloat, C0, V0, Ret));
+  auto indexFloatDoubleConstantBufferArrayAsConstantArray = DeclareOptimizationRule(
+    nativeLibraryId,
+    U"IndexFloatDoubleConstantBufferArrayAsConstantArray",
+    Call(&indexFloatDouble, C0, V0, Ret),
+    Call(&indexConstFloatDouble, C0, V0, Ret));
+  auto indexFloatIntConstantBufferArrayAsConstantArray = DeclareOptimizationRule(
+    nativeLibraryId,
+    U"IndexFloatIntConstantBufferArrayAsConstantArray",
+    Call(&indexFloatInt, C0, V0, Ret),
+    Call(&indexConstFloatInt, C0, V0, Ret));
+  auto indexDoubleFloatConstantBufferArrayAsConstantArray = DeclareOptimizationRule(
+    nativeLibraryId,
+    U"IndexDoubleFloatConstantBufferArrayAsConstantArray",
+    Call(&indexDoubleFloat, C0, V0, Ret),
+    Call(&indexConstDoubleFloat, C0, V0, Ret));
+  auto indexDoubleDoubleConstantBufferArrayAsConstantArray = DeclareOptimizationRule(
+    nativeLibraryId,
+    U"IndexDoubleDoubleConstantBufferArrayAsConstantArray",
+    Call(&indexDoubleDouble, C0, V0, Ret),
+    Call(&indexConstDoubleDouble, C0, V0, Ret));
+  auto indexDoubleIntConstantBufferArrayAsConstantArray = DeclareOptimizationRule(
+    nativeLibraryId,
+    U"IndexDoubleIntConstantBufferArrayAsConstantArray",
+    Call(&indexDoubleInt, C0, V0, Ret),
+    Call(&indexConstDoubleInt, C0, V0, Ret));
+  auto indexIntFloatConstantBufferArrayAsConstantArray = DeclareOptimizationRule(
+    nativeLibraryId,
+    U"IndexIntFloatConstantBufferArrayAsConstantArray",
+    Call(&indexIntFloat, C0, V0, Ret),
+    Call(&indexConstIntFloat, C0, V0, Ret));
+  auto indexIntDoubleConstantBufferArrayAsConstantArray = DeclareOptimizationRule(
+    nativeLibraryId,
+    U"IndexIntDoubleConstantBufferArrayAsConstantArray",
+    Call(&indexIntDouble, C0, V0, Ret),
+    Call(&indexConstIntDouble, C0, V0, Ret));
+  auto indexIntIntConstantBufferArrayAsConstantArray = DeclareOptimizationRule(
+    nativeLibraryId,
+    U"IndexIntIntConstantBufferArrayAsConstantArray",
+    Call(&indexIntInt, C0, V0, Ret),
+    Call(&indexConstIntInt, C0, V0, Ret));
+  auto indexBoolFloatConstantBufferArrayAsConstantArray = DeclareOptimizationRule(
+    nativeLibraryId,
+    U"IndexBoolFloatConstantBufferArrayAsConstantArray",
+    Call(&indexBoolFloat, C0, V0, Ret),
+    Call(&indexConstBoolFloat, C0, V0, Ret));
+  auto indexBoolDoubleConstantBufferArrayAsConstantArray = DeclareOptimizationRule(
+    nativeLibraryId,
+    U"IndexBoolDoubleConstantBufferArrayAsConstantArray",
+    Call(&indexBoolDouble, C0, V0, Ret),
+    Call(&indexConstBoolDouble, C0, V0, Ret));
+  auto IndexBoolIntConstantBufferArrayAsConstantArray = DeclareOptimizationRule(
+    nativeLibraryId,
+    U"IndexBoolIntConstantBufferArrayAsConstantArray",
+    Call(&indexBoolInt, C0, V0, Ret),
+    Call(&indexConstBoolInt, C0, V0, Ret));
+
   // Once latency is computed, the AddLatency() native module call can simply disappear
   // AddLatency(V0, C0) -> V0
   auto removeAddLatencyFloat = DeclareOptimizationRule(nativeLibraryId, U"RemoveAddLatencyFloat", Call(&addLatencyFloat, V0, Ret), V0);
@@ -1127,6 +1189,18 @@ extern "C" __declspec(dllexport) void ListNativeLibraries(void* context, ListNat
     removeAddLatencyDouble.GetOptimizationRule(),
     removeAddLatencyInt.GetOptimizationRule(),
     removeAddLatencyBool.GetOptimizationRule(),
+    indexFloatFloatConstantBufferArrayAsConstantArray.GetOptimizationRule(),
+    indexFloatDoubleConstantBufferArrayAsConstantArray.GetOptimizationRule(),
+    indexFloatIntConstantBufferArrayAsConstantArray.GetOptimizationRule(),
+    indexDoubleFloatConstantBufferArrayAsConstantArray.GetOptimizationRule(),
+    indexDoubleDoubleConstantBufferArrayAsConstantArray.GetOptimizationRule(),
+    indexDoubleIntConstantBufferArrayAsConstantArray.GetOptimizationRule(),
+    indexIntFloatConstantBufferArrayAsConstantArray.GetOptimizationRule(),
+    indexIntDoubleConstantBufferArrayAsConstantArray.GetOptimizationRule(),
+    indexIntIntConstantBufferArrayAsConstantArray.GetOptimizationRule(),
+    indexBoolFloatConstantBufferArrayAsConstantArray.GetOptimizationRule(),
+    indexBoolDoubleConstantBufferArrayAsConstantArray.GetOptimizationRule(),
+    IndexBoolIntConstantBufferArrayAsConstantArray.GetOptimizationRule(),
   };
 
   NativeLibrary nativeLibrary =

@@ -20,6 +20,9 @@ namespace Chord
         : m_interval(s32(intervalSeconds * 1000.0))
         { }
 
+      void Reset()
+        { m_lastReportTime.reset(); }
+
       // Call this before reporting. If it returns true, report the message. Otherwise, drop it.
       bool TryReport()
       {
@@ -377,8 +380,8 @@ namespace Chord
 
       InputFloatBufferArrayElement operator[](basic_integral auto index) const
       {
-        auto span = Span(&this->m_argument->m_floatBufferArrayIn.m_elements, this->m_argument->m_floatBufferArrayIn.m_count);
-        return { span[index] };
+        auto span = Span(this->m_argument->m_floatBufferArrayIn.m_elements, this->m_argument->m_floatBufferArrayIn.m_count);
+        return { &span[index] };
       }
 
       usz Count() const
@@ -535,8 +538,8 @@ namespace Chord
 
       InputDoubleBufferArrayElement operator[](basic_integral auto index) const
       {
-        auto span = Span(&this->m_argument->m_doubleBufferArrayIn.m_elements, this->m_argument->m_doubleBufferArrayIn.m_count);
-        return { span[index] };
+        auto span = Span(this->m_argument->m_doubleBufferArrayIn.m_elements, this->m_argument->m_doubleBufferArrayIn.m_count);
+        return { &span[index] };
       }
 
       usz Count() const
@@ -693,8 +696,8 @@ namespace Chord
 
       InputIntBufferArrayElement operator[](basic_integral auto index) const
       {
-        auto span = Span(&this->m_argument->m_intBufferArrayIn.m_elements, this->m_argument->m_intBufferArrayIn.m_count);
-        return { span[index] };
+        auto span = Span(this->m_argument->m_intBufferArrayIn.m_elements, this->m_argument->m_intBufferArrayIn.m_count);
+        return { &span[index] };
       }
 
       usz Count() const
@@ -851,8 +854,8 @@ namespace Chord
 
       InputBoolBufferArrayElement operator[](basic_integral auto index) const
       {
-        auto span = Span(&this->m_argument->m_boolBufferArrayIn.m_elements, this->m_argument->m_boolBufferArrayIn.m_count);
-        return { span[index] };
+        auto span = Span(this->m_argument->m_boolBufferArrayIn.m_elements, this->m_argument->m_boolBufferArrayIn.m_count);
+        return { &span[index] };
       }
 
       usz Count() const

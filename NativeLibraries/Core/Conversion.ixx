@@ -20,7 +20,16 @@ namespace Chord
       static constexpr const char32_t* Name = U"as double";
 
       static void Invoke(CHORD_IN(const? float, x), CHORD_RETURN(const? double, result))
-        { IterateBuffers<IterateBuffersFlags::PropagateConstants>(x, result, [](auto&& xVal, auto&& resultVal) { resultVal = decltype(resultVal)(xVal); }); }
+      {
+        IterateBuffers<IterateBuffersFlags::PropagateConstants>(
+          x,
+          result,
+          [](auto&& xVal, auto&& resultVal)
+          {
+            using Result = std::remove_reference_t<decltype(resultVal)>;
+            resultVal = Result(xVal);
+          });
+      }
     };
 
     class ConvertFloatInt
@@ -30,7 +39,16 @@ namespace Chord
       static constexpr const char32_t* Name = U"as int";
 
       static void Invoke(CHORD_IN(const? float, x), CHORD_RETURN(const? int, result))
-        { IterateBuffers<IterateBuffersFlags::PropagateConstants>(x, result, [](auto&& xVal, auto&& resultVal) { resultVal = decltype(resultVal)(xVal); }); }
+      {
+        IterateBuffers<IterateBuffersFlags::PropagateConstants>(
+          x,
+          result,
+          [](auto&& xVal, auto&& resultVal)
+          {
+            using Result = std::remove_reference_t<decltype(resultVal)>;
+            resultVal = Result(xVal);
+          });
+      }
     };
 
     class ConvertDoubleFloat
@@ -40,7 +58,16 @@ namespace Chord
       static constexpr const char32_t* Name = U"as float";
 
       static void Invoke(CHORD_IN(const? double, x), CHORD_RETURN(const? float, result))
-        { IterateBuffers<IterateBuffersFlags::PropagateConstants>(x, result, [](auto&& xVal, auto&& resultVal) { resultVal = decltype(resultVal)(xVal); }); }
+      {
+        IterateBuffers<IterateBuffersFlags::PropagateConstants>(
+          x,
+          result,
+          [](auto&& xVal, auto&& resultVal)
+          {
+            using Result = std::remove_reference_t<decltype(resultVal)>;
+            resultVal = Result(xVal);
+          });
+      }
     };
 
     class ConvertDoubleInt
@@ -50,7 +77,16 @@ namespace Chord
       static constexpr const char32_t* Name = U"as int";
 
       static void Invoke(CHORD_IN(const? double, x), CHORD_RETURN(const? int, result))
-        { IterateBuffers<IterateBuffersFlags::PropagateConstants>(x, result, [](auto&& xVal, auto&& resultVal) { resultVal = decltype(resultVal)(xVal); }); }
+      {
+        IterateBuffers<IterateBuffersFlags::PropagateConstants>(
+          x,
+          result,
+          [](auto&& xVal, auto&& resultVal)
+          {
+            using Result = std::remove_reference_t<decltype(resultVal)>;
+            resultVal = Result(xVal);
+          });
+      }
     };
 
     class ConvertIntFloat
@@ -60,7 +96,16 @@ namespace Chord
       static constexpr const char32_t* Name = U"as float";
 
       static void Invoke(CHORD_IN(const? int, x), CHORD_RETURN(const? float, result))
-        { IterateBuffers<IterateBuffersFlags::PropagateConstants>(x, result, [](auto&& xVal, auto&& resultVal) { resultVal = decltype(resultVal)(xVal); }); }
+      {
+        IterateBuffers<IterateBuffersFlags::PropagateConstants>(
+          x,
+          result,
+          [](auto&& xVal, auto&& resultVal)
+          {
+            using Result = std::remove_reference_t<decltype(resultVal)>;
+            resultVal = Result(xVal);
+          });
+      }
     };
 
     class ConvertIntDouble
@@ -70,7 +115,16 @@ namespace Chord
       static constexpr const char32_t* Name = U"as double";
 
       static void Invoke(CHORD_IN(const? int, x), CHORD_RETURN(const? double, result))
-        { IterateBuffers<IterateBuffersFlags::PropagateConstants>(x, result, [](auto&& xVal, auto&& resultVal) { resultVal = decltype(resultVal)(xVal); }); }
+      {
+        IterateBuffers<IterateBuffersFlags::PropagateConstants>(
+          x,
+          result,
+          [](auto&& xVal, auto&& resultVal)
+          {
+            using Result = std::remove_reference_t<decltype(resultVal)>;
+            resultVal = Result(xVal);
+          });
+      }
     };
   }
 }
