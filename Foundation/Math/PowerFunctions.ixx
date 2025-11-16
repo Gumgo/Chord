@@ -162,7 +162,7 @@ namespace Chord
       static constexpr usz CoefficientCount = Exp2Coefficients<fBB>.Count();
       T exponentiatedFraction = T(Exp2Coefficients<fBB>[CoefficientCount - 1]);
       Unroll<1, CoefficientCount>(
-        [&](auto i) { exponentiatedFraction = FMAdd(exponentiatedFraction, fractionPart, T(Exp2Coefficients<fBB>[CoefficientCount - i.value - 1])); });
+        [&]<usz Index>() { exponentiatedFraction = FMAdd(exponentiatedFraction, fractionPart, T(Exp2Coefficients<fBB>[CoefficientCount - Index - 1])); });
 
       result.SetResult(exponentiatedInt * exponentiatedFraction * denormalMultiplier);
       return result.Result();
@@ -244,7 +244,7 @@ namespace Chord
       static constexpr usz CoefficientCount = Log2Coefficients<fBB>.Count();
       T polyResult = T(Log2Coefficients<fBB>[CoefficientCount - 1]);
       Unroll<1, CoefficientCount>(
-        [&](auto i) { polyResult = FMAdd(polyResult, polyInput, T(Log2Coefficients<fBB>[CoefficientCount - i.value - 1])); });
+        [&]<usz Index>() { polyResult = FMAdd(polyResult, polyInput, T(Log2Coefficients<fBB>[CoefficientCount - Index - 1])); });
 
       result.SetResult(FMAdd(polyResult, polyInput, exponent));
       return result.Result();

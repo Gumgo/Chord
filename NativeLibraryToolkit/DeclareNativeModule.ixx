@@ -31,9 +31,9 @@ namespace Chord
     {
       usz count = 0;
       Unroll<0, ArgumentCount>(
-        [&](auto i)
+        [&]<usz Index>()
         {
-          if constexpr (std::same_as<std::tuple_element_t<decltype(i)::value, Arguments>, TArgumentTest>)
+          if constexpr (std::same_as<std::tuple_element_t<Index, Arguments>, TArgumentTest>)
             { count++; }
         });
 
@@ -158,9 +158,9 @@ namespace Chord
     using Traits = FunctionTraits<TFunc>;
     usz parameterCount = 0;
     Unroll<0, Traits::ArgumentCount>(
-      [&](auto i)
+      [&]<usz Index>()
       {
-        using Argument = std::tuple_element_t<decltype(i)::value, typename Traits::Arguments>;
+        using Argument = std::tuple_element_t<Index, typename Traits::Arguments>;
         if constexpr (std::derived_from<Argument, NativeModuleArgumentBase>)
           { parameterCount++; }
       });
@@ -198,9 +198,9 @@ namespace Chord
     usz parameterIndex = 0;
     s32 returnParameterIndex = -1;
     Unroll<0, Traits::ArgumentCount>(
-      [&](auto i)
+      [&]<usz Index>()
       {
-        using Argument = std::tuple_element_t<decltype(i)::value, typename FunctionTraits<TFunc>::Arguments>;
+        using Argument = std::tuple_element_t<Index, typename FunctionTraits<TFunc>::Arguments>;
         if constexpr (std::derived_from<Argument, NativeModuleArgumentBase>)
         {
           auto [parameter, isReturn] = BuildNativeModuleParameter<Argument>();

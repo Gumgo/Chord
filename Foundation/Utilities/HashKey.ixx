@@ -34,9 +34,9 @@ namespace Chord
           static_assert(sizeof(uBB) == sizeof(T));
 
           Unroll<0, sizeof(T)>(
-            [&](auto i)
+            [&]<usz Index>()
             {
-              m_state ^= u8(std::bit_cast<uBB>(value) >> (i.value * 8));
+              m_state ^= u8(std::bit_cast<uBB>(value) >> (Index * 8));
               m_state *= 1099511628211_u64;
             });
         }
@@ -73,8 +73,8 @@ namespace Chord
     {
       HashKey result = HashKey(0);
       Unroll<0, std::tuple_size_v<std::tuple<T...>>>(
-        [&](auto i)
-          { result = HashKey(u64(result) ^ u64(CalculateHashKey(std::get<decltype(i)::value>(value)))); });
+        [&]<usz Index>()
+          { result = HashKey(u64(result) ^ u64(CalculateHashKey(std::get<Index>(value)))); });
       return result;
     }
   }

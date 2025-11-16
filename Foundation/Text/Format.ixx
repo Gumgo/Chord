@@ -32,9 +32,8 @@ namespace Chord
       {
         auto argsTuple = std::make_tuple(std::forward<TArgs>(args)...);
         Unroll<0, sizeof...(TArgs)>(
-          [&](auto i)
+          [&]<usz Index>()
           {
-            static constexpr usz Index = decltype(i)::value;
             if (Index == parameterSpec.m_argumentIndex)
             {
               using ArgumentType = std::remove_cvref_t<std::tuple_element_t<Index, std::tuple<TArgs...>>>;

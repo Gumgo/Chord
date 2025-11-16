@@ -269,9 +269,9 @@ namespace Chord
     {
       static constexpr s32 ShiftValues[] = { 0, 4, 7, 31 };
       Unroll<0, ArrayLength(ShiftValues)>(
-        [](auto shiftValue)
+        []<usz ShiftValueIndex>()
         {
-          static constexpr s32 ShiftValue = ShiftValues[shiftValue.value];
+          static constexpr s32 ShiftValue = ShiftValues[ShiftValueIndex];
           ForEachSimdType(
             [&]<basic_numeric TElement, usz ElementCount>()
             {
@@ -327,9 +327,9 @@ namespace Chord
     {
       static constexpr s32 ShiftValues[] = { 0, 4, 7, 31 };
       Unroll<0, ArrayLength(ShiftValues)>(
-        [](auto shiftValue)
+        []<usz ShiftValueIndex>()
         {
-          static constexpr s32 ShiftValue = ShiftValues[shiftValue.value];
+          static constexpr s32 ShiftValue = ShiftValues[ShiftValueIndex];
           ForEachSimdType(
             [&]<basic_numeric TElement, usz ElementCount>()
             {

@@ -51,7 +51,7 @@ namespace Chord
               { sourceElements[i] = TElement(i + 4); }
             auto a = Vector<TElement, ElementCount>::LoadAligned(sourceElements);
             auto b = a.LowerHalf();
-            Unroll<0, ElementCount / 2>([&](auto i) { EXPECT(b.GetElement<decltype(i)::value>() == sourceElements[decltype(i)::value]); });
+            Unroll<0, ElementCount / 2>([&]<usz Index>() { EXPECT(b.GetElement<Index>() == sourceElements[Index]); });
           }
         });
     }
@@ -68,7 +68,7 @@ namespace Chord
               { sourceElements[i] = TElement(i + 4); }
             auto a = Vector<TElement, ElementCount>::LoadAligned(sourceElements);
             auto b = a.UpperHalf();
-            Unroll<0, ElementCount / 2>([&](auto i) { EXPECT(b.GetElement<decltype(i)::value>() == sourceElements[(ElementCount / 2) + decltype(i)::value]); });
+            Unroll<0, ElementCount / 2>([&]<usz Index>() { EXPECT(b.GetElement<Index>() == sourceElements[(ElementCount / 2) + Index]); });
           }
         });
     }
@@ -85,8 +85,8 @@ namespace Chord
               { sourceElements[i] = TElement(i + 4); }
             auto v = Vector<TElement, ElementCount>::LoadAligned(sourceElements);
             auto [a, b] = v.WidenAndSplit();
-            Unroll<0, ElementCount / 2>([&](auto i) { EXPECT(a.GetElement<decltype(i)::value>() == sourceElements[decltype(i)::value]); });
-            Unroll<0, ElementCount / 2>([&](auto i) { EXPECT(b.GetElement<decltype(i)::value>() == sourceElements[(ElementCount / 2) + decltype(i)::value]); });
+            Unroll<0, ElementCount / 2>([&]<usz Index>() { EXPECT(a.GetElement<Index>() == sourceElements[Index]); });
+            Unroll<0, ElementCount / 2>([&]<usz Index>() { EXPECT(b.GetElement<Index>() == sourceElements[(ElementCount / 2) + Index]); });
           }
         });
     }
@@ -105,10 +105,10 @@ namespace Chord
 
             static constexpr usz ShuffleTestCount = ShuffleTestIndices.Count();
             Unroll<0, ShuffleTestCount>(
-              [&](auto testIndex)
+              [&]<usz TestIndex>()
               {
-                static constexpr usz Index0 = ((ShuffleTestIndices[testIndex.value] >> 0) & 0xf) % ElementCount;
-                static constexpr usz Index1 = ((ShuffleTestIndices[testIndex.value] >> 4) & 0xf) % ElementCount;
+                static constexpr usz Index0 = ((ShuffleTestIndices[TestIndex] >> 0) & 0xf) % ElementCount;
+                static constexpr usz Index1 = ((ShuffleTestIndices[TestIndex] >> 4) & 0xf) % ElementCount;
                 auto s = v.Shuffle<Index0, Index1>();
                 EXPECT(s.GetElement<0>() == sourceElements[Index0]);
                 EXPECT(s.GetElement<1>() == sourceElements[Index1]);
@@ -131,12 +131,12 @@ namespace Chord
 
             static constexpr usz ShuffleTestCount = ShuffleTestIndices.Count();
             Unroll<0, ShuffleTestCount>(
-              [&](auto testIndex)
+              [&]<usz TestIndex>()
               {
-                static constexpr usz Index0 = ((ShuffleTestIndices[testIndex.value] >> 0) & 0xf) % ElementCount;
-                static constexpr usz Index1 = ((ShuffleTestIndices[testIndex.value] >> 4) & 0xf) % ElementCount;
-                static constexpr usz Index2 = ((ShuffleTestIndices[testIndex.value] >> 8) & 0xf) % ElementCount;
-                static constexpr usz Index3 = ((ShuffleTestIndices[testIndex.value] >> 12) & 0xf) % ElementCount;
+                static constexpr usz Index0 = ((ShuffleTestIndices[TestIndex] >> 0) & 0xf) % ElementCount;
+                static constexpr usz Index1 = ((ShuffleTestIndices[TestIndex] >> 4) & 0xf) % ElementCount;
+                static constexpr usz Index2 = ((ShuffleTestIndices[TestIndex] >> 8) & 0xf) % ElementCount;
+                static constexpr usz Index3 = ((ShuffleTestIndices[TestIndex] >> 12) & 0xf) % ElementCount;
                 auto s = v.Shuffle<Index0, Index1, Index2, Index3>();
                 EXPECT(s.GetElement<0>() == sourceElements[Index0]);
                 EXPECT(s.GetElement<1>() == sourceElements[Index1]);
@@ -161,16 +161,16 @@ namespace Chord
 
             static constexpr usz ShuffleTestCount = ShuffleTestIndices.Count();
             Unroll<0, ShuffleTestCount>(
-              [&](auto testIndex)
+              [&]<usz TestIndex>()
               {
-                static constexpr usz Index0 = ((ShuffleTestIndices[testIndex.value] >> 0) & 0xf) % ElementCount;
-                static constexpr usz Index1 = ((ShuffleTestIndices[testIndex.value] >> 4) & 0xf) % ElementCount;
-                static constexpr usz Index2 = ((ShuffleTestIndices[testIndex.value] >> 8) & 0xf) % ElementCount;
-                static constexpr usz Index3 = ((ShuffleTestIndices[testIndex.value] >> 12) & 0xf) % ElementCount;
-                static constexpr usz Index4 = ((ShuffleTestIndices[testIndex.value] >> 16) & 0xf) % ElementCount;
-                static constexpr usz Index5 = ((ShuffleTestIndices[testIndex.value] >> 20) & 0xf) % ElementCount;
-                static constexpr usz Index6 = ((ShuffleTestIndices[testIndex.value] >> 24) & 0xf) % ElementCount;
-                static constexpr usz Index7 = ((ShuffleTestIndices[testIndex.value] >> 28) & 0xf) % ElementCount;
+                static constexpr usz Index0 = ((ShuffleTestIndices[TestIndex] >> 0) & 0xf) % ElementCount;
+                static constexpr usz Index1 = ((ShuffleTestIndices[TestIndex] >> 4) & 0xf) % ElementCount;
+                static constexpr usz Index2 = ((ShuffleTestIndices[TestIndex] >> 8) & 0xf) % ElementCount;
+                static constexpr usz Index3 = ((ShuffleTestIndices[TestIndex] >> 12) & 0xf) % ElementCount;
+                static constexpr usz Index4 = ((ShuffleTestIndices[TestIndex] >> 16) & 0xf) % ElementCount;
+                static constexpr usz Index5 = ((ShuffleTestIndices[TestIndex] >> 20) & 0xf) % ElementCount;
+                static constexpr usz Index6 = ((ShuffleTestIndices[TestIndex] >> 24) & 0xf) % ElementCount;
+                static constexpr usz Index7 = ((ShuffleTestIndices[TestIndex] >> 28) & 0xf) % ElementCount;
                 auto s = v.Shuffle<Index0, Index1, Index2, Index3, Index4, Index5, Index6, Index7>();
                 EXPECT(s.GetElement<0>() == sourceElements[Index0]);
                 EXPECT(s.GetElement<1>() == sourceElements[Index1]);

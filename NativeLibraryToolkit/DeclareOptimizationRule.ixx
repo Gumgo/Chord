@@ -77,8 +77,8 @@ namespace Chord
       {
         usz count = 1;
         Unroll<0, sizeof...(TArguments)>(
-          [&](auto i)
-            { count += CountComponents<std::tuple_element_t<decltype(i)::value, std::tuple<TArguments...>>>(); });
+          [&]<usz Index>()
+            { count += CountComponents<std::tuple_element_t<Index, std::tuple<TArguments...>>>(); });
         return count;
       }();
 
@@ -121,8 +121,8 @@ namespace Chord
       {
         usz count = 1;
         Unroll<0, sizeof...(TElements)>(
-          [&](auto i)
-            { count += CountComponents<std::tuple_element_t<decltype(i)::value, std::tuple<TElements...>>>(); });
+          [&]<usz Index>()
+            { count += CountComponents<std::tuple_element_t<Index, std::tuple<TElements...>>>(); });
         return count;
       }();
 
@@ -160,14 +160,14 @@ namespace Chord
       if constexpr (T::ComponentType == ComponentType::NativeModuleCall)
       {
         Unroll<0, std::tuple_size_v<decltype(component.m_arguments)>>(
-          [&](auto i)
-            { IterateComponents(std::get<decltype(i)::value>(component.m_arguments), std::forward<TFunc>(func)); });
+          [&]<usz Index>()
+            { IterateComponents(std::get<Index>(component.m_arguments), std::forward<TFunc>(func)); });
       }
       else if constexpr (T::ComponentType == ComponentType::Array)
       {
         Unroll<0, std::tuple_size_v<decltype(component.m_elements)>>(
-          [&](auto i)
-            { IterateComponents(std::get<decltype(i)::value>(component.m_elements), std::forward<TFunc>(func)); });
+          [&]<usz Index>()
+            { IterateComponents(std::get<Index>(component.m_elements), std::forward<TFunc>(func)); });
       }
     }
   }
@@ -178,9 +178,8 @@ namespace Chord
     using Component = std::remove_cvref_t<T>;
     std::optional<usz> index;
     Unroll<0, std::tuple_size_v<decltype(Component::m_arguments)>>(
-      [&](auto i)
+      [&]<usz ArgumentIndex>()
       {
-        static constexpr usz ArgumentIndex = decltype(i)::value;
         using Argument = std::tuple_element_t<ArgumentIndex, decltype(Component::m_arguments)>;
         if constexpr (std::derived_from<Argument, OptimizationRuleComponentBase>)
         {
@@ -399,8 +398,8 @@ namespace Chord
         {
           usz result = 0;
           Unroll<0, sizeof...(TOutputPatterns)>(
-            [&](auto i)
-              { result += (CountComponents<std::tuple_element_t<decltype(i)::value, std::tuple<TOutputPatterns...>>>() + 1); });
+            [&]<usz Index>()
+              { result += (CountComponents<std::tuple_element_t<Index, std::tuple<TOutputPatterns...>>>() + 1); });
           return result;
         }();
 
@@ -648,9 +647,8 @@ namespace Chord
 
       auto outputPatternsTuple = std::make_tuple(outputPatterns...);
       Unroll<0, sizeof...(TOutputPatterns)>(
-        [&](auto i)
+        [&]<usz OutputPatternIndex>()
         {
-          static constexpr usz OutputPatternIndex = decltype(i)::value;
           const auto& outputPattern = std::get<OutputPatternIndex>(outputPatternsTuple);
           using OutputPattern = std::remove_cvref_t<decltype(outputPattern)>;
           static_assert(std::derived_from<OutputPattern, OptimizationRuleComponentBase>, "Output patterns must be wrapped in Out<i>(...)");

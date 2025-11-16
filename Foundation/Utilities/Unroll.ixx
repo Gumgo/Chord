@@ -8,12 +8,11 @@ namespace Chord
 {
   export
   {
-    // !!! rewrite this to just take a templated lambda instead of integral_constant
     template<usz InclusiveStart, usz ExclusiveEnd, typename TFunc>
     inline constexpr void Unroll(TFunc&& func)
     {
       return []<usz... Indices>(TFunc&& funcInner, std::index_sequence<Indices...>)
-        { (funcInner(std::integral_constant<usz, InclusiveStart + Indices>()), ...); }(
+        { (funcInner.template operator()<InclusiveStart + Indices>(), ...); }(
           std::forward<TFunc>(func),
           std::make_index_sequence<ExclusiveEnd - InclusiveStart>());
     }

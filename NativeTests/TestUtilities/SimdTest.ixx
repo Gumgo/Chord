@@ -69,9 +69,8 @@ namespace Chord
             auto argVectors = std::make_tuple(Vector<TArgs, ElementCount>(Zero)...);
 
             Unroll<0, sizeof...(TArgs)>(
-              [&](auto i)
+              [&]<usz ArgIndex>()
               {
-                static constexpr usz ArgIndex = decltype(i)::value;
                 using VectorType = std::tuple_element_t<ArgIndex, decltype(argVectors)>;
 
                 // Load N consecutive test values. This way, we can test having different values in each lane.
@@ -90,11 +89,8 @@ namespace Chord
             {
               auto argScalars = std::make_tuple(TArgs()...);
               Unroll<0, sizeof...(TArgs)>(
-                [&](auto i)
-                {
-                  static constexpr usz ArgIndex = decltype(i)::value;
-                  std::get<ArgIndex>(argScalars) = std::get<ArgIndex>(tests[(testIndex + elementIndex) % tests.Count()]);
-                });
+                [&]<usz ArgIndex>()
+                  { std::get<ArgIndex>(argScalars) = std::get<ArgIndex>(tests[(testIndex + elementIndex) % tests.Count()]); });
 
               auto resultScalar = std::apply(std::forward<TScalarFunc>(scalarFunc), argScalars);
 

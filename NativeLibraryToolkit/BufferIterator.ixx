@@ -100,9 +100,9 @@ namespace Chord
     {
       bool result = true;
       Unroll<0, sizeof...(TBuffers)>(
-        [&](auto i)
+        [&]<usz Index>()
         {
-          using Buffer = std::tuple_element_t<decltype(i)::value, std::tuple<TBuffers...>>;
+          using Buffer = std::tuple_element_t<Index, std::tuple<TBuffers...>>;
           if constexpr (std::same_as<Buffer, InputFloatBuffer*> || std::same_as<Buffer, OutputFloatBuffer*>)
             { result &= IsSimdTypeSupported<f32, ElementCount>; }
           else if constexpr (std::same_as<Buffer, InputDoubleBuffer*> || std::same_as<Buffer, OutputDoubleBuffer*>)
@@ -268,8 +268,8 @@ namespace Chord
 
     usz sampleCount = std::get<0>(buffersTuple)->m_sampleCount;
     Unroll<0, sizeof...(TBuffers)>(
-      [&](auto i)
-        { ASSERT(std::get<decltype(i)::value>(buffersTuple)->m_sampleCount == sampleCount); });
+      [&]<usz Index>()
+        { ASSERT(std::get<Index>(buffersTuple)->m_sampleCount == sampleCount); });
 
 
     auto bufferDataTuple = std::make_tuple(GetBufferData(buffers)...);
@@ -278,9 +278,9 @@ namespace Chord
     if constexpr (AnySet(IterateBuffersFlags::PropagateConstants, Flags))
     {
       Unroll<0, sizeof...(TBuffers)>(
-        [&](auto i)
+        [&]<usz Index>()
         {
-          auto buffer = std::get<decltype(i)::value>(buffersTuple);
+          auto buffer = std::get<Index>(buffersTuple);
           if constexpr (IsInputBuffer<std::remove_cvref_t<decltype(buffer)>>())
             { allInputsConstant &= buffer->m_isConstant; }
         });
@@ -295,10 +295,10 @@ namespace Chord
     usz sampleIndex = 0;
 
     Unroll<0, ArrayLength(IterationElementCounts)>(
-      [&](auto iterationElementCountIndex)
+      [&]<usz IterationElementCountIndex>()
       {
-        static constexpr usz IterationElementCount = IterationElementCounts[decltype(iterationElementCountIndex)::value];
-        static_assert(IsPowerOfTwo(IterationElementCount));
+      static constexpr usz IterationElementCount = IterationElementCounts[IterationElementCountIndex];
+      static_assert(IsPowerOfTwo(IterationElementCount));
         if constexpr (IsIterationSupported<IterationElementCount, TBuffers...>())
         {
           usz endSampleIndex = sampleCount & ~(IterationElementCount - 1);
@@ -325,11 +325,8 @@ namespace Chord
             std::apply(CallCallback, bufferValuesTuple);
 
             Unroll<0, sizeof...(TBuffers)>(
-              [&](auto i)
-              {
-                static constexpr usz BufferIndex = decltype(i)::value;
-                StoreBufferValue<IterationElementCount>(std::get<BufferIndex>(bufferDataTuple), std::get<BufferIndex>(bufferValuesTuple), sampleIndex);
-              });
+              [&]<usz BufferIndex>()
+                { StoreBufferValue<IterationElementCount>(std::get<BufferIndex>(bufferDataTuple), std::get<BufferIndex>(bufferValuesTuple), sampleIndex); });
 
             sampleIndex += IterationElementCount;
           }
@@ -341,9 +338,8 @@ namespace Chord
       if (allInputsConstant)
       {
         Unroll<0, sizeof...(TBuffers)>(
-          [&](auto i)
+          [&]<usz BufferIndex>()
           {
-            static constexpr usz BufferIndex = decltype(i)::value;
             auto& buffer = std::get<BufferIndex>(buffersTuple);
             using Buffer = std::remove_cvref_t<decltype(buffer)>;
             if constexpr (!IsInputBuffer<Buffer>())

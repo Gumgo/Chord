@@ -908,8 +908,8 @@ namespace Chord
       auto testArgumentsTuple = std::forward_as_tuple(testArguments...);
       FixedArray<TestNativeModuleArgument*, sizeof...(TArguments)> testArgumentPointers;
       Unroll<0, sizeof...(TArguments)>(
-        [&](auto i)
-          { testArgumentPointers[i.value] = &std::get<decltype(i)::value>(testArgumentsTuple); });
+        [&]<usz Index>()
+          { testArgumentPointers[Index] = &std::get<Index>(testArgumentsTuple); });
       TestNativeModuleInternal(nativeModule, maxSampleCount, sampleCounts, validate, testArgumentPointers);
     }
 
@@ -924,9 +924,8 @@ namespace Chord
 
           // Validate arguments are correct
           Unroll<0, sizeof...(TArgs)>(
-            [&](auto i)
+            [&]<usz Index>()
             {
-              static constexpr usz Index = decltype(i)::value;
               const NativeModuleParameter& parameter = parameters[Index];
               using Arg = std::tuple_element_t<Index, std::tuple<TArgs...>>;
 
@@ -950,9 +949,8 @@ namespace Chord
           {
             std::tuple<TArgs...> values;
             Unroll<0, sizeof...(TArgs)>(
-              [&](auto index)
+              [&]<usz Index>()
               {
-                static constexpr usz Index = decltype(index)::value;
                 const NativeModuleParameter& parameter = parameters[Index];
                 const NativeModuleArgument& argument = arguments->m_arguments[Index];
                 using Arg = std::tuple_element_t<Index, std::tuple<TArgs...>>;

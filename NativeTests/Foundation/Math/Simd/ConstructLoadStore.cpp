@@ -200,7 +200,7 @@ namespace Chord
           for (usz i = 0; i < 8; i++)
             { sourceElements[i] = TElement(i + 4); }
           auto v = Vector<TElement, ElementCount>::LoadAligned(sourceElements);
-          Unroll<0, ElementCount>([&](auto i) { EXPECT(v.GetElement<decltype(i)::value>() == sourceElements[decltype(i)::value]); });
+          Unroll<0, ElementCount>([&]<usz Index>() { EXPECT(v.GetElement<Index>() == sourceElements[Index]); });
         });
     }
   };
